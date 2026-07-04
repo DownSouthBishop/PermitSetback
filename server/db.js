@@ -90,6 +90,84 @@ db.exec(`
     created_at TEXT NOT NULL,
     expires_at TEXT NOT NULL
   );
+
+  -- Child tables for the platform vision (SETBACK VISION 1.0) — everything
+  -- keys off project_id so each module owns its own table and its own
+  -- track can build without touching another module's rows.
+
+  -- Feasibility Intelligence and Risk Intelligence share this shape (a
+  -- labeled concern with likelihood/impact/priority/mitigation/confidence);
+  -- category tells them apart so the two modules never collide on a row.
+  CREATE TABLE IF NOT EXISTS project_findings (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    category TEXT NOT NULL,
+    label TEXT NOT NULL,
+    detail TEXT NOT NULL,
+    likelihood TEXT,
+    impact TEXT,
+    priority TEXT,
+    mitigation TEXT,
+    confidence TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  -- Cost Intelligence line items.
+  CREATE TABLE IF NOT EXISTS project_costs (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    category TEXT NOT NULL,
+    low_estimate REAL,
+    high_estimate REAL,
+    note TEXT,
+    created_at TEXT NOT NULL
+  );
+
+  -- Timeline Intelligence phases (feasibility -> design -> ... -> completion).
+  CREATE TABLE IF NOT EXISTS project_timeline_phases (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    sort_order INTEGER NOT NULL,
+    estimated_duration TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    is_bottleneck INTEGER NOT NULL DEFAULT 0,
+    note TEXT,
+    created_at TEXT NOT NULL
+  );
+
+  -- Task Center.
+  CREATE TABLE IF NOT EXISTS project_tasks (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    detail TEXT,
+    status TEXT NOT NULL DEFAULT 'open',
+    due_date TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  -- Documents module — multiple generated document types per project.
+  CREATE TABLE IF NOT EXISTS project_documents (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    doc_type TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  -- AI Advisor conversation history, so a project's chat has memory instead
+  -- of regenerating identical work on every question.
+  CREATE TABLE IF NOT EXISTS project_conversations (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
 `);
 
 // Schema evolves via additive, idempotent statements rather than a migration
@@ -103,7 +181,13 @@ for (const stmt of [
   // agencies/flags/risks/timeline/narrative shape (e.g. cost estimate,
   // timeline breakdown, next actions) — avoids a fresh ALTER TABLE for every
   // new field a future roadmap-intelligence extension adds.
-  "ALTER TABLE projects ADD COLUMN extra TEXT"
+  "ALTER TABLE projects ADD COLUMN extra TEXT",
+  // Project Overview fields — nullable until the Overview track (or a
+  // future scoring pass) actually computes them.
+  "ALTER TABLE projects ADD COLUMN name TEXT",
+  "ALTER TABLE projects ADD COLUMN status TEXT",
+  "ALTER TABLE projects ADD COLUMN confidence_score INTEGER",
+  "ALTER TABLE projects ADD COLUMN risk_score INTEGER"
 ]) {
   try { db.exec(stmt); } catch (err) { /* column already exists — fine */ }
 }
@@ -155,3 +239,49 @@ export function getOrCreateUser(email) {
   insertUserStmt.run(email, new Date().toISOString());
   return getUserByEmailStmt.get(email);
 }
+
+// --- module child tables (Feasibility, Cost, Timeline, Risk, Tasks, Documents, AI Advisor) ---
+// One insert + one list-by-project statement per table, so each track has a
+// ready-made, shape-consistent starting point instead of inventing its own.
+
+export const insertFindingStmt = db.prepare(`
+  INSERT INTO project_findings (id, project_id, category, label, detail, likelihood, impact, priority, mitigation, confidence, created_at, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`);
+export const getFindingsByProjectStmt = db.prepare(
+  'SELECT * FROM project_findings WHERE project_id = ? AND category = ? ORDER BY created_at ASC'
+);
+
+export const insertCostStmt = db.prepare(`
+  INSERT INTO project_costs (id, project_id, category, low_estimate, high_estimate, note, created_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?)
+`);
+export const getCostsByProjectStmt = db.prepare('SELECT * FROM project_costs WHERE project_id = ? ORDER BY created_at ASC');
+
+export const insertTimelinePhaseStmt = db.prepare(`
+  INSERT INTO project_timeline_phases (id, project_id, name, sort_order, estimated_duration, status, is_bottleneck, note, created_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+`);
+export const getTimelinePhasesByProjectStmt = db.prepare(
+  'SELECT * FROM project_timeline_phases WHERE project_id = ? ORDER BY sort_order ASC'
+);
+
+export const insertTaskStmt = db.prepare(`
+  INSERT INTO project_tasks (id, project_id, title, detail, status, due_date, created_at, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+`);
+export const getTasksByProjectStmt = db.prepare('SELECT * FROM project_tasks WHERE project_id = ? ORDER BY created_at ASC');
+
+export const insertDocumentStmt = db.prepare(`
+  INSERT INTO project_documents (id, project_id, doc_type, content, created_at, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?)
+`);
+export const getDocumentsByProjectStmt = db.prepare('SELECT * FROM project_documents WHERE project_id = ? ORDER BY created_at ASC');
+
+export const insertConversationMessageStmt = db.prepare(`
+  INSERT INTO project_conversations (id, project_id, role, content, created_at)
+  VALUES (?, ?, ?, ?, ?)
+`);
+export const getConversationByProjectStmt = db.prepare(
+  'SELECT * FROM project_conversations WHERE project_id = ? ORDER BY created_at ASC'
+);

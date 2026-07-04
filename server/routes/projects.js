@@ -6,6 +6,10 @@ import { insertProject, getProjectStmt, updateProjectOutcomeStmt, insertOutcome 
 function projectRowToJson(row) {
   return {
     id: row.id,
+    name: row.name,
+    status: row.status,
+    confidenceScore: row.confidence_score,
+    riskScore: row.risk_score,
     location: row.location,
     description: row.description,
     trade: row.trade,

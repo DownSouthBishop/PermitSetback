@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project — Setback</title>
+<meta name="description" content="Your Setback project workspace — permits, feasibility, cost, timeline, risk, tasks, and documents in one place.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231D6FE0'/%3E%3Cpath d='M5 19V10h6V5h9' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F5F7F8">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#10151A">
+<style>
+  :root{
+    --paper: #F5F7F8; --paper-raised: #FFFFFF; --ink: #14181C; --ink-soft: #55606B;
+    --line: #C5CDD5; --accent: #1D6FE0; --accent-deep: #14509E; --accent-tint: #D7E6FD;
+    --risk: #B3261E; --risk-tint: #F8D3D0; --good: #1E7F4C; --good-tint: #D2EDDC;
+    --warn: #92600A; --warn-tint: #F5E1AF;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --radius: 10px;
+    --shadow-sm: 0 1px 2px rgba(20,24,28,.06), 0 1px 1px rgba(20,24,28,.04);
+    --shadow-md: 0 6px 20px rgba(20,24,28,.09), 0 2px 6px rgba(20,24,28,.06);
+    --dur: 180ms; --ease-out: cubic-bezier(.16,1,.3,1);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper: #10151A; --paper-raised: #1A2129; --ink: #E7ECF0; --ink-soft: #9FACB8;
+      --line: #2B3540; --accent: #5B9BF2; --accent-deep: #8AB8F5; --accent-tint: #16273D;
+      --risk: #E5867E; --risk-tint: #341C1A; --good: #6FCB94; --good-tint: #142C20;
+      --warn: #D9A94A; --warn-tint: #332809;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.35); --shadow-md: 0 8px 24px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper: #10151A; --paper-raised: #1A2129; --ink: #E7ECF0; --ink-soft: #9FACB8;
+    --line: #2B3540; --accent: #5B9BF2; --accent-deep: #8AB8F5; --accent-tint: #16273D;
+    --risk: #E5867E; --risk-tint: #341C1A; --good: #6FCB94; --good-tint: #142C20;
+    --warn: #D9A94A; --warn-tint: #332809;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.35); --shadow-md: 0 8px 24px rgba(0,0,0,.45);
+  }
+  :root[data-theme="light"]{
+    --paper: #F5F7F8; --paper-raised: #FFFFFF; --ink: #14181C; --ink-soft: #55606B;
+    --line: #C5CDD5; --accent: #1D6FE0; --accent-deep: #14509E; --accent-tint: #D7E6FD;
+    --risk: #B3261E; --risk-tint: #F8D3D0; --good: #1E7F4C; --good-tint: #D2EDDC;
+    --warn: #92600A; --warn-tint: #F5E1AF;
+    --shadow-sm: 0 1px 2px rgba(20,24,28,.06), 0 1px 1px rgba(20,24,28,.04);
+    --shadow-md: 0 6px 20px rgba(20,24,28,.09), 0 2px 6px rgba(20,24,28,.06);
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background: var(--paper); color: var(--ink); font-family: var(--font-sans); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  #app{ max-width: 720px; margin: 0 auto; padding: 24px 18px 72px; }
+  button{ touch-action: manipulation; }
+  a:focus-visible, button:focus-visible, [tabindex]:focus-visible{ outline: 2.5px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  @keyframes fadeInUp{ from{ opacity:0; transform: translateY(8px); } to{ opacity:1; transform: translateY(0); } }
+  .fadein{ animation: fadeInUp 220ms var(--ease-out) both; }
+
+  .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom: 18px; }
+  .brandrow{ display:flex; align-items:center; gap:10px; }
+  .mark{ width:32px; height:32px; border-radius:8px; background: linear-gradient(135deg, var(--accent), var(--accent-deep)); display:flex; align-items:center; justify-content:center; flex:none; }
+  h1.word{ font-size:19px; font-weight:800; letter-spacing:-0.02em; margin:0; }
+  .themebtn{ background:var(--paper-raised); border:1px solid var(--line); color:var(--ink-soft); border-radius:8px; padding:7px 11px; font-size:12px; cursor:pointer; font-family: var(--font-mono); }
+  .backlink{ display:block; font-size:13px; color:var(--ink-soft); text-decoration:none; margin-bottom:14px; }
+  .backlink:hover{ color:var(--accent); }
+
+  .tabs{ display:flex; gap:4px; overflow-x:auto; margin-bottom:18px; border-bottom:1px solid var(--line); padding-bottom:0; }
+  .tab{ background:none; border:none; color:var(--ink-soft); font-size:13px; font-weight:600; padding:10px 12px; cursor:pointer; white-space:nowrap; border-bottom:2px solid transparent; margin-bottom:-1px; }
+  .tab:hover{ color:var(--ink); }
+  .tab.active{ color:var(--accent); border-bottom-color:var(--accent); }
+
+  .card{ background: var(--paper-raised); border:1px solid var(--line); box-shadow: var(--shadow-sm); border-radius: var(--radius); padding:20px; margin-bottom:16px; }
+  .card h3{ display:flex; align-items:center; gap:8px; font-size:14px; font-weight:700; margin:0 0 12px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft); }
+
+  .section{ padding-top:16px; margin-top:16px; border-top:1px solid var(--line); }
+  .section:first-child{ padding-top:0; margin-top:0; border-top:none; }
+
+  .counts{ display:flex; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
+  .countbox{ flex:1; min-width:90px; background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:12px; text-align:center; }
+  .countbox b{ display:block; font-size:18px; font-family:var(--font-mono); color:var(--accent-deep); }
+  .countbox span{ font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.03em; }
+
+  .agency{ background:var(--paper); border-left:3px solid var(--accent); border-radius:6px; padding:12px 14px; margin-bottom:9px; }
+  .agency b{ font-size:14px; }
+  .agency p{ color:var(--ink-soft); font-size:13px; margin:4px 0 0; }
+  .flag{ background:var(--warn-tint); border-left:3px solid var(--warn); border-radius:6px; padding:11px 14px; margin-bottom:8px; font-size:13px; }
+  .risk{ background:var(--risk-tint); border-left:3px solid var(--risk); border-radius:6px; padding:11px 14px; margin-bottom:8px; font-size:13px; }
+  .timeline b{ font-size:22px; font-family:var(--font-mono); color:var(--good); }
+  .narrative{ background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:15px; font-size:13.5px; white-space:pre-wrap; }
+  .copybtn{ background:var(--paper); border:1px solid var(--line); color:var(--ink-soft); border-radius:7px; padding:7px 13px; font-size:12px; cursor:pointer; margin-top:10px; }
+
+  .rbtns{ display:flex; gap:8px; flex-wrap:wrap; }
+  .rbtn{ flex:1; min-width:110px; min-height:44px; display:flex; align-items:center; justify-content:center; gap:6px; background:var(--paper); border:1px solid var(--line); color:var(--ink); border-radius:8px; padding:10px; font-size:12.5px; cursor:pointer; font-weight:600; }
+  .rbtn:hover{ border-color:var(--accent); }
+  .creditbox{ background:var(--good-tint); border-radius:8px; padding:12px 14px; margin-top:12px; font-size:13px; }
+  .creditbox b{ font-family:var(--font-mono); color:var(--good); }
+
+  .disc{ color:var(--ink-soft); font-size:11.5px; line-height:1.6; text-align:center; margin-top:26px; padding:0 8px; }
+  .err{ color:var(--risk); background:var(--risk-tint); border-radius:8px; padding:11px 13px; font-size:13px; margin-top:8px; }
+  .hidden{ display:none; }
+  .notbuilt{ color:var(--ink-soft); font-size:13.5px; }
+  @media (prefers-reduced-motion: reduce){ *{ animation-duration:.001ms !important; transition-duration:.001ms !important; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script type="module">
+import { BACKEND_ORIGIN, fetchWithTimeout, esc } from './modules/shared.js';
+
+// The tab registry — adding a module later is one line here plus one new
+// file in modules/. This is the one shared line each track's PR touches;
+// keep the diff to exactly one added object per module.
+const MODULES = [
+  { key: 'overview', label: 'Overview', file: './modules/overview.js' },
+  { key: 'feasibility', label: 'Feasibility', file: './modules/feasibility.js' },
+  { key: 'permits', label: 'Permits', file: './modules/permits.js' },
+  { key: 'cost', label: 'Cost', file: './modules/cost.js' },
+  { key: 'timeline', label: 'Timeline', file: './modules/timeline.js' },
+  { key: 'risk', label: 'Risk', file: './modules/risk.js' },
+  { key: 'advisor', label: 'AI Advisor', file: './modules/advisor.js' },
+  { key: 'tasks', label: 'Tasks', file: './modules/tasks.js' },
+  { key: 'documents', label: 'Documents', file: './modules/documents.js' }
+];
+
+let theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+let project = null;
+let activeKey = 'overview';
+
+function toggleTheme() {
+  theme = theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('themetoggle');
+  if (btn) btn.textContent = theme === 'dark' ? 'Light' : 'Dark';
+}
+
+function shell() {
+  const root = document.getElementById('app');
+  root.innerHTML = `
+    <div class="topbar">
+      <div class="brandrow"><div class="mark"></div><h1 class="word">Setback</h1></div>
+      <button class="themebtn" id="themetoggle">${theme === 'dark' ? 'Light' : 'Dark'}</button>
+    </div>
+    <a class="backlink" href="projects.html">&larr; My Projects</a>
+    <div class="tabs" id="tabs"></div>
+    <div id="moduleOut" tabindex="-1" aria-live="polite" style="outline:none;"></div>
+  `;
+  document.getElementById('themetoggle').onclick = toggleTheme;
+  const tabs = document.getElementById('tabs');
+  MODULES.forEach(m => {
+    const b = document.createElement('button');
+    b.className = 'tab' + (m.key === activeKey ? ' active' : '');
+    b.textContent = m.label;
+    b.onclick = () => selectTab(m.key);
+    tabs.appendChild(b);
+  });
+}
+
+async function selectTab(key) {
+  activeKey = key;
+  document.querySelectorAll('.tab').forEach((b, i) => b.classList.toggle('active', MODULES[i].key === key));
+  const out = document.getElementById('moduleOut');
+  out.innerHTML = '';
+  const mod = MODULES.find(m => m.key === key);
+  try {
+    const impl = await import(mod.file);
+    await impl.render(out, project);
+  } catch (err) {
+    out.innerHTML = `<div class="card"><p class="notbuilt">${esc(mod.label)} isn't built yet.</p></div>`;
+  }
+  out.classList.remove('fadein'); void out.offsetWidth; out.classList.add('fadein');
+}
+
+async function init() {
+  const id = new URLSearchParams(location.search).get('id');
+  const root = document.getElementById('app');
+  if (!id) {
+    root.innerHTML = `<div class="card"><p class="err">No project id in the URL.</p></div>`;
+    return;
+  }
+  try {
+    const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(id)}`, {}, 8000);
+    if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+    project = await res.json();
+  } catch (err) {
+    root.innerHTML = `<div class="card"><p class="err">Couldn't load this project — is the backend running?</p></div>`;
+    return;
+  }
+  shell();
+  selectTab(activeKey);
+}
+
+init();
+</script>
+</body>
+</html>

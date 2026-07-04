@@ -244,7 +244,7 @@ function renderProjects(projects){
     return;
   }
   const cards = projects.map(p => `
-    <a class="projectcard" href="setback-app.html?project=${encodeURIComponent(p.id)}">
+    <a class="projectcard" href="project.html?id=${encodeURIComponent(p.id)}">
       <div class="row">
         <span class="loc">${esc(p.location)}</span>
         ${statusBadge(p.outcomeStatus)}

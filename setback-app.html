@@ -877,7 +877,7 @@ function renderProjectList(projects){
       <h3>${ICON.doc} Your saved roadmaps</h3>
       ${(projects||[]).length ? projects.map(p => `
         <div class="agency">
-          <b><a href="setback-app.html?project=${encodeURIComponent(p.id)}">${esc(p.location)} — ${esc(p.trade)}</a></b>
+          <b><a href="project.html?id=${encodeURIComponent(p.id)}">${esc(p.location)} — ${esc(p.trade)}</a></b>
           <p>${esc(new Date(p.createdAt).toLocaleDateString())}</p>
         </div>
       `).join('') : `<p style="color:var(--ink-soft);font-size:13px;">No saved roadmaps yet.</p>`}
