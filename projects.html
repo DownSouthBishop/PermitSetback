@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Projects — Setback</title>
+<meta name="description" content="See every permit roadmap you've generated with Setback, saved to your account.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231D6FE0'/%3E%3Cpath d='M5 19V10h6V5h9' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F5F7F8">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#10151A">
+<style>
+  :root{
+    --paper: #F5F7F8;
+    --paper-raised: #FFFFFF;
+    --ink: #14181C;
+    --ink-soft: #55606B;
+    --line: #C5CDD5;
+    --accent: #1D6FE0;
+    --accent-deep: #14509E;
+    --accent-tint: #D7E6FD;
+    --risk: #B3261E;
+    --risk-tint: #F8D3D0;
+    --good: #1E7F4C;
+    --good-tint: #D2EDDC;
+    --warn: #92600A;
+    --warn-tint: #F5E1AF;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --radius: 10px;
+    --shadow-sm: 0 1px 2px rgba(20,24,28,.06), 0 1px 1px rgba(20,24,28,.04);
+    --shadow-md: 0 6px 20px rgba(20,24,28,.09), 0 2px 6px rgba(20,24,28,.06);
+    --dur: 180ms;
+    --dur-slow: 260ms;
+    --ease-out: cubic-bezier(.16,1,.3,1);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --shadow-sm: 0 1px 2px rgba(0,0,0,.35); --shadow-md: 0 8px 24px rgba(0,0,0,.45); }
+  }
+  :root[data-theme="dark"]{ --shadow-sm: 0 1px 2px rgba(0,0,0,.35); --shadow-md: 0 8px 24px rgba(0,0,0,.45); }
+  :root[data-theme="light"]{ --shadow-sm: 0 1px 2px rgba(20,24,28,.06), 0 1px 1px rgba(20,24,28,.04); --shadow-md: 0 6px 20px rgba(20,24,28,.09), 0 2px 6px rgba(20,24,28,.06); }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper: #10151A; --paper-raised: #1A2129; --ink: #E7ECF0; --ink-soft: #9FACB8;
+      --line: #2B3540; --accent: #5B9BF2; --accent-deep: #8AB8F5; --accent-tint: #16273D;
+      --risk: #E5867E; --risk-tint: #341C1A; --good: #6FCB94; --good-tint: #142C20;
+      --warn: #D9A94A; --warn-tint: #332809;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper: #10151A; --paper-raised: #1A2129; --ink: #E7ECF0; --ink-soft: #9FACB8;
+    --line: #2B3540; --accent: #5B9BF2; --accent-deep: #8AB8F5; --accent-tint: #16273D;
+    --risk: #E5867E; --risk-tint: #341C1A; --good: #6FCB94; --good-tint: #142C20;
+    --warn: #D9A94A; --warn-tint: #332809;
+  }
+  :root[data-theme="light"]{
+    --paper: #F5F7F8; --paper-raised: #FFFFFF; --ink: #14181C; --ink-soft: #55606B;
+    --line: #C5CDD5; --accent: #1D6FE0; --accent-deep: #14509E; --accent-tint: #D7E6FD;
+    --risk: #B3261E; --risk-tint: #F8D3D0; --good: #1E7F4C; --good-tint: #D2EDDC;
+    --warn: #92600A; --warn-tint: #F5E1AF;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background: var(--paper); color: var(--ink); font-family: var(--font-sans); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  #app{ max-width: 640px; margin: 0 auto; padding: 24px 18px 72px; }
+  button, input{ touch-action: manipulation; }
+  a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible{
+    outline: 2.5px solid var(--accent); outline-offset: 2px; border-radius: 4px;
+  }
+  @keyframes fadeInUp{ from{ opacity:0; transform: translateY(8px); } to{ opacity:1; transform: translateY(0); } }
+  .fadein{ animation: fadeInUp var(--dur-slow) var(--ease-out) both; }
+
+  .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom: 22px; }
+  .brandrow{ display:flex; align-items:center; gap:10px; }
+  .mark{ width:32px; height:32px; border-radius:8px; background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+    display:flex; align-items:center; justify-content:center; flex:none; }
+  h1.word{ font-size:19px; font-weight:800; letter-spacing:-0.02em; margin:0; }
+  .themebtn{ background:var(--paper-raised); border:1px solid var(--line); color:var(--ink-soft); border-radius:8px; padding:7px 11px; font-size:12px; cursor:pointer; font-family: var(--font-mono); }
+
+  h2.hero{ font-size:22px; font-weight:800; letter-spacing:-0.02em; line-height:1.25; margin: 10px 0 8px; text-wrap: balance; }
+  p.sub{ color: var(--ink-soft); font-size:15px; max-width:56ch; margin: 0 0 18px; }
+
+  .card{ background: var(--paper-raised); border:1px solid var(--line); box-shadow: var(--shadow-sm); border-radius: var(--radius); padding:20px; margin-bottom:16px; transition: box-shadow var(--dur) var(--ease-out); }
+
+  label{ display:block; font-size:12px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; margin:0 0 6px; }
+  input{ width:100%; background:var(--paper); border:1.5px solid var(--line); color:var(--ink);
+    border-radius:8px; padding:11px 12px; font-size:16px; font-family:inherit; margin-bottom:14px; }
+  input:focus{ outline:none; border-color:var(--accent); }
+
+  .btn{ background: var(--accent); color:#fff; border:none; border-radius:9px; padding:13px 18px; min-height:48px;
+    font-size:15px; font-weight:700; cursor:pointer; width:100%; transition:transform var(--dur) var(--ease-out), opacity var(--dur); }
+  .btn:hover{ transform: translateY(-1px); }
+  .btn:active{ transform: scale(.98); }
+  .btn:disabled{ opacity:.5; cursor:not-allowed; transform:none; }
+  .btn.secondary{ background:transparent; color:var(--accent); border:1px solid var(--line); }
+
+  .projectcard{ background: var(--paper-raised); border:1px solid var(--line); box-shadow: var(--shadow-sm); border-radius: var(--radius);
+    padding:16px 18px; margin-bottom:12px; display:block; text-decoration:none; color:inherit; transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
+  .projectcard:hover{ box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .projectcard .row{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; }
+  .projectcard .loc{ font-size:15.5px; font-weight:700; }
+  .projectcard .meta{ color:var(--ink-soft); font-size:13px; }
+
+  .badge{ display:inline-block; border-radius:999px; padding:3px 10px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; flex:none; }
+  .badge.good{ background:var(--good-tint); color:var(--good); }
+  .badge.warn{ background:var(--warn-tint); color:var(--warn); }
+  .badge.risk{ background:var(--risk-tint); color:var(--risk); }
+
+  .linkbox{ background:var(--accent-tint); border-radius:8px; padding:13px 15px; font-size:13.5px; color:var(--ink); margin-bottom:8px; word-break:break-all; }
+  .linkbox a{ color:var(--accent-deep); font-weight:600; }
+
+  .disc{ color:var(--ink-soft); font-size:11.5px; line-height:1.6; text-align:center; margin-top:26px; padding:0 8px; }
+  .err{ color:var(--risk); background:var(--risk-tint); border-radius:8px; padding:11px 13px; font-size:13px; margin-top:8px; }
+  .empty{ color:var(--ink-soft); font-size:14px; text-align:center; padding:24px 8px; }
+  .hidden{ display:none; }
+  @media (prefers-reduced-motion: reduce){ *{ animation-duration:.001ms !important; transition-duration:.001ms !important; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ============================================================
+// Setback — "My Projects" dashboard shell. Auth via the same
+// magic-link flow as the main app; lists saved projects and
+// links out to setback-app.html for the full reveal.
+// ============================================================
+
+const BACKEND_ORIGIN = 'http://localhost:8787';
+const SESSION_KEY = 'setback_session';
+
+const MARK_ICON = `<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9h6V4h10"/></svg>`;
+
+const TRADE_LABELS = {
+  pool: 'Pool', deck: 'Deck', roof: 'Roof', solar: 'Solar', fence: 'Fence',
+  addition: 'Addition', 'garage/adu': 'Garage/ADU', other: 'Other'
+};
+
+let state = {
+  theme: (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'
+};
+
+const root = document.getElementById('app');
+
+function esc(s){ return String(s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function qs(name){
+  return new URLSearchParams(window.location.search).get(name);
+}
+
+function toggleTheme(){
+  state.theme = state.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', state.theme);
+  const btn = document.getElementById('themetoggle');
+  if (btn) btn.textContent = state.theme === 'dark' ? 'Light' : 'Dark';
+}
+
+function tradeLabel(trade){
+  return TRADE_LABELS[trade] || (trade ? trade.charAt(0).toUpperCase() + trade.slice(1) : 'Other');
+}
+
+function statusBadge(status){
+  if (!status) return '';
+  if (status === 'approved') return `<span class="badge good">Approved</span>`;
+  if (status === 'comments') return `<span class="badge warn">Approved w/ comments</span>`;
+  if (status === 'rejected') return `<span class="badge risk">Rejected</span>`;
+  return '';
+}
+
+function formatDate(iso){
+  try {
+    return new Date(iso).toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
+  } catch (err){
+    return iso;
+  }
+}
+
+function topbar(){
+  return `
+    <div class="topbar">
+      <div class="brandrow"><div class="mark">${MARK_ICON}</div><h1 class="word">Setback</h1></div>
+      <button class="themebtn" id="themetoggle">${state.theme === 'dark' ? 'Light' : 'Dark'}</button>
+    </div>`;
+}
+
+function renderShell(inner){
+  root.innerHTML = `
+    ${topbar()}
+    <h2 class="hero">My Projects</h2>
+    <p class="sub">Every permit roadmap you've generated, saved to your account.</p>
+    <div id="content" class="fadein">${inner}</div>
+    <p class="disc"><a href="setback-app.html">Back to Setback</a></p>
+  `;
+  document.getElementById('themetoggle').onclick = toggleTheme;
+}
+
+function renderEmailCard(errorMsg){
+  renderShell(`
+    <div class="card">
+      <label>Email</label>
+      <input id="f-email" type="email" placeholder="you@example.com">
+      <div id="errbox">${errorMsg ? `<div class="err">${esc(errorMsg)}</div>` : ''}</div>
+      <button class="btn" id="requestlink">Email me my access link</button>
+      <div id="linkResult"></div>
+    </div>
+  `);
+  document.getElementById('requestlink').onclick = handleRequestLink;
+}
+
+async function handleRequestLink(){
+  const email = document.getElementById('f-email').value.trim();
+  const errbox = document.getElementById('errbox');
+  errbox.innerHTML = '';
+  if (!email || !email.includes('@')){
+    errbox.innerHTML = `<div class="err">Enter a valid email address.</div>`;
+    return;
+  }
+  const btn = document.getElementById('requestlink');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  try {
+    const res = await fetch(`${BACKEND_ORIGIN}/api/auth/request-link`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Backend returned ${res.status}`);
+    const token = new URL(data.devLink).searchParams.get('token');
+    const ownLink = `${window.location.origin}${window.location.pathname}?verify=${token}`;
+    document.getElementById('linkResult').innerHTML = `
+      <div class="linkbox">Your access link (temporary — real email delivery comes later): <a href="${ownLink}">${esc(ownLink)}</a></div>
+    `;
+  } catch (err){
+    errbox.innerHTML = `<div class="err">Couldn't send that link: ${esc(err.message)}. Is the backend running?</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Email me my access link';
+  }
+}
+
+function renderProjects(projects){
+  if (!projects || projects.length === 0){
+    renderShell(`<div class="empty">No saved projects yet — <a href="setback-app.html">generate a roadmap</a> and save it to see it here.</div>`);
+    return;
+  }
+  const cards = projects.map(p => `
+    <a class="projectcard" href="setback-app.html?project=${encodeURIComponent(p.id)}">
+      <div class="row">
+        <span class="loc">${esc(p.location)}</span>
+        ${statusBadge(p.outcomeStatus)}
+      </div>
+      <div class="meta">${esc(tradeLabel(p.trade))} &middot; ${esc(formatDate(p.createdAt))}</div>
+    </a>
+  `).join('');
+  renderShell(cards);
+}
+
+function renderError(msg){
+  renderShell(`<div class="err">${esc(msg)}</div>`);
+}
+
+async function verifyToken(token){
+  try {
+    const res = await fetch(`${BACKEND_ORIGIN}/api/auth/verify?token=${encodeURIComponent(token)}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Backend returned ${res.status}`);
+    localStorage.setItem(SESSION_KEY, data.sessionToken);
+    window.history.replaceState(null, '', window.location.pathname);
+    renderProjects(data.projects);
+  } catch (err){
+    renderError(`Couldn't verify that link: ${err.message}`);
+  }
+}
+
+async function loadProjects(sessionToken){
+  try {
+    const res = await fetch(`${BACKEND_ORIGIN}/api/me/projects`, {
+      headers: { 'Authorization': `Bearer ${sessionToken}` }
+    });
+    if (res.status === 401){
+      localStorage.removeItem(SESSION_KEY);
+      renderEmailCard();
+      return;
+    }
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Backend returned ${res.status}`);
+    renderProjects(data.projects);
+  } catch (err){
+    renderError(`Couldn't load your projects: ${err.message}. Is the backend running?`);
+  }
+}
+
+function init(){
+  const verifyTokenParam = qs('verify');
+  if (verifyTokenParam){
+    renderShell(`<p class="sub">Verifying your access link...</p>`);
+    verifyToken(verifyTokenParam);
+    return;
+  }
+  const sessionToken = localStorage.getItem(SESSION_KEY);
+  if (sessionToken){
+    renderShell(`<p class="sub">Loading your projects...</p>`);
+    loadProjects(sessionToken);
+    return;
+  }
+  renderEmailCard();
+}
+
+init();
+</script>
+</body>
+</html>
