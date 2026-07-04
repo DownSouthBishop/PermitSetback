@@ -37,6 +37,7 @@ db.exec(`
     created_at TEXT NOT NULL,
     location TEXT NOT NULL,
     description TEXT NOT NULL,
+    trade TEXT NOT NULL DEFAULT 'other',
     provider TEXT NOT NULL,
     unrecognized INTEGER NOT NULL DEFAULT 0
   );
@@ -45,6 +46,7 @@ db.exec(`
     created_at TEXT NOT NULL,
     location TEXT NOT NULL,
     description TEXT NOT NULL,
+    trade TEXT NOT NULL DEFAULT 'other',
     outcome TEXT NOT NULL
   );
   CREATE TABLE IF NOT EXISTS events (
@@ -53,17 +55,62 @@ db.exec(`
     name TEXT NOT NULL,
     properties TEXT
   );
+  -- Written only by the offline learning job (learn.js), read cheaply here
+  -- on the live request path. The live path never calls an LLM to produce
+  -- this — it's precomputed, so a busy hot path never pays for it.
+  CREATE TABLE IF NOT EXISTS insights (
+    location TEXT NOT NULL,
+    trade TEXT NOT NULL,
+    report_count INTEGER NOT NULL,
+    approved_pct REAL NOT NULL,
+    summary TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (location, trade)
+  );
 `);
 
+// Older data.db files predate the trade column — add it if missing rather
+// than requiring anyone to delete and recreate the database.
+for (const stmt of [
+  "ALTER TABLE roadmaps ADD COLUMN trade TEXT NOT NULL DEFAULT 'other'",
+  "ALTER TABLE outcomes ADD COLUMN trade TEXT NOT NULL DEFAULT 'other'"
+]) {
+  try { db.exec(stmt); } catch (err) { /* column already exists — fine */ }
+}
+
 const insertRoadmap = db.prepare(
-  'INSERT INTO roadmaps (created_at, location, description, provider, unrecognized) VALUES (?, ?, ?, ?, ?)'
+  'INSERT INTO roadmaps (created_at, location, description, trade, provider, unrecognized) VALUES (?, ?, ?, ?, ?, ?)'
 );
 const insertOutcome = db.prepare(
-  'INSERT INTO outcomes (created_at, location, description, outcome) VALUES (?, ?, ?, ?)'
+  'INSERT INTO outcomes (created_at, location, description, trade, outcome) VALUES (?, ?, ?, ?, ?)'
 );
 const insertEvent = db.prepare(
   'INSERT INTO events (created_at, name, properties) VALUES (?, ?, ?)'
 );
+// Case-insensitive on location — real users type "Broward County, Florida"
+// and "broward county, florida" for the same place, and an exact-match
+// lookup would silently miss the insight for one of them.
+const getInsightStmt = db.prepare('SELECT summary, report_count FROM insights WHERE LOWER(location) = LOWER(?) AND trade = ?');
+
+// Simple keyword classification — same categories as the frontend's trade
+// chips. Good enough to group outcome reports meaningfully; not meant to be
+// a precise taxonomy.
+const TRADE_KEYWORDS = {
+  pool: ['pool', 'spa', 'hot tub'],
+  deck: ['deck'],
+  roof: ['roof', 'shingle'],
+  solar: ['solar', 'photovoltaic', ' pv '],
+  fence: ['fence', 'fencing'],
+  addition: ['addition', 'room addition', 'extension'],
+  'garage/adu': ['garage', 'adu', 'accessory dwelling']
+};
+function classifyTrade(description) {
+  const d = ` ${description.toLowerCase()} `;
+  for (const [trade, keywords] of Object.entries(TRADE_KEYWORDS)) {
+    if (keywords.some(k => d.includes(k))) return trade;
+  }
+  return 'other';
+}
 
 const SYSTEM_PROMPT = `You are Setback, an expert permitting analyst for U.S. construction and improvement projects — any trade: pools, decks, additions, roofing, solar, fencing, garages, driveways, and beyond. You understand how local (county/municipal), state, and federal jurisdictions overlap for residential and light-commercial work.
 
@@ -165,8 +212,16 @@ async function callGemini(userText) {
   return extractJson(text);
 }
 
-async function generateRoadmap(location, description) {
-  const userText = `Project location: ${location}\nProject description: ${description}`;
+async function generateRoadmap(location, description, trade) {
+  // Cheap, synchronous, indexed lookup — no LLM call on this path. If the
+  // offline learning job (learn.js) hasn't produced an insight for this
+  // location+trade yet (cold start, or just not enough real reports), this
+  // is simply undefined and the prompt goes out exactly as it always has.
+  const insight = getInsightStmt.get(location, trade);
+  const learnedContext = insight
+    ? `\n\nReal-world context from ${insight.report_count} outcomes reported by other users for this trade in this area: ${insight.summary} Treat this as one data point among several, not a guarantee.`
+    : '';
+  const userText = `Project location: ${location}\nProject description: ${description}${learnedContext}`;
 
   try {
     const result = await callAnthropic(userText);
@@ -212,8 +267,9 @@ const server = createServer(async (req, res) => {
       const { location, description } = JSON.parse((await readBody(req)) || '{}');
       if (!location || !description) return sendJson(res, 400, { error: 'location and description are required' });
 
-      const { provider, result } = await generateRoadmap(location, description);
-      insertRoadmap.run(new Date().toISOString(), location, description, provider, result.unrecognized ? 1 : 0);
+      const trade = classifyTrade(description);
+      const { provider, result } = await generateRoadmap(location, description, trade);
+      insertRoadmap.run(new Date().toISOString(), location, description, trade, provider, result.unrecognized ? 1 : 0);
       sendJson(res, 200, { provider, result });
     } catch (err) {
       console.error('Request failed:', err.message);
@@ -230,7 +286,7 @@ const server = createServer(async (req, res) => {
       if (!location || !description || !validOutcomes.includes(outcome)) {
         return sendJson(res, 400, { error: 'location, description, and a valid outcome are required' });
       }
-      insertOutcome.run(new Date().toISOString(), location, description, outcome);
+      insertOutcome.run(new Date().toISOString(), location, description, classifyTrade(description), outcome);
       sendJson(res, 200, { ok: true });
     } catch (err) {
       sendJson(res, 400, { error: 'invalid request body' });
