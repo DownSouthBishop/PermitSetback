@@ -1,0 +1,25 @@
+/* Shared stylesheet for Setback's static content pages (legal, how-it-works,
+   expediters) — same token palette as the app, simpler document layout since
+   these are pages to read, not a tool to operate. */
+:root{
+  --paper: #F5F7F8; --paper-raised: #FFFFFF; --ink: #14181C; --ink-soft: #55606B;
+  --line: #C5CDD5; --accent: #1D6FE0; --accent-deep: #14509E; --accent-tint: #D7E6FD;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --paper:#10151A; --paper-raised:#1A2129; --ink:#E7ECF0; --ink-soft:#9FACB8; --line:#2B3540; --accent:#5B9BF2; --accent-deep:#8AB8F5; --accent-tint:#16273D; }
+}
+*{ box-sizing:border-box; }
+body{ background:var(--paper); color:var(--ink); font-family:var(--font-sans); line-height:1.6; margin:0; }
+.wrap{ max-width:680px; margin:0 auto; padding:40px 20px 80px; }
+a{ color:var(--accent-deep); }
+.topnav{ display:flex; align-items:center; justify-content:space-between; margin-bottom:32px; }
+.brand{ font-weight:800; font-size:17px; letter-spacing:-0.02em; text-decoration:none; color:var(--ink); }
+.back{ font-size:13px; color:var(--ink-soft); text-decoration:none; }
+h1{ font-size:26px; font-weight:800; letter-spacing:-0.01em; margin:0 0 6px; }
+h2{ font-size:17px; font-weight:700; margin:32px 0 10px; }
+p, li{ font-size:15px; color:var(--ink-soft); }
+p strong, li strong{ color:var(--ink); }
+.updated{ font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); margin-bottom:28px; }
+.card{ background:var(--paper-raised); border:1px solid var(--line); border-radius:10px; padding:18px 20px; margin:18px 0; }

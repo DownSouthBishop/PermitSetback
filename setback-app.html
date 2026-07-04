@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Setback — Every Permit, Decoded</title>
+<meta name="description" content="In 60 seconds, Setback tells you more than a week of phone calls to the permit office: every agency, the rules that get projects like yours rejected, a realistic timeline, and a permit narrative already written. Any trade, anywhere in the US, no account required.">
+<meta property="og:title" content="Setback — Every Permit, Decoded">
+<meta property="og:description" content="In 60 seconds, more than a week of phone calls to the permit office would tell you. Any trade, anywhere in the US, no account required.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231D6FE0'/%3E%3Cpath d='M5 19V10h6V5h9' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F5F7F8">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#10151A">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    { "@type": "Organization", "name": "Setback", "url": "https://setback.example" },
+    {
+      "@type": "Service",
+      "serviceType": "Construction permit research",
+      "provider": { "@type": "Organization", "name": "Setback" },
+      "areaServed": "US",
+      "offers": { "@type": "Offer", "price": "19.00", "priceCurrency": "USD", "description": "Introductory rate for the first 100 roadmaps; $39 standard price thereafter." }
+    }
+  ]
+}
+</script>
+<style>
+  :root{
+    --paper: #F5F7F8;
+    --paper-raised: #FFFFFF;
+    --ink: #14181C;
+    --ink-soft: #55606B;
+    --line: #C5CDD5;
+    --accent: #1D6FE0;
+    --accent-deep: #14509E;
+    --accent-tint: #D7E6FD;
+    --risk: #B3261E;
+    --risk-tint: #F8D3D0;
+    --good: #1E7F4C;
+    --good-tint: #D2EDDC;
+    --warn: #92600A;
+    --warn-tint: #F5E1AF;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --radius: 10px;
+    --shadow-sm: 0 1px 2px rgba(20,24,28,.06), 0 1px 1px rgba(20,24,28,.04);
+    --shadow-md: 0 6px 20px rgba(20,24,28,.09), 0 2px 6px rgba(20,24,28,.06);
+    --dur: 180ms;
+    --dur-slow: 260ms;
+    --ease-out: cubic-bezier(.16,1,.3,1);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --shadow-sm: 0 1px 2px rgba(0,0,0,.35); --shadow-md: 0 8px 24px rgba(0,0,0,.45); }
+  }
+  :root[data-theme="dark"]{ --shadow-sm: 0 1px 2px rgba(0,0,0,.35); --shadow-md: 0 8px 24px rgba(0,0,0,.45); }
+  :root[data-theme="light"]{ --shadow-sm: 0 1px 2px rgba(20,24,28,.06), 0 1px 1px rgba(20,24,28,.04); --shadow-md: 0 6px 20px rgba(20,24,28,.09), 0 2px 6px rgba(20,24,28,.06); }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper: #10151A; --paper-raised: #1A2129; --ink: #E7ECF0; --ink-soft: #9FACB8;
+      --line: #2B3540; --accent: #5B9BF2; --accent-deep: #8AB8F5; --accent-tint: #16273D;
+      --risk: #E5867E; --risk-tint: #341C1A; --good: #6FCB94; --good-tint: #142C20;
+      --warn: #D9A94A; --warn-tint: #332809;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper: #10151A; --paper-raised: #1A2129; --ink: #E7ECF0; --ink-soft: #9FACB8;
+    --line: #2B3540; --accent: #5B9BF2; --accent-deep: #8AB8F5; --accent-tint: #16273D;
+    --risk: #E5867E; --risk-tint: #341C1A; --good: #6FCB94; --good-tint: #142C20;
+    --warn: #D9A94A; --warn-tint: #332809;
+  }
+  :root[data-theme="light"]{
+    --paper: #F5F7F8; --paper-raised: #FFFFFF; --ink: #14181C; --ink-soft: #55606B;
+    --line: #C5CDD5; --accent: #1D6FE0; --accent-deep: #14509E; --accent-tint: #D7E6FD;
+    --risk: #B3261E; --risk-tint: #F8D3D0; --good: #1E7F4C; --good-tint: #D2EDDC;
+    --warn: #92600A; --warn-tint: #F5E1AF;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background: var(--paper); color: var(--ink); font-family: var(--font-sans); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  #app{ max-width: 640px; margin: 0 auto; padding: 24px 18px 72px; }
+  button, input, textarea{ touch-action: manipulation; }
+  a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:focus-visible{
+    outline: 2.5px solid var(--accent); outline-offset: 2px; border-radius: 4px;
+  }
+  @keyframes fadeInUp{ from{ opacity:0; transform: translateY(8px); } to{ opacity:1; transform: translateY(0); } }
+  .fadein{ animation: fadeInUp var(--dur-slow) var(--ease-out) both; }
+
+  .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom: 22px; }
+  .brandrow{ display:flex; align-items:center; gap:10px; }
+  .mark{ width:32px; height:32px; border-radius:8px; background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+    display:flex; align-items:center; justify-content:center; flex:none; }
+  h1.word{ font-size:19px; font-weight:800; letter-spacing:-0.02em; margin:0; }
+  .themebtn{ background:var(--paper-raised); border:1px solid var(--line); color:var(--ink-soft); border-radius:8px; padding:7px 11px; font-size:12px; cursor:pointer; font-family: var(--font-mono); }
+
+  .tag{ color: var(--accent); font-size:13px; font-weight:700; }
+  h2.hero{ font-size:25px; font-weight:800; letter-spacing:-0.02em; line-height:1.25; margin: 10px 0 8px; text-wrap: balance; }
+  p.sub{ color: var(--ink-soft); font-size:15px; max-width:56ch; margin: 0 0 18px; }
+
+  .pillrow{ display:flex; gap:10px; margin-bottom:22px; flex-wrap:wrap; }
+  .pill{ background: var(--paper-raised); border:1px solid var(--line); box-shadow: var(--shadow-sm); border-radius:8px; padding:8px 13px; font-size:12.5px; color:var(--ink-soft); }
+  .pill b{ color:var(--ink); font-family: var(--font-mono); }
+
+  .card{ background: var(--paper-raised); border:1px solid var(--line); box-shadow: var(--shadow-sm); border-radius: var(--radius); padding:20px; margin-bottom:16px; transition: box-shadow var(--dur) var(--ease-out); }
+  .card h3{ display:flex; align-items:center; gap:8px; font-size:14px; font-weight:700; margin:0 0 12px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft); }
+  .card h3 svg{ flex:none; color: var(--accent); }
+
+  .section{ padding-top:16px; margin-top:16px; border-top:1px solid var(--line); }
+  .section:first-child{ padding-top:0; margin-top:0; border-top:none; }
+
+  label{ display:block; font-size:12px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; margin:0 0 6px; }
+  input, textarea{ width:100%; background:var(--paper); border:1.5px solid var(--line); color:var(--ink);
+    border-radius:8px; padding:11px 12px; font-size:16px; font-family:inherit; margin-bottom:14px; }
+  input:focus, textarea:focus{ outline:none; border-color:var(--accent); }
+  textarea{ resize:vertical; min-height:88px; }
+
+  .chiprow{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .chip{ background:var(--accent-tint); color:var(--accent-deep); border:1px solid transparent; border-radius:999px;
+    padding:11px 16px; min-height:44px; font-size:13px; font-weight:600; cursor:pointer; transition: transform var(--dur) var(--ease-out); }
+  .chip:hover{ border-color:var(--accent); }
+  .chip:active{ transform: scale(.96); }
+
+  .taWrap{ position:relative; }
+  .taWrap textarea{ padding-right:52px; }
+  .micbtn{ position:absolute; top:8px; right:8px; width:44px; height:44px; border-radius:50%;
+    background:var(--paper-raised); border:1px solid var(--line); color:var(--ink-soft);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; transition: transform var(--dur) var(--ease-out); }
+  .micbtn:hover{ border-color:var(--accent); color:var(--accent); }
+  .micbtn:active{ transform: scale(.94); }
+  .micbtn.listening{ background:var(--risk); border-color:var(--risk); color:#fff; animation:micpulse 1.4s ease-in-out infinite; }
+  @keyframes micpulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(179,38,30,.35); } 50%{ box-shadow:0 0 0 7px rgba(179,38,30,0); } }
+  #micstatus{ font-size:12px; color:var(--ink-soft); margin:-8px 0 12px; min-height:15px; }
+
+  .btn{ background: var(--accent); color:#fff; border:none; border-radius:9px; padding:13px 18px; min-height:48px;
+    font-size:15px; font-weight:700; cursor:pointer; width:100%; transition:transform var(--dur) var(--ease-out), opacity var(--dur); }
+  .btn:hover{ transform: translateY(-1px); }
+  .btn:active{ transform: scale(.98); }
+  .btn:disabled{ opacity:.5; cursor:not-allowed; transform:none; }
+  .btn.secondary{ background:transparent; color:var(--accent); border:1px solid var(--line); }
+  .btn.small{ width:auto; padding:11px 16px; min-height:44px; font-size:13px; }
+
+  .clarify{ background:var(--warn-tint); border:1px solid var(--warn); border-radius:9px; padding:14px 16px; margin-bottom:16px; }
+  .clarify p{ margin:0 0 10px; font-size:14px; color:var(--ink); }
+  .clarifybtns{ display:flex; gap:10px; }
+
+  .recap{ background:var(--accent-tint); border-radius:8px; padding:13px 15px; font-size:13.5px; color:var(--ink); margin-bottom:8px; }
+  .recap a{ color:var(--accent-deep); font-weight:600; cursor:pointer; text-decoration:underline; }
+  .counts{ display:flex; gap:10px; margin-bottom:14px; }
+  .countbox{ flex:1; background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:12px; text-align:center; }
+  .countbox b{ display:block; font-size:22px; font-family:var(--font-mono); color:var(--accent-deep); }
+  .countbox span{ font-size:11.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.03em; }
+
+  .anchor{ display:flex; align-items:baseline; justify-content:space-between; background:var(--good-tint);
+    border-radius:8px; padding:12px 15px; margin: 4px 0 16px; font-size:13.5px; }
+  .anchor b{ color:var(--good); font-family:var(--font-mono); font-size:15px; }
+  .price{ font-family:var(--font-mono); font-size:30px; font-weight:800; }
+  .pricewrap{ display:flex; align-items:baseline; gap:10px; margin-bottom:6px; }
+  .pricewrap span{ color:var(--ink-soft); font-size:13px; }
+  .was-price{ font-family:var(--font-mono); font-size:17px; color:var(--ink-soft); text-decoration:line-through; }
+  .introline{ font-size:12px; color:var(--ink-soft); margin:-2px 0 14px; }
+
+  .guarantee{ background:var(--paper); border:1px dashed var(--line); border-radius:8px; padding:12px 14px; font-size:13px; color:var(--ink-soft); margin-bottom:16px; }
+  .checkline{ display:flex; align-items:flex-start; gap:10px; margin-bottom:16px; font-size:13px; color:var(--ink-soft); }
+  .checkline input{ width:auto; margin:2px 0 0; }
+
+  .agency{ background:var(--paper); border-left:3px solid var(--accent); border-radius:6px; padding:12px 14px; margin-bottom:9px; }
+  .agency b{ font-size:14px; }
+  .agency p{ color:var(--ink-soft); font-size:13px; margin:4px 0 0; }
+  .flag{ background:var(--warn-tint); border-left:3px solid var(--warn); border-radius:6px; padding:11px 14px; margin-bottom:8px; font-size:13px; }
+  .risk{ background:var(--risk-tint); border-left:3px solid var(--risk); border-radius:6px; padding:11px 14px; margin-bottom:8px; font-size:13px; }
+  .timeline b{ font-size:22px; font-family:var(--font-mono); color:var(--good); }
+  .narrative{ background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:15px; font-size:13.5px; white-space:pre-wrap; }
+  .copybtn{ background:var(--paper); border:1px solid var(--line); color:var(--ink-soft); border-radius:7px; padding:7px 13px; font-size:12px; cursor:pointer; margin-top:10px; }
+
+  .rbtns{ display:flex; gap:8px; flex-wrap:wrap; }
+  .rbtn{ flex:1; min-width:110px; min-height:44px; display:flex; align-items:center; justify-content:center; gap:6px;
+    background:var(--paper); border:1px solid var(--line); color:var(--ink); border-radius:8px; padding:10px; font-size:12.5px; cursor:pointer; font-weight:600;
+    transition: transform var(--dur) var(--ease-out); }
+  .rbtn:hover{ border-color:var(--accent); }
+  .rbtn:active{ transform: scale(.97); }
+  .creditbox{ background:var(--good-tint); border-radius:8px; padding:12px 14px; margin-top:12px; font-size:13px; }
+  .creditbox b{ font-family:var(--font-mono); color:var(--good); }
+
+  .modal-backdrop{ position:fixed; inset:0; background:rgba(10,15,20,.55); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50; }
+  .modal{ background:var(--paper-raised); border-radius:14px; padding:24px; max-width:380px; width:100%; }
+  .modal h3{ margin:0 0 4px; font-size:17px; }
+  .demoflag{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--warn); background:var(--warn-tint); display:inline-block; padding:3px 8px; border-radius:5px; margin-bottom:12px; }
+  .walletbtns{ display:flex; gap:8px; margin-bottom:14px; }
+  .walletbtn{ flex:1; background:#000; color:#fff; border:none; border-radius:8px; padding:11px; font-size:13px; font-weight:600; cursor:pointer; }
+  .walletbtn.g{ background:var(--paper); color:var(--ink); border:1px solid var(--line); }
+  .divider{ text-align:center; font-size:11px; color:var(--ink-soft); margin:10px 0; }
+  .spinner{ display:inline-block; width:14px; height:14px; border:2px solid #ffffff66; border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; margin-right:7px; vertical-align:middle; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .disc{ color:var(--ink-soft); font-size:11.5px; line-height:1.6; text-align:center; margin-top:26px; padding:0 8px; }
+  .err{ color:var(--risk); background:var(--risk-tint); border-radius:8px; padding:11px 13px; font-size:13px; margin-top:8px; }
+  .hidden{ display:none; }
+  @media (prefers-reduced-motion: reduce){ *{ animation-duration:.001ms !important; transition-duration:.001ms !important; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ============================================================
+// Setback — trade-universal AI permit roadmap tool
+// Prototype: full funnel (intake -> teaser -> paywall -> reveal
+// -> outcome report). Checkout below is a clearly-labeled DEMO —
+// wiring real payment requires a live Stripe integration and a
+// server-side proxy for the AI call (see AI-security notes in
+// the planning doc; this file calls the model client-side only
+// for prototype purposes, matching the original prototype).
+// ============================================================
+
+const TRADE_CHIPS = ['Pool','Deck','Roof','Solar','Fence','Addition','Garage/ADU','Other'];
+const STARTERS = {
+  Pool: 'Building a new inground pool, ',
+  Deck: 'Building a new deck attached to the house, ',
+  Roof: 'Full roof replacement, ',
+  Solar: 'Installing rooftop solar panels, ',
+  Fence: 'Installing a new fence, ',
+  Addition: 'Adding a room addition to the house, ',
+  'Garage/ADU': 'Building a new garage or accessory dwelling unit, ',
+  Other: ''
+};
+
+let state = {
+  project: null, result: null,
+  theme: (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'
+};
+let recognizer = null;
+let listening = false;
+
+async function fetchWithTimeout(url, options, ms){
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+// Point this at a deployed backend once one exists; localhost is right for
+// testing with `node --env-file=.env server/index.js`.
+const BACKEND_ORIGIN = 'http://localhost:8787';
+
+// Fire-and-forget analytics — never blocks the UI, never surfaces an error
+// to the user if the backend is unreachable. Real events now, not vapor.
+function logEvent(name, properties){
+  fetch(`${BACKEND_ORIGIN}/api/event`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, properties })
+  }).catch(() => {});
+}
+
+const MIC_ICON = `<svg aria-hidden="true" width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a2 2 0 0 0-2 2v5a2 2 0 1 0 4 0V3a2 2 0 0 0-2-2z"/><path d="M3.5 7a.5.5 0 0 1 .5.5V8a4 4 0 0 0 8 0v-.5a.5.5 0 0 1 1 0V8a5 5 0 0 1-4.5 4.975V14h1.5a.5.5 0 0 1 0 1h-4a.5.5 0 0 1 0-1H7v-1.025A5 5 0 0 1 3 8v-.5a.5.5 0 0 1 .5-.5z"/></svg>`;
+
+// The mark: a stepped line — a setback boundary indenting from a property
+// corner, the actual shape a setback line takes on a site plan.
+const MARK_ICON = `<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9h6V4h10"/></svg>`;
+
+const ICON = {
+  building: `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M15 9h.01M9 13h.01M15 13h.01M9 17h.01M15 17h.01"/></svg>`,
+  flag: `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4m0 0h13l-2 4 2 4H4"/></svg>`,
+  alert: `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>`,
+  clock: `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>`,
+  doc: `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>`,
+  loop: `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0 1 15-4l1 1M20 15a9 9 0 0 1-15 4l-1-1"/></svg>`,
+  check: `<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`,
+  edit: `<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
+  x: `<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`
+};
+
+function swapOut(html){
+  const out = document.getElementById('out');
+  out.innerHTML = html;
+  out.classList.remove('fadein'); void out.offsetWidth; out.classList.add('fadein');
+  out.scrollIntoView({ behavior:'smooth', block:'start' });
+  out.focus();
+}
+function demoBanner(){
+  return state.isMock ? `<div class="demoflag" style="margin-bottom:10px;">Demo data — not a real answer to what you typed</div>` : '';
+}
+
+function micSupported(){
+  return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+}
+
+function toggleMic(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  const ta = document.getElementById('f-desc');
+  const btn = document.getElementById('micbtn');
+  const status = document.getElementById('micstatus');
+  if (!ta || !btn) return;
+
+  if (listening){
+    recognizer && recognizer.stop();
+    return;
+  }
+
+  recognizer = new SR();
+  recognizer.continuous = true;
+  recognizer.interimResults = true;
+  recognizer.lang = 'en-US';
+
+  const baseText = ta.value.trim() ? ta.value.trim() + ' ' : '';
+  let finalTranscript = '';
+
+  recognizer.onstart = () => {
+    listening = true;
+    btn.classList.add('listening');
+    status.textContent = 'Listening — tap the mic again to stop.';
+  };
+  recognizer.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++){
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) finalTranscript += t + ' ';
+      else interim += t;
+    }
+    ta.value = (baseText + finalTranscript + interim).trim();
+  };
+  recognizer.onerror = (e) => {
+    status.textContent = e.error === 'not-allowed'
+      ? 'Microphone access was denied — you can still type your description.'
+      : "Didn't catch that — tap the mic to try again, or just type.";
+  };
+  recognizer.onend = () => {
+    listening = false;
+    if (btn) btn.classList.remove('listening');
+    if (status && status.textContent.startsWith('Listening')) status.textContent = '';
+  };
+  recognizer.start();
+}
+
+const root = document.getElementById('app');
+
+function render(){
+  root.innerHTML = `
+    <div class="topbar">
+      <div class="brandrow"><div class="mark">${MARK_ICON}</div><h1 class="word">Setback</h1></div>
+      <button class="themebtn" id="themetoggle">${state.theme === 'dark' ? 'Light' : 'Dark'}</button>
+    </div>
+
+    <div class="tag">The setback you'll never have.</div>
+    <h2 class="hero">In 60 seconds, Setback tells you more than a week of phone calls to the permit office.</h2>
+    <p class="sub">Describe the job. Tell us where it's happening. We will look up every agency involved, the specific rule in your county that gets projects like yours rejected, a realistic timeline, and a permit narrative you can copy straight onto the application. Any trade. Any state. No account required.</p>
+
+    <div class="pillrow" id="statsPill"></div>
+
+    <div class="card" id="intakeCard">
+      <h3>Tell us about the job</h3>
+      <label>Where's the project?</label>
+      <input id="f-loc" placeholder="e.g. Broward County, Florida">
+
+      <label>What are you building?</label>
+      <div class="chiprow" id="chips"></div>
+      <div class="taWrap">
+        <textarea id="f-desc" placeholder="e.g. New 15x30 ft inground pool, fenced backyard, about 10 ft from the property line"></textarea>
+        ${micSupported() ? `<button type="button" class="micbtn" id="micbtn" title="Speak your project description" aria-label="Speak your project description">${MIC_ICON}</button>` : ''}
+      </div>
+      <div id="micstatus" aria-live="polite"></div>
+
+      <div id="clarifyBox" aria-live="polite"></div>
+      <div id="errbox" aria-live="assertive"></div>
+      <button class="btn" id="go">Show me my permits</button>
+    </div>
+
+    <div id="out" tabindex="-1" aria-live="polite" style="outline:none;"></div>
+
+    <p class="disc">Setback produces a draft roadmap to review with your engineer and the permitting authorities — it is not legal advice and does not replace official agency determinations. Always confirm current requirements with the issuing agencies before submitting.</p>
+    <p class="disc"><a href="how-it-works.html">How it works</a> &middot; <a href="expediters.html">For expediters</a> &middot; <a href="terms.html">Terms</a> &middot; <a href="privacy.html">Privacy</a> &middot; <a href="disclaimer.html">Disclaimer</a></p>
+  `;
+
+  document.getElementById('themetoggle').onclick = toggleTheme;
+  const chipRow = document.getElementById('chips');
+  TRADE_CHIPS.forEach(t => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.type = 'button'; b.textContent = t;
+    b.onclick = () => {
+      const ta = document.getElementById('f-desc');
+      const starter = STARTERS[t] || '';
+      if (!ta.value.trim()){
+        ta.value = starter;
+      } else if (starter){
+        ta.value = ta.value.trim().replace(/[.,]?\s*$/, '') + ', ' + starter;
+      }
+      ta.focus();
+    };
+    chipRow.appendChild(b);
+  });
+  document.getElementById('go').onclick = handleGenerate;
+  const mic = document.getElementById('micbtn');
+  if (mic) mic.onclick = toggleMic;
+
+  if (!window._pageViewLogged){
+    window._pageViewLogged = true;
+    logEvent('page_view');
+  }
+  loadStats();
+}
+
+async function loadStats(){
+  try {
+    const res = await fetch(`${BACKEND_ORIGIN}/api/stats`);
+    if (!res.ok) return;
+    const stats = await res.json();
+    const el = document.getElementById('statsPill');
+    if (!el || !stats.roadmapsGenerated) return; // nothing real to show yet — stay quiet rather than show a hollow "0"
+    el.innerHTML = `<div class="pill"><b>${stats.roadmapsGenerated.toLocaleString()}</b> roadmaps generated</div>` +
+      (stats.outcomesReported ? `<div class="pill"><b>${stats.outcomesReported.toLocaleString()}</b> outcomes reported</div>` : '');
+  } catch (err) { /* stats are a nice-to-have, never block on them */ }
+}
+
+function toggleTheme(){
+  state.theme = state.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', state.theme);
+  const btn = document.getElementById('themetoggle');
+  if (btn) btn.textContent = state.theme === 'dark' ? 'Light' : 'Dark';
+}
+
+function needsClarifying(desc){
+  const d = desc.toLowerCase();
+  return !(/\bnew\b/.test(d) || /\bexisting\b/.test(d) || /\breplac/.test(d));
+}
+
+// Basic sanity check, not real geocoding — catches the obvious cases
+// ("asdfasdf") without pretending to validate real US jurisdictions.
+// The real fix is the system-prompt instruction below, which lets the
+// model itself refuse unrecognizable input instead of fabricating a roadmap.
+function looksLikeRealLocation(loc){
+  const trimmed = loc.trim();
+  if (trimmed.length < 6) return false;
+  if (!/[ ,]/.test(trimmed)) return false;
+  if (/^(.)\1{3,}$/.test(trimmed.replace(/[ ,]/g, ''))) return false;
+  return true;
+}
+
+// Real geocoding via Nominatim (OpenStreetMap) — free, no API key, and
+// unlike the US Census geocoder it actually resolves place names like
+// "Broward County, Florida" rather than requiring a street address.
+// Fails open (doesn't block the user) on network/CORS/rate-limit issues,
+// since a third-party outage shouldn't take down the core flow.
+let lastVerifiedLoc = null;
+async function verifyLocation(loc){
+  if (loc === lastVerifiedLoc) return { ok: true };
+  try {
+    const res = await fetchWithTimeout(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(loc + ', USA')}&format=json&limit=1&countrycodes=us`, {}, 8000);
+    if (!res.ok) return { ok: true, skipped: true };
+    const data = await res.json();
+    if (!data || data.length === 0){
+      return { ok: false, message: `"${loc}" doesn't look like a real US city, county, or state — try a format like "Broward County, Florida."` };
+    }
+    lastVerifiedLoc = loc;
+    return { ok: true };
+  } catch (err){
+    return { ok: true, skipped: true };
+  }
+}
+
+async function handleGenerate(){
+  const loc = document.getElementById('f-loc').value.trim();
+  const desc = document.getElementById('f-desc').value.trim();
+  document.getElementById('errbox').innerHTML = '';
+
+  if (!loc || !desc){
+    document.getElementById('errbox').innerHTML = `<div class="err">Add a location and a short project description so Setback can map the right jurisdictions.</div>`;
+    return;
+  }
+
+  if (!looksLikeRealLocation(loc)){
+    document.getElementById('errbox').innerHTML = `<div class="err">"${esc(loc)}" doesn't look like a real US city, county, or state — try a format like "Broward County, Florida."</div>`;
+    return;
+  }
+
+  const btn = document.getElementById('go');
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span>Checking that location...`;
+  const verified = await verifyLocation(loc);
+  btn.disabled = false;
+  btn.innerHTML = 'Show me my permits';
+  if (!verified.ok){
+    document.getElementById('errbox').innerHTML = `<div class="err">${esc(verified.message)}</div>`;
+    return;
+  }
+
+  if (needsClarifying(desc) && state._clarifiedFor !== desc){
+    document.getElementById('clarifyBox').innerHTML = `
+      <div class="clarify">
+        <p>Quick check — is this new construction, or replacing something existing?</p>
+        <div class="clarifybtns">
+          <button class="btn small" id="c-new">New</button>
+          <button class="btn small secondary" id="c-existing">Replacing existing</button>
+        </div>
+      </div>`;
+    document.getElementById('c-new').onclick = () => {
+      const ta = document.getElementById('f-desc');
+      ta.value += ' This is new construction.';
+      state._clarifiedFor = ta.value.trim();
+      document.getElementById('clarifyBox').innerHTML = '';
+      handleGenerate();
+    };
+    document.getElementById('c-existing').onclick = () => {
+      const ta = document.getElementById('f-desc');
+      ta.value += ' This is replacing an existing structure.';
+      state._clarifiedFor = ta.value.trim();
+      document.getElementById('clarifyBox').innerHTML = '';
+      handleGenerate();
+    };
+    return;
+  }
+
+  state.project = { location: loc, description: document.getElementById('f-desc').value.trim() };
+  generateRoadmap();
+}
+
+// A full, non-streamed generation realistically runs ~30-45s, not instant —
+// rotating status text keeps a long wait from reading as a stuck/broken page.
+const LOOKUP_STAGES = [
+  'Checking agencies for your area...',
+  'Mapping jurisdiction rules...',
+  'Cross-checking rejection risks...',
+  'Drafting your permit narrative...',
+  'Almost done...'
+];
+
+async function generateRoadmap(){
+  const btn = document.getElementById('go');
+  btn.disabled = true;
+  let stageIndex = 0;
+  btn.innerHTML = `<span class="spinner"></span>${LOOKUP_STAGES[0]}`;
+  const stageTimer = setInterval(() => {
+    stageIndex = Math.min(stageIndex + 1, LOOKUP_STAGES.length - 1);
+    btn.innerHTML = `<span class="spinner"></span>${LOOKUP_STAGES[stageIndex]}`;
+  }, 7000);
+
+  try {
+    const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/roadmap`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ location: state.project.location, description: state.project.description })
+    }, 70000);
+    if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+    const { result } = await res.json();
+    if (result.unrecognized){
+      document.getElementById('errbox').innerHTML = `<div class="err">${esc(result.message || "We couldn't identify that location or project — try again with a real US city, county, or state.")}</div>`;
+      return;
+    }
+    state.result = result;
+    state.isMock = false;
+    renderTeaser();
+  } catch (err){
+    console.error('Setback: roadmap generation failed —', err);
+    document.getElementById('errbox').innerHTML = `<div class="err">Something interrupted the engine: ${String(err)}. Is the backend running? (node --env-file=.env server/index.js) Falling back to demo data below for now.</div>`;
+    state.result = mockResult();
+    state.isMock = true;
+    renderTeaser();
+  } finally {
+    clearInterval(stageTimer);
+    btn.disabled = false;
+    btn.innerHTML = 'Show me my permits';
+  }
+}
+
+function mockResult(){
+  return {
+    agencies: [
+      { name: "County Building Department", detail: "Reviews structural plans and issues the primary construction permit." },
+      { name: "Zoning / Planning Division", detail: "Confirms setback and lot-coverage compliance before the building permit is issued." },
+      { name: "HOA Architectural Review (if applicable)", detail: "Many communities require sign-off before a county permit will be accepted." }
+    ],
+    flags: [ "Setback distance to the property line is the most common reason projects like this get kicked back here.", "Fence/barrier code may apply if the project is near a pool or water feature." ],
+    risks: [ "Incomplete site plan omitting the property-line distance is the top rejection reason for this project type." ],
+    timeline: "4-8 weeks before construction",
+    timelineNote: "Range depends on whether HOA review is required in parallel with the county review.",
+    narrative: "We are proposing to construct the above-described project at the referenced address, in accordance with all applicable local building and zoning requirements. The scope, materials, and site plan are described in the attached documents..."
+  };
+}
+
+function esc(s){ return String(s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function renderTeaser(){
+  const r = state.result;
+  logEvent('teaser_viewed', { location: state.project.location, agencies: (r.agencies||[]).length });
+  swapOut(`
+    ${demoBanner()}
+    <div class="card">
+      <h3>${ICON.doc} Here's what you told us</h3>
+      <div class="recap">${esc(state.project.description)} — in ${esc(state.project.location)}. <a id="editdesc">Add more detail</a></div>
+      <div class="counts">
+        <div class="countbox"><b>${(r.agencies||[]).length}</b><span>Agencies</span></div>
+        <div class="countbox"><b>${(r.flags||[]).length}</b><span>Jurisdiction flags</span></div>
+        <div class="countbox"><b>${(r.risks||[]).length}</b><span>Rejection risks</span></div>
+      </div>
+
+      <div class="anchor"><span>A permit expediter typically charges <b>$500 to $3,000</b> for exactly this research</span></div>
+
+      <div class="pricewrap"><span class="price">$19</span><span class="was-price">$39</span><span>one-time, no subscription</span></div>
+      <div class="introline">Introductory rate for our first 100 roadmaps — $39 after that.</div>
+
+      <div class="guarantee">Our promise: if we miss an agency your project clearly needed, that pull is refunded. Send the rejection notice, or the jurisdiction's own code section, within 30 days — that's all it takes.</div>
+
+      <label class="checkline"><input type="checkbox" id="disc-check"> I understand this is an informational roadmap, not a permit guarantee or legal determination.</label>
+
+      <button class="btn" id="unlock" disabled>See my full roadmap — $19</button>
+    </div>
+  `);
+  document.getElementById('editdesc').onclick = () => {
+    const savedProject = state.project;
+    render();
+    if (savedProject){
+      document.getElementById('f-loc').value = savedProject.location;
+      document.getElementById('f-desc').value = savedProject.description;
+    }
+  };
+  document.getElementById('disc-check').onchange = (e) => {
+    document.getElementById('unlock').disabled = !e.target.checked;
+  };
+  document.getElementById('unlock').onclick = openCheckout;
+}
+
+function openCheckout(){
+  logEvent('checkout_started', { location: state.project.location });
+  const triggerBtn = document.getElementById('unlock');
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'modalTitle');
+  modal.innerHTML = `
+    <div class="modal fadein" id="modalBox" tabindex="-1" style="outline:none;">
+      <div class="demoflag">Demo checkout — connect Stripe to accept real payment</div>
+      <h3 id="modalTitle">Pay $19</h3>
+      <p style="color:var(--ink-soft);font-size:13px;margin:0 0 16px;">Setback — full permit roadmap (introductory rate)</p>
+      <div class="walletbtns">
+        <button class="walletbtn"> Pay</button>
+        <button class="walletbtn g">G Pay</button>
+      </div>
+      <div class="divider">or pay by card</div>
+      <input placeholder="Card number" aria-label="Card number" style="margin-bottom:10px;">
+      <div style="display:flex;gap:10px;">
+        <input placeholder="MM / YY" aria-label="Expiry date">
+        <input placeholder="CVC" aria-label="Security code">
+      </div>
+      <button class="btn" id="paynow" style="margin-top:6px;">Pay $19</button>
+      <button class="btn secondary" id="cancelpay" style="margin-top:8px;">Cancel</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  document.getElementById('modalBox').focus();
+
+  function onKeydown(e){
+    if (e.key === 'Escape') closeModal();
+  }
+  function closeModal(){
+    modal.remove();
+    document.removeEventListener('keydown', onKeydown);
+    if (triggerBtn) triggerBtn.focus();
+  }
+  document.addEventListener('keydown', onKeydown);
+
+  document.getElementById('cancelpay').onclick = closeModal;
+  document.getElementById('paynow').onclick = () => {
+    const btn = document.getElementById('paynow');
+    btn.innerHTML = `<span class="spinner"></span>Processing...`;
+    btn.disabled = true;
+    document.removeEventListener('keydown', onKeydown);
+    logEvent('checkout_completed', { location: state.project.location, price: 19 });
+    setTimeout(() => { modal.remove(); renderFull(); }, 900);
+  };
+}
+
+function renderFull(){
+  const r = state.result;
+  const agencies = (r.agencies||[]).map(a => `<div class="agency"><b>${esc(a.name)}</b><p>${esc(a.detail)}</p></div>`).join('');
+  const flags = (r.flags||[]).map(f => `<div class="flag">${esc(f)}</div>`).join('');
+  const risks = (r.risks||[]).map(x => `<div class="risk">${esc(x)}</div>`).join('');
+
+  swapOut(`
+    ${demoBanner()}
+    <div class="card">
+      <div class="section"><h3>${ICON.building} Every agency you'll answer to</h3>${agencies}</div>
+      <div class="section"><h3>${ICON.flag} The rules that trip up projects like yours</h3>${flags}</div>
+      <div class="section"><h3>${ICON.alert} Why projects like yours get rejected</h3>${risks}</div>
+    </div>
+    <div class="card"><h3>${ICON.clock} How long this will actually take</h3>
+      <div class="timeline"><b>${esc(r.timeline)}</b></div>
+      <p style="color:var(--ink-soft);font-size:13px;margin-top:6px;">${esc(r.timelineNote)}</p>
+    </div>
+    <div class="card"><h3>${ICON.doc} Your permit application, already written</h3>
+      <div class="narrative" id="narr">${esc(r.narrative)}</div>
+      <button class="copybtn" id="copy">Copy narrative</button>
+    </div>
+    <div class="card"><h3>${ICON.loop} Tell us what happened</h3>
+      <p style="color:var(--ink-soft);font-size:13px;margin:0 0 12px;">This only matters once the agency has actually decided — it makes the next contractor's roadmap in your county a little sharper.</p>
+      <div id="outcomeGate">
+        <div class="rbtns">
+          <button class="rbtn" id="notyet">Not decided yet</button>
+          <button class="rbtn" id="decided">${ICON.check} It's been decided</button>
+        </div>
+      </div>
+      <div id="outcomeChoices" class="hidden">
+        <div class="rbtns">
+          <button class="rbtn" data-o="approved">${ICON.check} Approved as drafted</button>
+          <button class="rbtn" data-o="comments">${ICON.edit} Approved after comments</button>
+          <button class="rbtn" data-o="rejected">${ICON.x} Rejected — needed changes</button>
+        </div>
+      </div>
+      <div id="thanks" aria-live="polite"></div>
+    </div>
+    <p class="disc">This is an informational roadmap, not a permit guarantee or legal determination — confirm current requirements with the issuing agencies before submitting.</p>
+  `);
+  document.getElementById('copy').onclick = async () => {
+    const copyBtn = document.getElementById('copy');
+    const text = document.getElementById('narr').innerText;
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      try {
+        await navigator.clipboard.writeText(text);
+        copyBtn.textContent = 'Copied';
+      } catch (err){
+        copyBtn.textContent = 'Select the text above to copy';
+      }
+    } else {
+      const range = document.createRange();
+      range.selectNodeContents(document.getElementById('narr'));
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      copyBtn.textContent = 'Text selected — press Ctrl+C';
+    }
+    setTimeout(()=>{ const c=document.getElementById('copy'); if(c) c.textContent='Copy narrative'; }, 2000);
+  };
+  document.getElementById('notyet').onclick = () => {
+    document.getElementById('outcomeGate').innerHTML = `<p style="color:var(--ink-soft);font-size:13px;margin:0;">No problem — come back and tell us once you hear back.</p>`;
+  };
+  document.getElementById('decided').onclick = () => {
+    document.getElementById('outcomeGate').classList.add('hidden');
+    document.getElementById('outcomeChoices').classList.remove('hidden');
+  };
+  document.querySelectorAll('#outcomeChoices .rbtn').forEach(b => b.onclick = async () => {
+    const outcome = b.getAttribute('data-o');
+    const thanks = document.getElementById('thanks');
+    document.querySelectorAll('#outcomeChoices .rbtn').forEach(x => x.disabled = true);
+    thanks.innerHTML = `<p style="color:var(--ink-soft);font-size:13px;margin:0;">Saving...</p>`;
+    try {
+      const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/outcome`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ location: state.project.location, description: state.project.description, outcome })
+      }, 8000);
+      if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+      thanks.innerHTML = `<div class="creditbox">Thank you. Here's <b>SETBACK15</b> — $15 off your next roadmap, redeemable at checkout.</div>`;
+    } catch (err){
+      document.querySelectorAll('#outcomeChoices .rbtn').forEach(x => x.disabled = false);
+      thanks.innerHTML = `<div class="err">Couldn't save that — is the backend running? Try again in a moment.</div>`;
+    }
+  });
+}
+
+render();
+</script>
+</body>
+</html>

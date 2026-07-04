@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clearway — Every Permit, Decoded</title>
+<meta name="description" content="In 60 seconds, Clearway tells you more than a week of phone calls to the permit office: every agency, the rules that get projects like yours rejected, a realistic timeline, and a permit narrative already written. Any trade, anywhere in the US, no account required.">
+<meta property="og:title" content="Clearway — Every Permit, Decoded">
+<meta property="og:description" content="In 60 seconds, more than a week of phone calls to the permit office would tell you. Any trade, anywhere in the US, no account required.">
+<meta property="og:type" content="website">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    { "@type": "Organization", "name": "Clearway", "url": "https://clearway.example" },
+    {
+      "@type": "Service",
+      "serviceType": "Construction permit research",
+      "provider": { "@type": "Organization", "name": "Clearway" },
+      "areaServed": "US",
+      "offers": { "@type": "Offer", "price": "39.00", "priceCurrency": "USD" }
+    }
+  ]
+}
+</script>
+<style>
+  :root{
+    --paper: #F5F7F8;
+    --paper-raised: #FFFFFF;
+    --ink: #14181C;
+    --ink-soft: #55606B;
+    --line: #DEE3E7;
+    --accent: #1D6FE0;
+    --accent-deep: #14509E;
+    --accent-tint: #E8F0FE;
+    --risk: #B3261E;
+    --risk-tint: #FCEBEA;
+    --good: #1E7F4C;
+    --good-tint: #E8F5EE;
+    --warn: #9A6400;
+    --warn-tint: #FBF1DD;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --radius: 10px;
+    --shadow-sm: 0 1px 2px rgba(20,24,28,.06), 0 1px 1px rgba(20,24,28,.04);
+    --shadow-md: 0 6px 20px rgba(20,24,28,.09), 0 2px 6px rgba(20,24,28,.06);
+    --dur: 180ms;
+    --dur-slow: 260ms;
+    --ease-out: cubic-bezier(.16,1,.3,1);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --shadow-sm: 0 1px 2px rgba(0,0,0,.35); --shadow-md: 0 8px 24px rgba(0,0,0,.45); }
+  }
+  :root[data-theme="dark"]{ --shadow-sm: 0 1px 2px rgba(0,0,0,.35); --shadow-md: 0 8px 24px rgba(0,0,0,.45); }
+  :root[data-theme="light"]{ --shadow-sm: 0 1px 2px rgba(20,24,28,.06), 0 1px 1px rgba(20,24,28,.04); --shadow-md: 0 6px 20px rgba(20,24,28,.09), 0 2px 6px rgba(20,24,28,.06); }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper: #10151A; --paper-raised: #1A2129; --ink: #E7ECF0; --ink-soft: #9FACB8;
+      --line: #2B3540; --accent: #5B9BF2; --accent-deep: #8AB8F5; --accent-tint: #16273D;
+      --risk: #E5867E; --risk-tint: #341C1A; --good: #6FCB94; --good-tint: #142C20;
+      --warn: #D9A94A; --warn-tint: #332809;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper: #10151A; --paper-raised: #1A2129; --ink: #E7ECF0; --ink-soft: #9FACB8;
+    --line: #2B3540; --accent: #5B9BF2; --accent-deep: #8AB8F5; --accent-tint: #16273D;
+    --risk: #E5867E; --risk-tint: #341C1A; --good: #6FCB94; --good-tint: #142C20;
+    --warn: #D9A94A; --warn-tint: #332809;
+  }
+  :root[data-theme="light"]{
+    --paper: #F5F7F8; --paper-raised: #FFFFFF; --ink: #14181C; --ink-soft: #55606B;
+    --line: #DEE3E7; --accent: #1D6FE0; --accent-deep: #14509E; --accent-tint: #E8F0FE;
+    --risk: #B3261E; --risk-tint: #FCEBEA; --good: #1E7F4C; --good-tint: #E8F5EE;
+    --warn: #9A6400; --warn-tint: #FBF1DD;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background: var(--paper); color: var(--ink); font-family: var(--font-sans); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  #app{ max-width: 640px; margin: 0 auto; padding: 24px 18px 72px; }
+  button, input, textarea{ touch-action: manipulation; }
+  a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:focus-visible{
+    outline: 2.5px solid var(--accent); outline-offset: 2px; border-radius: 4px;
+  }
+  @keyframes fadeInUp{ from{ opacity:0; transform: translateY(8px); } to{ opacity:1; transform: translateY(0); } }
+  .fadein{ animation: fadeInUp var(--dur-slow) var(--ease-out) both; }
+
+  .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom: 22px; }
+  .brandrow{ display:flex; align-items:center; gap:10px; }
+  .mark{ width:32px; height:32px; border-radius:8px; background: linear-gradient(135deg, var(--accent), var(--accent-deep)); position:relative; flex:none; }
+  .mark:before{ content:''; position:absolute; left:8px; right:8px; top:50%; height:3px; background:#fff; border-radius:3px; transform: translateY(-50%) rotate(-14deg); }
+  h1.word{ font-size:19px; font-weight:800; letter-spacing:-0.02em; margin:0; }
+  .themebtn{ background:var(--paper-raised); border:1px solid var(--line); color:var(--ink-soft); border-radius:8px; padding:7px 11px; font-size:12px; cursor:pointer; font-family: var(--font-mono); }
+
+  .tag{ color: var(--accent); font-size:13px; font-weight:700; }
+  h2.hero{ font-size:25px; font-weight:800; letter-spacing:-0.02em; line-height:1.25; margin: 10px 0 8px; text-wrap: balance; }
+  p.sub{ color: var(--ink-soft); font-size:15px; max-width:56ch; margin: 0 0 18px; }
+
+  .pillrow{ display:flex; gap:10px; margin-bottom:22px; flex-wrap:wrap; }
+  .pill{ background: var(--paper-raised); border:1px solid var(--line); box-shadow: var(--shadow-sm); border-radius:8px; padding:8px 13px; font-size:12.5px; color:var(--ink-soft); }
+  .pill b{ color:var(--ink); font-family: var(--font-mono); }
+
+  .card{ background: var(--paper-raised); border:1px solid var(--line); box-shadow: var(--shadow-sm); border-radius: var(--radius); padding:20px; margin-bottom:16px; transition: box-shadow var(--dur) var(--ease-out); }
+  .card h3{ display:flex; align-items:center; gap:8px; font-size:14px; font-weight:700; margin:0 0 12px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft); }
+  .card h3 svg{ flex:none; color: var(--accent); }
+
+  .steps{ display:flex; align-items:center; margin-bottom:20px; }
+  .step{ display:flex; align-items:center; gap:7px; flex:1; }
+  .step .dot{ width:22px; height:22px; border-radius:50%; background:var(--paper-raised); border:2px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); flex:none; transition: all var(--dur) var(--ease-out); }
+  .step .label{ font-size:11.5px; color:var(--ink-soft); font-weight:600; white-space:nowrap; }
+  .step .line{ height:2px; background:var(--line); flex:1; margin:0 4px; transition: background var(--dur) var(--ease-out); }
+  .step:last-child .line{ display:none; }
+  .step.active .dot{ border-color:var(--accent); color:var(--accent); background:var(--accent-tint); }
+  .step.active .label{ color:var(--ink); }
+  .step.done .dot{ background:var(--good); border-color:var(--good); color:#fff; }
+  .step.done .line{ background:var(--good); }
+
+  label{ display:block; font-size:12px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; margin:0 0 6px; }
+  input, textarea{ width:100%; background:var(--paper); border:1px solid var(--line); color:var(--ink);
+    border-radius:8px; padding:11px 12px; font-size:14.5px; font-family:inherit; margin-bottom:14px; }
+  input:focus, textarea:focus{ outline:none; border-color:var(--accent); }
+  textarea{ resize:vertical; min-height:88px; }
+
+  .chiprow{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .chip{ background:var(--accent-tint); color:var(--accent-deep); border:1px solid transparent; border-radius:999px;
+    padding:11px 16px; min-height:44px; font-size:13px; font-weight:600; cursor:pointer; transition: transform var(--dur) var(--ease-out); }
+  .chip:hover{ border-color:var(--accent); }
+  .chip:active{ transform: scale(.96); }
+
+  .taWrap{ position:relative; }
+  .taWrap textarea{ padding-right:52px; }
+  .micbtn{ position:absolute; top:8px; right:8px; width:44px; height:44px; border-radius:50%;
+    background:var(--paper-raised); border:1px solid var(--line); color:var(--ink-soft);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; transition: transform var(--dur) var(--ease-out); }
+  .micbtn:hover{ border-color:var(--accent); color:var(--accent); }
+  .micbtn:active{ transform: scale(.94); }
+  .micbtn.listening{ background:var(--risk); border-color:var(--risk); color:#fff; animation:micpulse 1.4s ease-in-out infinite; }
+  @keyframes micpulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(179,38,30,.35); } 50%{ box-shadow:0 0 0 7px rgba(179,38,30,0); } }
+  #micstatus{ font-size:12px; color:var(--ink-soft); margin:-8px 0 12px; min-height:15px; }
+
+  .btn{ background: var(--accent); color:#fff; border:none; border-radius:9px; padding:13px 18px; min-height:48px;
+    font-size:15px; font-weight:700; cursor:pointer; width:100%; transition:transform var(--dur) var(--ease-out), opacity var(--dur); }
+  .btn:hover{ transform: translateY(-1px); }
+  .btn:active{ transform: scale(.98); }
+  .btn:disabled{ opacity:.5; cursor:not-allowed; transform:none; }
+  .btn.secondary{ background:transparent; color:var(--accent); border:1px solid var(--line); }
+  .btn.small{ width:auto; padding:11px 16px; min-height:44px; font-size:13px; }
+
+  .clarify{ background:var(--warn-tint); border:1px solid var(--warn); border-radius:9px; padding:14px 16px; margin-bottom:16px; }
+  .clarify p{ margin:0 0 10px; font-size:14px; color:var(--ink); }
+  .clarifybtns{ display:flex; gap:10px; }
+
+  .recap{ background:var(--accent-tint); border-radius:8px; padding:13px 15px; font-size:13.5px; color:var(--ink); margin-bottom:8px; }
+  .recap a{ color:var(--accent-deep); font-weight:600; cursor:pointer; text-decoration:underline; }
+  .counts{ display:flex; gap:10px; margin-bottom:14px; }
+  .countbox{ flex:1; background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:12px; text-align:center; }
+  .countbox b{ display:block; font-size:22px; font-family:var(--font-mono); color:var(--accent-deep); }
+  .countbox span{ font-size:11.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.03em; }
+
+  .anchor{ display:flex; align-items:baseline; justify-content:space-between; background:var(--good-tint);
+    border-radius:8px; padding:12px 15px; margin: 4px 0 16px; font-size:13.5px; }
+  .anchor b{ color:var(--good); font-family:var(--font-mono); font-size:15px; }
+  .price{ font-family:var(--font-mono); font-size:30px; font-weight:800; }
+  .pricewrap{ display:flex; align-items:baseline; gap:10px; margin-bottom:6px; }
+  .pricewrap span{ color:var(--ink-soft); font-size:13px; }
+
+  .guarantee{ background:var(--paper); border:1px dashed var(--line); border-radius:8px; padding:12px 14px; font-size:13px; color:var(--ink-soft); margin-bottom:16px; }
+  .checkline{ display:flex; align-items:flex-start; gap:10px; margin-bottom:16px; font-size:13px; color:var(--ink-soft); }
+  .checkline input{ width:auto; margin:2px 0 0; }
+
+  .agency{ background:var(--paper); border-left:3px solid var(--accent); border-radius:6px; padding:12px 14px; margin-bottom:9px; }
+  .agency b{ font-size:14px; }
+  .agency p{ color:var(--ink-soft); font-size:13px; margin:4px 0 0; }
+  .flag{ background:var(--warn-tint); border-left:3px solid var(--warn); border-radius:6px; padding:11px 14px; margin-bottom:8px; font-size:13px; }
+  .risk{ background:var(--risk-tint); border-left:3px solid var(--risk); border-radius:6px; padding:11px 14px; margin-bottom:8px; font-size:13px; }
+  .timeline b{ font-size:22px; font-family:var(--font-mono); color:var(--good); }
+  .narrative{ background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:15px; font-size:13.5px; white-space:pre-wrap; }
+  .copybtn{ background:var(--paper); border:1px solid var(--line); color:var(--ink-soft); border-radius:7px; padding:7px 13px; font-size:12px; cursor:pointer; margin-top:10px; }
+
+  .rbtns{ display:flex; gap:8px; flex-wrap:wrap; }
+  .rbtn{ flex:1; min-width:110px; min-height:44px; display:flex; align-items:center; justify-content:center; gap:6px;
+    background:var(--paper); border:1px solid var(--line); color:var(--ink); border-radius:8px; padding:10px; font-size:12.5px; cursor:pointer; font-weight:600;
+    transition: transform var(--dur) var(--ease-out); }
+  .rbtn:hover{ border-color:var(--accent); }
+  .rbtn:active{ transform: scale(.97); }
+  .creditbox{ background:var(--good-tint); border-radius:8px; padding:12px 14px; margin-top:12px; font-size:13px; }
+  .creditbox b{ font-family:var(--font-mono); color:var(--good); }
+
+  .modal-backdrop{ position:fixed; inset:0; background:rgba(10,15,20,.55); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50; }
+  .modal{ background:var(--paper-raised); border-radius:14px; padding:24px; max-width:380px; width:100%; }
+  .modal h3{ margin:0 0 4px; font-size:17px; }
+  .demoflag{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--warn); background:var(--warn-tint); display:inline-block; padding:3px 8px; border-radius:5px; margin-bottom:12px; }
+  .walletbtns{ display:flex; gap:8px; margin-bottom:14px; }
+  .walletbtn{ flex:1; background:#000; color:#fff; border:none; border-radius:8px; padding:11px; font-size:13px; font-weight:600; cursor:pointer; }
+  .walletbtn.g{ background:var(--paper); color:var(--ink); border:1px solid var(--line); }
+  .divider{ text-align:center; font-size:11px; color:var(--ink-soft); margin:10px 0; }
+  .spinner{ display:inline-block; width:14px; height:14px; border:2px solid #ffffff66; border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; margin-right:7px; vertical-align:middle; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .disc{ color:var(--ink-soft); font-size:11.5px; line-height:1.6; text-align:center; margin-top:26px; padding:0 8px; }
+  .err{ color:var(--risk); background:var(--risk-tint); border-radius:8px; padding:11px 13px; font-size:13px; margin-top:8px; }
+  .hidden{ display:none; }
+  @media (prefers-reduced-motion: reduce){ *{ animation-duration:.001ms !important; transition-duration:.001ms !important; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ============================================================
+// Clearway — trade-universal AI permit roadmap tool
+// Prototype: full funnel (intake -> teaser -> paywall -> reveal
+// -> outcome report). Checkout below is a clearly-labeled DEMO —
+// wiring real payment requires a live Stripe integration and a
+// server-side proxy for the AI call (see AI-security notes in
+// the planning doc; this file calls the model client-side only
+// for prototype purposes, matching the original prototype).
+// ============================================================
+
+const STATS = { pulls: 1247, trades: 9 };
+const TRADE_CHIPS = ['Pool','Deck','Roof','Solar','Fence','Addition','Other'];
+const STARTERS = {
+  Pool: 'Building a new inground pool, ',
+  Deck: 'Building a new deck attached to the house, ',
+  Roof: 'Full roof replacement, ',
+  Solar: 'Installing rooftop solar panels, ',
+  Fence: 'Installing a new fence, ',
+  Addition: 'Adding a room addition to the house, ',
+  Other: ''
+};
+
+let state = { project: null, result: null, theme: null, disclaimerChecked: false };
+let recognizer = null;
+let listening = false;
+
+const MIC_ICON = `<svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a2 2 0 0 0-2 2v5a2 2 0 1 0 4 0V3a2 2 0 0 0-2-2z"/><path d="M3.5 7a.5.5 0 0 1 .5.5V8a4 4 0 0 0 8 0v-.5a.5.5 0 0 1 1 0V8a5 5 0 0 1-4.5 4.975V14h1.5a.5.5 0 0 1 0 1h-4a.5.5 0 0 1 0-1H7v-1.025A5 5 0 0 1 3 8v-.5a.5.5 0 0 1 .5-.5z"/></svg>`;
+
+const ICON = {
+  building: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M15 9h.01M9 13h.01M15 13h.01M9 17h.01M15 17h.01"/></svg>`,
+  flag: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4m0 0h13l-2 4 2 4H4"/></svg>`,
+  alert: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>`,
+  clock: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>`,
+  doc: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>`,
+  loop: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0 1 15-4l1 1M20 15a9 9 0 0 1-15 4l-1-1"/></svg>`,
+  check: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`,
+  edit: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
+  x: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`
+};
+
+const STEP_NAMES = ['Describe', 'Review', 'Unlock', 'Roadmap'];
+function stepsHtml(activeIndex){
+  return `<div class="steps">${STEP_NAMES.map((label,i) => `
+    <div class="step ${i < activeIndex ? 'done' : ''} ${i === activeIndex ? 'active' : ''}">
+      <div class="dot">${i < activeIndex ? ICON.check.replace('14" height="14"','10" height="10"') : i+1}</div>
+      <span class="label">${label}</span>
+      <div class="line"></div>
+    </div>`).join('')}</div>`;
+}
+function swapOut(html){
+  const out = document.getElementById('out');
+  out.innerHTML = html;
+  out.classList.remove('fadein'); void out.offsetWidth; out.classList.add('fadein');
+  out.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+function setActiveStep(idx){
+  const holder = document.getElementById('stepsHolder');
+  if (holder) holder.innerHTML = stepsHtml(idx);
+}
+
+function micSupported(){
+  return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+}
+
+function toggleMic(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  const ta = document.getElementById('f-desc');
+  const btn = document.getElementById('micbtn');
+  const status = document.getElementById('micstatus');
+  if (!ta || !btn) return;
+
+  if (listening){
+    recognizer && recognizer.stop();
+    return;
+  }
+
+  recognizer = new SR();
+  recognizer.continuous = true;
+  recognizer.interimResults = true;
+  recognizer.lang = 'en-US';
+
+  const baseText = ta.value.trim() ? ta.value.trim() + ' ' : '';
+  let finalTranscript = '';
+
+  recognizer.onstart = () => {
+    listening = true;
+    btn.classList.add('listening');
+    status.textContent = 'Listening — tap the mic again to stop.';
+  };
+  recognizer.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++){
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) finalTranscript += t + ' ';
+      else interim += t;
+    }
+    ta.value = (baseText + finalTranscript + interim).trim();
+  };
+  recognizer.onerror = (e) => {
+    status.textContent = e.error === 'not-allowed'
+      ? 'Microphone access was denied — you can still type your description.'
+      : "Didn't catch that — tap the mic to try again, or just type.";
+  };
+  recognizer.onend = () => {
+    listening = false;
+    if (btn) btn.classList.remove('listening');
+    if (status && status.textContent.startsWith('Listening')) status.textContent = '';
+  };
+  recognizer.start();
+}
+
+const root = document.getElementById('app');
+
+function render(){
+  root.innerHTML = `
+    <div class="topbar">
+      <div class="brandrow"><div class="mark"></div><h1 class="word">Clearway</h1></div>
+      <button class="themebtn" id="themetoggle">${state.theme === 'dark' ? 'Light' : 'Dark'}</button>
+    </div>
+
+    <div id="stepsHolder">${stepsHtml(0)}</div>
+
+    <div class="tag">Every permit, decoded — in under 60 seconds</div>
+    <h2 class="hero">In 60 seconds, Clearway tells you more than a week of phone calls to the permit office.</h2>
+    <p class="sub">Describe the job. Tell us where it's happening. We will look up every agency involved, the specific rule in your county that gets projects like yours rejected, a realistic timeline, and a permit narrative you can copy straight onto the application. Any trade. Any state. No account required.</p>
+
+    <div class="pillrow">
+      <div class="pill"><b>${STATS.pulls.toLocaleString()}</b> roadmaps generated</div>
+      <div class="pill"><b>${STATS.trades}+</b> trades covered</div>
+    </div>
+
+    <div class="card" id="intakeCard">
+      <h3>Tell us about the job</h3>
+      <label>Where's the project?</label>
+      <input id="f-loc" placeholder="e.g. Broward County, Florida">
+
+      <label>What are you building?</label>
+      <div class="chiprow" id="chips"></div>
+      <div class="taWrap">
+        <textarea id="f-desc" placeholder="e.g. New 15x30 ft inground pool, fenced backyard, about 10 ft from the property line"></textarea>
+        ${micSupported() ? `<button type="button" class="micbtn" id="micbtn" title="Speak your project description" aria-label="Speak your project description">${MIC_ICON}</button>` : ''}
+      </div>
+      <div id="micstatus"></div>
+
+      <div id="clarifyBox"></div>
+      <div id="errbox"></div>
+      <button class="btn" id="go">Show me my permits</button>
+    </div>
+
+    <div id="out"></div>
+
+    <p class="disc">Clearway produces a draft roadmap to review with your engineer and the permitting authorities — it is not legal advice and does not replace official agency determinations. Always confirm current requirements with the issuing agencies before submitting.</p>
+  `;
+
+  document.getElementById('themetoggle').onclick = toggleTheme;
+  const chipRow = document.getElementById('chips');
+  TRADE_CHIPS.forEach(t => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.type = 'button'; b.textContent = t;
+    b.onclick = () => {
+      const ta = document.getElementById('f-desc');
+      ta.value = STARTERS[t] || '';
+      ta.focus();
+    };
+    chipRow.appendChild(b);
+  });
+  document.getElementById('go').onclick = handleGenerate;
+  const mic = document.getElementById('micbtn');
+  if (mic) mic.onclick = toggleMic;
+}
+
+function toggleTheme(){
+  state.theme = state.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', state.theme);
+  render();
+}
+
+function needsClarifying(desc){
+  const d = desc.toLowerCase();
+  return !(d.includes('new') || d.includes('existing') || d.includes('replac'));
+}
+
+function handleGenerate(){
+  const loc = document.getElementById('f-loc').value.trim();
+  const desc = document.getElementById('f-desc').value.trim();
+  document.getElementById('errbox').innerHTML = '';
+
+  if (!loc || !desc){
+    document.getElementById('errbox').innerHTML = `<div class="err">Add a location and a short project description so Clearway can map the right jurisdictions.</div>`;
+    return;
+  }
+
+  if (needsClarifying(desc) && !state._clarified){
+    document.getElementById('clarifyBox').innerHTML = `
+      <div class="clarify">
+        <p>Quick check — is this new construction, or replacing something existing?</p>
+        <div class="clarifybtns">
+          <button class="btn small" id="c-new">New</button>
+          <button class="btn small secondary" id="c-existing">Replacing existing</button>
+        </div>
+      </div>`;
+    document.getElementById('c-new').onclick = () => { state._clarified = true; document.getElementById('f-desc').value += ' This is new construction.'; document.getElementById('clarifyBox').innerHTML=''; handleGenerate(); };
+    document.getElementById('c-existing').onclick = () => { state._clarified = true; document.getElementById('f-desc').value += ' This is replacing an existing structure.'; document.getElementById('clarifyBox').innerHTML=''; handleGenerate(); };
+    return;
+  }
+
+  state.project = { location: loc, description: document.getElementById('f-desc').value.trim() };
+  generateRoadmap();
+}
+
+async function generateRoadmap(){
+  const btn = document.getElementById('go');
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span>Looking up your permits...`;
+
+  const sys = `You are Clearway, an expert permitting analyst for U.S. construction and improvement projects — any trade: pools, decks, additions, roofing, solar, fencing, garages, driveways, and beyond. You understand how local (county/municipal), state, and federal jurisdictions overlap for residential and light-commercial work.
+
+Given a project, return a permitting roadmap. Be specific to the jurisdiction named. If you are not certain a specific local rule applies, say it generally and flag that it must be confirmed locally rather than inventing a precise number. Never fabricate a specific statute citation you are unsure of. Keep specific claims hedged ("agencies that typically apply", "commonly required") while keeping the overall structure clear and decisive — the value of this product is organization and speed, not vague hedging on everything.
+
+Respond with ONLY valid JSON (no markdown, no preamble), in exactly this shape:
+{
+ "agencies":[{"name":"agency / permit name","detail":"what they review and what's required, 1-2 sentences"}],
+ "flags":["jurisdiction-specific rule or gotcha that commonly applies here"],
+ "risks":["a specific reason a project like this gets rejected or delayed, and how to avoid it"],
+ "timeline":"realistic range e.g. '4-8 weeks before construction'",
+ "timelineNote":"one sentence on what drives the range",
+ "narrative":"a 120-180 word draft project description / cover narrative the applicant can adapt for the permit application, written professionally in first person"
+}
+Keep agencies to the 3-6 that actually apply. Keep flags and risks to the 3-5 most relevant each.`;
+
+  const user = `Project location: ${state.project.location}\nProject description: ${state.project.description}`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 2000, messages: [{ role:"user", content:user }], system: sys })
+    });
+    const data = await res.json();
+    let text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n").trim();
+    text = text.replace(/```json/gi,'').replace(/```/g,'').trim();
+    const s = text.indexOf('{'), e = text.lastIndexOf('}');
+    if (s > -1 && e > -1) text = text.slice(s, e+1);
+    state.result = JSON.parse(text);
+    renderTeaser();
+  } catch (err){
+    document.getElementById('errbox').innerHTML = `<div class="err">Something interrupted the engine: ${String(err)}. This demo calls the Anthropic API directly from the browser with no key configured, matching the original prototype — wire a server-side proxy before going live. Try again, or continue with the flow using the mock data below.</div>`;
+    state.result = mockResult();
+    renderTeaser();
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Show me my permits';
+  }
+}
+
+function mockResult(){
+  return {
+    agencies: [
+      { name: "County Building Department", detail: "Reviews structural plans and issues the primary construction permit." },
+      { name: "Zoning / Planning Division", detail: "Confirms setback and lot-coverage compliance before the building permit is issued." },
+      { name: "HOA Architectural Review (if applicable)", detail: "Many communities require sign-off before a county permit will be accepted." }
+    ],
+    flags: [ "Setback distance to the property line is the most common reason projects like this get kicked back here.", "Fence/barrier code may apply if the project is near a pool or water feature." ],
+    risks: [ "Incomplete site plan omitting the property-line distance is the top rejection reason for this project type." ],
+    timeline: "4-8 weeks before construction",
+    timelineNote: "Range depends on whether HOA review is required in parallel with the county review.",
+    narrative: "We are proposing to construct the above-described project at the referenced address, in accordance with all applicable local building and zoning requirements. The scope, materials, and site plan are described in the attached documents..."
+  };
+}
+
+function esc(s){ return String(s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function renderTeaser(){
+  const r = state.result;
+  setActiveStep(1);
+  swapOut(`
+    <div class="card">
+      <h3>${ICON.doc} Here's what you told us</h3>
+      <div class="recap">${esc(state.project.description)} — in ${esc(state.project.location)}. <a id="editdesc">Add more detail</a></div>
+      <div class="counts">
+        <div class="countbox"><b>${(r.agencies||[]).length}</b><span>Agencies</span></div>
+        <div class="countbox"><b>${(r.flags||[]).length}</b><span>Jurisdiction flags</span></div>
+        <div class="countbox"><b>${(r.risks||[]).length}</b><span>Rejection risks</span></div>
+      </div>
+
+      <div class="anchor"><span>A permit expediter typically charges <b>$500 to $3,000</b> for exactly this research</span></div>
+
+      <div class="pricewrap"><span class="price">$39</span><span>one-time, no subscription</span></div>
+
+      <div class="guarantee">Our promise: if we miss an agency your project clearly needed, that pull is refunded. Send the rejection notice, or the jurisdiction's own code section, within 30 days — that's all it takes.</div>
+
+      <label class="checkline"><input type="checkbox" id="disc-check"> I understand this is an informational roadmap, not a permit guarantee or legal determination.</label>
+
+      <button class="btn" id="unlock" disabled>See my full roadmap — $39</button>
+    </div>
+  `);
+  document.getElementById('editdesc').onclick = () => { render(); };
+  document.getElementById('disc-check').onchange = (e) => {
+    document.getElementById('unlock').disabled = !e.target.checked;
+  };
+  document.getElementById('unlock').onclick = openCheckout;
+}
+
+function openCheckout(){
+  setActiveStep(2);
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.innerHTML = `
+    <div class="modal fadein">
+      <div class="demoflag">Demo checkout — connect Stripe to accept real payment</div>
+      <h3>Pay $39</h3>
+      <p style="color:var(--ink-soft);font-size:13px;margin:0 0 16px;">Clearway — full permit roadmap</p>
+      <div class="walletbtns">
+        <button class="walletbtn"> Pay</button>
+        <button class="walletbtn g">G Pay</button>
+      </div>
+      <div class="divider">or pay by card</div>
+      <input placeholder="Card number" aria-label="Card number" style="margin-bottom:10px;">
+      <div style="display:flex;gap:10px;">
+        <input placeholder="MM / YY" aria-label="Expiry date">
+        <input placeholder="CVC" aria-label="Security code">
+      </div>
+      <button class="btn" id="paynow" style="margin-top:6px;">Pay $39</button>
+      <button class="btn secondary" id="cancelpay" style="margin-top:8px;">Cancel</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  document.getElementById('cancelpay').onclick = () => { setActiveStep(1); modal.remove(); };
+  document.getElementById('paynow').onclick = () => {
+    const btn = document.getElementById('paynow');
+    btn.innerHTML = `<span class="spinner"></span>Processing...`;
+    btn.disabled = true;
+    setTimeout(() => { modal.remove(); renderFull(); }, 900);
+  };
+}
+
+function renderFull(){
+  const r = state.result;
+  setActiveStep(3);
+  const agencies = (r.agencies||[]).map(a => `<div class="agency"><b>${esc(a.name)}</b><p>${esc(a.detail)}</p></div>`).join('');
+  const flags = (r.flags||[]).map(f => `<div class="flag">${esc(f)}</div>`).join('');
+  const risks = (r.risks||[]).map(x => `<div class="risk">${esc(x)}</div>`).join('');
+
+  swapOut(`
+    <div class="card"><h3>${ICON.building} Every agency you'll answer to</h3>${agencies}</div>
+    <div class="card"><h3>${ICON.flag} The rules that trip up projects like yours</h3>${flags}</div>
+    <div class="card"><h3>${ICON.alert} Why projects like yours get rejected</h3>${risks}</div>
+    <div class="card"><h3>${ICON.clock} How long this will actually take</h3>
+      <div class="timeline"><b>${esc(r.timeline)}</b></div>
+      <p style="color:var(--ink-soft);font-size:13px;margin-top:6px;">${esc(r.timelineNote)}</p>
+    </div>
+    <div class="card"><h3>${ICON.doc} Your permit application, already written</h3>
+      <div class="narrative" id="narr">${esc(r.narrative)}</div>
+      <button class="copybtn" id="copy">Copy narrative</button>
+    </div>
+    <div class="card"><h3>${ICON.loop} Tell us what happened</h3>
+      <p style="color:var(--ink-soft);font-size:13px;margin:0 0 12px;">When your permit comes back, tell us what happened. It makes the next contractor's roadmap in your county a little sharper.</p>
+      <div class="rbtns">
+        <button class="rbtn" data-o="approved">${ICON.check} Approved as drafted</button>
+        <button class="rbtn" data-o="comments">${ICON.edit} Approved after comments</button>
+        <button class="rbtn" data-o="rejected">${ICON.x} Rejected — needed changes</button>
+      </div>
+      <div id="thanks"></div>
+    </div>
+    <p class="disc">This is an informational roadmap, not a permit guarantee or legal determination — confirm current requirements with the issuing agencies before submitting.</p>
+  `);
+  document.getElementById('copy').onclick = () => {
+    navigator.clipboard && navigator.clipboard.writeText(document.getElementById('narr').innerText);
+    document.getElementById('copy').textContent = 'Copied';
+    setTimeout(()=>{ const c=document.getElementById('copy'); if(c) c.textContent='Copy narrative'; }, 1500);
+  };
+  document.querySelectorAll('.rbtn').forEach(b => b.onclick = () => {
+    document.getElementById('thanks').innerHTML = `
+      <div class="creditbox">Thank you. Here's <b>15OFFNEXT</b> — $15 off your next roadmap, redeemable at checkout.</div>`;
+  });
+}
+
+render();
+</script>
+</body>
+</html>

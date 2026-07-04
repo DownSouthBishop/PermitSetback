@@ -1,0 +1,16 @@
+# Setback
+
+> Setback tells a contractor or homeowner every permit their construction project needs, in under 60 seconds — agencies, jurisdiction-specific rejection risks, a realistic timeline, and a draft permit narrative. Any trade, any US location, no account required.
+
+Setback is not legal advice and does not replace an official agency determination. See /disclaimer.html.
+
+## Product
+- [Get a roadmap](setback-app.html): the main tool — describe a project and location, get a permit roadmap
+- [Pricing](pricing.md): $19 introductory rate (first 100), $39 standard
+- [For permit expediters](expediters.html): bulk pack for expediting firms, $999/50 roadmaps
+- [How it works](how-it-works.html): what the roadmap is based on, and what to independently confirm
+
+## Policies
+- [Terms of Service](terms.html)
+- [Privacy Policy](privacy.html)
+- [Disclaimer](disclaimer.html)

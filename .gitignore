@@ -1,0 +1,17 @@
+# Large media, not source — kept local only
+WAKE.mp4
+
+# Secrets — never commit
+server/.env
+
+# Runtime data — not source, regenerates locally
+server/data.db
+server/data.db-*
+server/node_modules/
+
+# Local tool config
+.claude/
+
+# OS cruft
+.DS_Store
+Thumbs.db
