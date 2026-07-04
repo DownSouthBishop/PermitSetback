@@ -339,7 +339,8 @@ function toggleMic(){
 
 const root = document.getElementById('app');
 
-function render(){
+function render(opts){
+  opts = opts || {};
   root.innerHTML = `
     <div class="topbar">
       <div class="brandrow"><div class="mark">${MARK_ICON}</div><h1 class="word">Setback</h1></div>
@@ -352,7 +353,7 @@ function render(){
 
     <div class="pillrow" id="statsPill"></div>
 
-    <div class="card" id="intakeCard">
+    <div class="card${opts.hideIntake ? ' hidden' : ''}" id="intakeCard">
       <h3>Tell us about the job</h3>
       <label>Where's the project?</label>
       <input id="f-loc" placeholder="e.g. Broward County, Florida">
@@ -545,13 +546,14 @@ async function generateRoadmap(){
       body: JSON.stringify({ location: state.project.location, description: state.project.description })
     }, 70000);
     if (!res.ok) throw new Error(`Backend returned ${res.status}`);
-    const { result } = await res.json();
+    const { provider, result } = await res.json();
     if (result.unrecognized){
       document.getElementById('errbox').innerHTML = `<div class="err">${esc(result.message || "We couldn't identify that location or project — try again with a real US city, county, or state.")}</div>`;
       return;
     }
     state.result = result;
     state.isMock = false;
+    persistProject(provider);
     renderTeaser();
   } catch (err){
     console.error('Setback: roadmap generation failed —', err);
@@ -582,6 +584,52 @@ function mockResult(){
 }
 
 function esc(s){ return String(s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+// Mirrors the backend's own classifyTrade keyword match (server/index.js) —
+// /api/roadmap doesn't echo the server-computed trade back to the client, so
+// this is recomputed here purely to fill the required `trade` field on
+// POST /api/projects. Keep the keyword lists in sync if either side changes.
+const TRADE_KEYWORDS = {
+  pool: ['pool', 'spa', 'hot tub'],
+  deck: ['deck'],
+  roof: ['roof', 'shingle'],
+  solar: ['solar', 'photovoltaic', ' pv '],
+  fence: ['fence', 'fencing'],
+  addition: ['addition', 'room addition', 'extension'],
+  'garage/adu': ['garage', 'adu', 'accessory dwelling']
+};
+function classifyTrade(description){
+  const d = ` ${description.toLowerCase()} `;
+  for (const [trade, keywords] of Object.entries(TRADE_KEYWORDS)){
+    if (keywords.some(k => d.includes(k))) return trade;
+  }
+  return 'other';
+}
+
+// Fire-and-forget, same posture as logEvent — persistence is additive, never
+// a dependency of the core funnel succeeding, so failures just log and move on.
+function persistProject(provider){
+  fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      location: state.project.location,
+      description: state.project.description,
+      trade: classifyTrade(state.project.description),
+      provider,
+      agencies: state.result.agencies,
+      flags: state.result.flags,
+      risks: state.result.risks,
+      timeline: state.result.timeline,
+      timelineNote: state.result.timelineNote,
+      narrative: state.result.narrative
+    })
+  }, 8000).then(res => {
+    if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+    return res.json();
+  }).then(({ id }) => { state.project.id = id; })
+    .catch(err => console.error('Setback: project persistence failed —', err));
+}
 
 function renderTeaser(){
   const r = state.result;
@@ -670,7 +718,51 @@ function openCheckout(){
     btn.disabled = true;
     document.removeEventListener('keydown', onKeydown);
     logEvent('checkout_completed', { location: state.project.location, price: 19 });
-    setTimeout(() => { modal.remove(); renderFull(); }, 900);
+    setTimeout(() => { showEmailCapture(modal); }, 900);
+  };
+}
+
+function showEmailCapture(modal){
+  const box = modal.querySelector('#modalBox');
+  box.innerHTML = `
+    <h3 id="modalTitle">Payment complete</h3>
+    <label>Save this roadmap — enter your email to find it anytime</label>
+    <input type="email" id="captureEmail" placeholder="you@email.com" aria-label="Email">
+    <div id="captureErr"></div>
+    <button class="btn" id="captureSubmit">Save my roadmap</button>
+    <p style="text-align:center;margin-top:10px;"><a id="captureSkip" style="cursor:pointer;color:var(--accent-deep);font-size:13px;">Skip for now</a></p>
+  `;
+  document.getElementById('captureSkip').onclick = () => { modal.remove(); renderFull(); };
+  document.getElementById('captureSubmit').onclick = async () => {
+    const email = document.getElementById('captureEmail').value.trim();
+    const errBox = document.getElementById('captureErr');
+    if (!email || !email.includes('@')){
+      errBox.innerHTML = `<div class="err">Add a valid email, or skip for now.</div>`;
+      return;
+    }
+    const submitBtn = document.getElementById('captureSubmit');
+    submitBtn.innerHTML = `<span class="spinner"></span>Saving...`;
+    submitBtn.disabled = true;
+    try {
+      const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/auth/request-link`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, projectId: state.project.id })
+      }, 8000);
+      if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+      const { devLink } = await res.json();
+      box.innerHTML = `
+        <h3 id="modalTitle">Saved</h3>
+        <p style="color:var(--ink-soft);font-size:13px;margin:0 0 14px;">There's no real email delivery yet, so here's your link directly:</p>
+        <p style="margin:0 0 16px;"><a href="${esc(devLink)}" target="_blank" rel="noopener" style="color:var(--accent-deep);font-weight:600;">Your access link (temporary — real email delivery comes later)</a></p>
+        <button class="btn" id="captureContinue">Continue to my roadmap</button>
+      `;
+      document.getElementById('captureContinue').onclick = () => { modal.remove(); renderFull(); };
+    } catch (err){
+      errBox.innerHTML = `<div class="err">Couldn't save that — is the backend running? You can try again or skip for now.</div>`;
+      submitBtn.innerHTML = 'Save my roadmap';
+      submitBtn.disabled = false;
+    }
   };
 }
 
@@ -747,10 +839,16 @@ function renderFull(){
     document.querySelectorAll('#outcomeChoices .rbtn').forEach(x => x.disabled = true);
     thanks.innerHTML = `<p style="color:var(--ink-soft);font-size:13px;margin:0;">Saving...</p>`;
     try {
-      const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/outcome`, {
+      const url = state.project && state.project.id
+        ? `${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(state.project.id)}/outcome`
+        : `${BACKEND_ORIGIN}/api/outcome`;
+      const body = state.project && state.project.id
+        ? { outcome }
+        : { location: state.project.location, description: state.project.description, outcome };
+      const res = await fetchWithTimeout(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ location: state.project.location, description: state.project.description, outcome })
+        body: JSON.stringify(body)
       }, 8000);
       if (!res.ok) throw new Error(`Backend returned ${res.status}`);
       thanks.innerHTML = `<div class="creditbox">Thank you. Here's <b>SETBACK15</b> — $15 off your next roadmap, redeemable at checkout.</div>`;
@@ -761,7 +859,86 @@ function renderFull(){
   });
 }
 
-render();
+// Renders the minimal fallback list a returning magic-link visitor sees —
+// Track C's projects.html is the fuller dedicated version of this.
+function renderProjectList(projects){
+  root.innerHTML = `
+    <div class="topbar">
+      <div class="brandrow"><div class="mark">${MARK_ICON}</div><h1 class="word">Setback</h1></div>
+      <button class="themebtn" id="themetoggle">${state.theme === 'dark' ? 'Light' : 'Dark'}</button>
+    </div>
+    <div class="card">
+      <h3>${ICON.doc} Your saved roadmaps</h3>
+      ${(projects||[]).length ? projects.map(p => `
+        <div class="agency">
+          <b><a href="setback-app.html?project=${encodeURIComponent(p.id)}">${esc(p.location)} — ${esc(p.trade)}</a></b>
+          <p>${esc(new Date(p.createdAt).toLocaleDateString())}</p>
+        </div>
+      `).join('') : `<p style="color:var(--ink-soft);font-size:13px;">No saved roadmaps yet.</p>`}
+    </div>
+  `;
+  document.getElementById('themetoggle').onclick = toggleTheme;
+}
+
+async function handleVerifyReturn(token){
+  try {
+    const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/auth/verify?token=${encodeURIComponent(token)}`, {}, 8000);
+    if (!res.ok){
+      const body = await res.json().catch(() => ({}));
+      render();
+      document.getElementById('errbox').innerHTML = `<div class="err">${esc(body.error || "That access link didn't work — it may be expired or already used.")}</div>`;
+      return;
+    }
+    const { sessionToken, projects } = await res.json();
+    localStorage.setItem('setback_session', sessionToken);
+    renderProjectList(projects);
+  } catch (err){
+    console.error('Setback: magic-link verification failed —', err);
+    render();
+    document.getElementById('errbox').innerHTML = `<div class="err">Couldn't verify that link — is the backend running?</div>`;
+  }
+}
+
+async function init(){
+  const params = new URLSearchParams(location.search);
+  const verifyToken = params.get('verify');
+  if (verifyToken){
+    await handleVerifyReturn(verifyToken);
+    return;
+  }
+
+  const projectId = params.get('project');
+  if (projectId){
+    try {
+      const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(projectId)}`, {}, 8000);
+      if (res.ok){
+        const project = await res.json();
+        state.project = { id: project.id, location: project.location, description: project.description };
+        state.result = {
+          agencies: project.agencies, flags: project.flags, risks: project.risks,
+          timeline: project.timeline, timelineNote: project.timelineNote, narrative: project.narrative
+        };
+        state.isMock = false;
+        render({ hideIntake: true });
+        renderFull();
+        return;
+      }
+      render();
+      if (res.status === 404){
+        document.getElementById('errbox').innerHTML = `<div class="err">That saved roadmap link didn't work — it may have been removed. You can generate a new one below.</div>`;
+      }
+      return;
+    } catch (err){
+      console.error('Setback: loading saved project failed —', err);
+      render();
+      return;
+    }
+  }
+
+  render();
+}
+
+init();
 </script>
 </body>
 </html>
