@@ -67,6 +67,52 @@ db.exec(`
     updated_at TEXT NOT NULL,
     PRIMARY KEY (location, trade)
   );
+
+  -- A generated roadmap becomes a durable Project once persisted, so a
+  -- customer can come back to what they paid for instead of losing it on
+  -- refresh. user_id starts NULL — a project is created before any account
+  -- exists, and gets attached to a user only once they capture an email.
+  CREATE TABLE IF NOT EXISTS projects (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER,
+    location TEXT NOT NULL,
+    description TEXT NOT NULL,
+    trade TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    agencies TEXT NOT NULL,
+    flags TEXT NOT NULL,
+    risks TEXT NOT NULL,
+    timeline TEXT NOT NULL,
+    timeline_note TEXT NOT NULL,
+    narrative TEXT NOT NULL,
+    outcome_status TEXT,
+    outcome_reported_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL
+  );
+  -- One-time login tokens. project_id carries a project through the
+  -- request-link -> verify round trip so it can be attached to the user as
+  -- soon as the account exists, without the frontend having to make a
+  -- second call.
+  CREATE TABLE IF NOT EXISTS magic_links (
+    token TEXT PRIMARY KEY,
+    email TEXT NOT NULL,
+    project_id TEXT,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used_at TEXT
+  );
+  CREATE TABLE IF NOT EXISTS sessions (
+    token TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL
+  );
 `);
 
 // Older data.db files predate the trade column — add it if missing rather
@@ -91,6 +137,71 @@ const insertEvent = db.prepare(
 // and "broward county, florida" for the same place, and an exact-match
 // lookup would silently miss the insight for one of them.
 const getInsightStmt = db.prepare('SELECT summary, report_count FROM insights WHERE LOWER(location) = LOWER(?) AND trade = ?');
+
+// --- projects + accounts -------------------------------------------------
+const insertProject = db.prepare(`
+  INSERT INTO projects (id, user_id, location, description, trade, provider, agencies, flags, risks, timeline, timeline_note, narrative, created_at, updated_at)
+  VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`);
+const getProjectStmt = db.prepare('SELECT * FROM projects WHERE id = ?');
+const updateProjectOutcomeStmt = db.prepare('UPDATE projects SET outcome_status = ?, outcome_reported_at = ?, updated_at = ? WHERE id = ?');
+const linkProjectToUserStmt = db.prepare('UPDATE projects SET user_id = ?, updated_at = ? WHERE id = ?');
+const getProjectsByUserStmt = db.prepare(`
+  SELECT id, location, description, trade, outcome_status, created_at
+  FROM projects WHERE user_id = ? ORDER BY created_at DESC
+`);
+
+const getUserByEmailStmt = db.prepare('SELECT * FROM users WHERE email = ?');
+const insertUserStmt = db.prepare('INSERT INTO users (email, created_at) VALUES (?, ?)');
+const insertMagicLinkStmt = db.prepare('INSERT INTO magic_links (token, email, project_id, created_at, expires_at) VALUES (?, ?, ?, ?, ?)');
+const getMagicLinkStmt = db.prepare('SELECT * FROM magic_links WHERE token = ?');
+const markMagicLinkUsedStmt = db.prepare('UPDATE magic_links SET used_at = ? WHERE token = ?');
+const insertSessionStmt = db.prepare('INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)');
+const getSessionUserStmt = db.prepare(`
+  SELECT users.id AS id, users.email AS email, sessions.expires_at AS expires_at
+  FROM sessions JOIN users ON users.id = sessions.user_id
+  WHERE sessions.token = ?
+`);
+
+// Finds or creates the user row for an email — request-link and verify both
+// need this, and there's no password to check, just an identity to reuse.
+function getOrCreateUser(email) {
+  const existing = getUserByEmailStmt.get(email);
+  if (existing) return existing;
+  insertUserStmt.run(email, new Date().toISOString());
+  return getUserByEmailStmt.get(email);
+}
+
+// Reads the bearer session token off the request and resolves it to a user,
+// or null if missing/expired/unknown — callers just check for null.
+function getSessionUser(req) {
+  const header = req.headers['authorization'] || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+  if (!token) return null;
+  const row = getSessionUserStmt.get(token);
+  if (!row) return null;
+  if (new Date(row.expires_at).getTime() < Date.now()) return null;
+  return row;
+}
+
+function projectRowToJson(row) {
+  return {
+    id: row.id,
+    location: row.location,
+    description: row.description,
+    trade: row.trade,
+    provider: row.provider,
+    agencies: JSON.parse(row.agencies),
+    flags: JSON.parse(row.flags),
+    risks: JSON.parse(row.risks),
+    timeline: row.timeline,
+    timelineNote: row.timeline_note,
+    narrative: row.narrative,
+    outcomeStatus: row.outcome_status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
 
 // Simple keyword classification — same categories as the frontend's trade
 // chips. Good enough to group outcome reports meaningfully; not meant to be
@@ -313,6 +424,123 @@ const server = createServer(async (req, res) => {
     const outcomeCount = db.prepare('SELECT COUNT(*) AS n FROM outcomes').get().n;
     const approvedCount = db.prepare(`SELECT COUNT(*) AS n FROM outcomes WHERE outcome = 'approved'`).get().n;
     sendJson(res, 200, { roadmapsGenerated: roadmapCount, outcomesReported: outcomeCount, approvedAsDrafted: approvedCount });
+    return;
+  }
+
+  // ---- POST /api/projects — persist a generated roadmap as a Project so it
+  // survives a refresh instead of vanishing once the browser tab closes ----
+  if (req.method === 'POST' && req.url === '/api/projects') {
+    try {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const { location, description, trade, provider, agencies, flags, risks, timeline, timelineNote, narrative } = body;
+      if (!location || !description || !trade || !provider || !Array.isArray(agencies) || !Array.isArray(flags) || !Array.isArray(risks) || !timeline || !timelineNote || !narrative) {
+        return sendJson(res, 400, { error: 'location, description, trade, provider, agencies, flags, risks, timeline, timelineNote, and narrative are required' });
+      }
+      const id = crypto.randomUUID();
+      const now = new Date().toISOString();
+      insertProject.run(id, location, description, trade, provider, JSON.stringify(agencies), JSON.stringify(flags), JSON.stringify(risks), timeline, timelineNote, narrative, now, now);
+      sendJson(res, 200, { id });
+    } catch (err) {
+      sendJson(res, 400, { error: 'invalid request body' });
+    }
+    return;
+  }
+
+  // ---- POST /api/projects/:id/outcome — same real-outcome question as
+  // /api/outcome, but also updates the project's own status so a returning
+  // customer sees it, and keeps feeding learn.js exactly as before --------
+  if (req.method === 'POST' && /^\/api\/projects\/[^/]+\/outcome$/.test(req.url)) {
+    const id = req.url.split('/')[3];
+    try {
+      const { outcome } = JSON.parse((await readBody(req)) || '{}');
+      const validOutcomes = ['approved', 'comments', 'rejected'];
+      if (!validOutcomes.includes(outcome)) {
+        return sendJson(res, 400, { error: 'a valid outcome is required' });
+      }
+      const project = getProjectStmt.get(id);
+      if (!project) return sendJson(res, 404, { error: 'not found' });
+
+      const now = new Date().toISOString();
+      updateProjectOutcomeStmt.run(outcome, now, now, id);
+      insertOutcome.run(now, project.location, project.description, project.trade, outcome);
+      sendJson(res, 200, { ok: true });
+    } catch (err) {
+      sendJson(res, 400, { error: 'invalid request body' });
+    }
+    return;
+  }
+
+  // ---- GET /api/projects/:id — public by unguessable UUID, same as the
+  // rest of this app: no account required to see what you generated -------
+  if (req.method === 'GET' && /^\/api\/projects\/[^/]+$/.test(req.url)) {
+    const id = req.url.split('/')[3];
+    const project = getProjectStmt.get(id);
+    if (!project) return sendJson(res, 404, { error: 'not found' });
+    sendJson(res, 200, projectRowToJson(project));
+    return;
+  }
+
+  // ---- POST /api/auth/request-link — passwordless login. No real email
+  // sender is wired up yet (that's a cloud dependency this build deliberately
+  // hasn't added without sign-off), so the link is handed straight back in
+  // the response instead of being emailed. Swap that in later without
+  // changing this shape. -----------------------------------------------
+  if (req.method === 'POST' && req.url === '/api/auth/request-link') {
+    if (isRateLimited(ip)) return sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' });
+    try {
+      const { email, projectId } = JSON.parse((await readBody(req)) || '{}');
+      if (typeof email !== 'string' || !email.includes('@')) {
+        return sendJson(res, 400, { error: 'a valid email is required' });
+      }
+      getOrCreateUser(email);
+      const token = crypto.randomUUID();
+      const now = new Date();
+      const expires = new Date(now.getTime() + 15 * 60_000);
+      insertMagicLinkStmt.run(token, email, projectId || null, now.toISOString(), expires.toISOString());
+      sendJson(res, 200, { devLink: `http://localhost:${PORT}/api/auth/verify?token=${token}` });
+    } catch (err) {
+      sendJson(res, 400, { error: 'invalid request body' });
+    }
+    return;
+  }
+
+  // ---- GET /api/auth/verify — redeems a magic-link token for a session --
+  if (req.method === 'GET' && req.url.startsWith('/api/auth/verify')) {
+    const token = new URL(req.url, `http://localhost:${PORT}`).searchParams.get('token');
+    const link = token && getMagicLinkStmt.get(token);
+    if (!link) return sendJson(res, 400, { error: 'invalid or unknown link' });
+    if (link.used_at) return sendJson(res, 400, { error: 'this link has already been used' });
+    if (new Date(link.expires_at).getTime() < Date.now()) return sendJson(res, 400, { error: 'this link has expired' });
+
+    markMagicLinkUsedStmt.run(new Date().toISOString(), token);
+    const user = getOrCreateUser(link.email);
+
+    if (link.project_id) {
+      linkProjectToUserStmt.run(user.id, new Date().toISOString(), link.project_id);
+    }
+
+    const sessionToken = crypto.randomUUID();
+    const now = new Date();
+    const expires = new Date(now.getTime() + 30 * 24 * 60 * 60_000);
+    insertSessionStmt.run(sessionToken, user.id, now.toISOString(), expires.toISOString());
+
+    const projects = getProjectsByUserStmt.all(user.id).map(p => ({
+      id: p.id, location: p.location, description: p.description, trade: p.trade,
+      outcomeStatus: p.outcome_status, createdAt: p.created_at
+    }));
+    sendJson(res, 200, { sessionToken, projects });
+    return;
+  }
+
+  // ---- GET /api/me/projects — the list behind "My Projects" -------------
+  if (req.method === 'GET' && req.url === '/api/me/projects') {
+    const user = getSessionUser(req);
+    if (!user) return sendJson(res, 401, { error: 'not authenticated' });
+    const projects = getProjectsByUserStmt.all(user.id).map(p => ({
+      id: p.id, location: p.location, description: p.description, trade: p.trade,
+      outcomeStatus: p.outcome_status, createdAt: p.created_at
+    }));
+    sendJson(res, 200, { projects });
     return;
   }
 
