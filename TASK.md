@@ -8,6 +8,23 @@ time without stepping on each other's files.
 
 Queued for a later round (not assigned yet): **Task Center**, **Documents**.
 
+## Shared backend — do not run your own server
+
+All five tracks test against **one shared backend**, already running from
+the main `WAKE` checkout (not any of the `WAKE-track-*` worktrees) on
+`http://localhost:8787`. That's the only copy of `server/data.db`, so it's
+the only place a project you create will actually show up for the other
+tracks (and for `agent-browser`/manual testing) to see.
+
+**Do not run `node --env-file=.env index.js` from your own worktree** — a
+second instance will either fail with `EADDRINUSE` (if the shared one is up)
+or silently create a second, divergent `data.db` in your own worktree (if it
+picks a different port). Just point `curl` and your browser tests at
+`http://localhost:8787`; the frontend's `BACKEND_ORIGIN` already does.
+
+If the shared backend isn't running, start it from the **main `WAKE` folder
+only** (`cd` there first): `node --env-file=.env index.js`.
+
 ## The pattern (read this first — copy `modules/permits.js`)
 
 **Frontend module contract.** Each module is `modules/<key>.js` exporting:
