@@ -1,7 +1,7 @@
 // Timeline Intelligence: POST /api/projects/:id/timeline (generate, once —
 // returns the existing breakdown if one already exists instead of
 // regenerating), GET /api/projects/:id/timeline (list, ordered by phase).
-import { sendJson } from '../http-utils.js';
+import { sendJson, requirePaid } from '../http-utils.js';
 import { isRateLimited } from '../rate-limit.js';
 import { getProjectStmt, insertTimelinePhaseStmt, getTimelinePhasesByProjectStmt } from '../db.js';
 import { generateTimelinePhases } from '../llm.js';
@@ -26,6 +26,7 @@ export async function handleTimelineRoutes(req, res, ip) {
     const id = req.url.split('/')[3];
     const project = getProjectStmt.get(id);
     if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }
+    if (requirePaid(res, project)) return true;
 
     const existing = getTimelinePhasesByProjectStmt.all(id);
     if (existing.length > 0) {
@@ -57,6 +58,7 @@ export async function handleTimelineRoutes(req, res, ip) {
     const id = req.url.split('/')[3];
     const project = getProjectStmt.get(id);
     if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }
+    if (requirePaid(res, project)) return true;
     sendJson(res, 200, getTimelinePhasesByProjectStmt.all(id).map(phaseRowToJson));
     return true;
   }

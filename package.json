@@ -1,0 +1,13 @@
+{
+  "name": "setback",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --env-file=server/.env server/index.js"
+  }
+}

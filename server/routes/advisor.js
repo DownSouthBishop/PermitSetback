@@ -1,5 +1,6 @@
 // AI Advisor: GET /api/projects/:id/conversation, POST /api/projects/:id/conversation
-import { readBody, sendJson } from '../http-utils.js';
+import { readBody, sendJson, requirePaid } from '../http-utils.js';
+import { isRateLimited } from '../rate-limit.js';
 import { getProjectStmt, insertConversationMessageStmt, getConversationByProjectStmt } from '../db.js';
 import { askAdvisor } from '../llm.js';
 
@@ -23,7 +24,7 @@ function projectToAdvisorContext(row) {
 
 // Returns true if this module handled the request (response already sent),
 // false if the caller should try the next route module.
-export async function handleAdvisorRoutes(req, res) {
+export async function handleAdvisorRoutes(req, res, ip) {
   const match = req.url.match(/^\/api\/projects\/([^/]+)\/conversation$/);
   if (!match) return false;
   const projectId = match[1];
@@ -31,12 +32,14 @@ export async function handleAdvisorRoutes(req, res) {
   if (req.method === 'GET') {
     const project = getProjectStmt.get(projectId);
     if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }
+    if (requirePaid(res, project)) return true;
     const messages = getConversationByProjectStmt.all(projectId).map(messageRowToJson);
     sendJson(res, 200, { messages });
     return true;
   }
 
   if (req.method === 'POST') {
+    if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
     try {
       const { message } = JSON.parse((await readBody(req)) || '{}');
       if (typeof message !== 'string' || !message.trim()) {
@@ -45,6 +48,7 @@ export async function handleAdvisorRoutes(req, res) {
       }
       const project = getProjectStmt.get(projectId);
       if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }
+      if (requirePaid(res, project)) return true;
 
       const history = getConversationByProjectStmt.all(projectId).map(r => ({ role: r.role, content: r.content }));
       const now = new Date().toISOString();

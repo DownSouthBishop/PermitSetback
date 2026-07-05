@@ -122,10 +122,10 @@
 // ============================================================
 // Setback — "My Projects" dashboard shell. Auth via the same
 // magic-link flow as the main app; lists saved projects and
-// links out to setback-app.html for the full reveal.
+// links out to index.html for the full reveal.
 // ============================================================
 
-const BACKEND_ORIGIN = 'http://localhost:8787';
+const BACKEND_ORIGIN = window.location.origin;
 const SESSION_KEY = 'setback_session';
 
 const MARK_ICON = `<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9h6V4h10"/></svg>`;
@@ -188,7 +188,7 @@ function renderShell(inner){
     <h2 class="hero">My Projects</h2>
     <p class="sub">Every permit roadmap you've generated, saved to your account.</p>
     <div id="content" class="fadein">${inner}</div>
-    <p class="disc"><a href="setback-app.html">Back to Setback</a></p>
+    <p class="disc"><a href="index.html">Back to Setback</a></p>
   `;
   document.getElementById('themetoggle').onclick = toggleTheme;
 }
@@ -240,7 +240,7 @@ async function handleRequestLink(){
 
 function renderProjects(projects){
   if (!projects || projects.length === 0){
-    renderShell(`<div class="empty">No saved projects yet — <a href="setback-app.html">generate a roadmap</a> and save it to see it here.</div>`);
+    renderShell(`<div class="empty">No saved projects yet — <a href="index.html">generate a roadmap</a> and save it to see it here.</div>`);
     return;
   }
   const cards = projects.map(p => `

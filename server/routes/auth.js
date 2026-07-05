@@ -45,7 +45,9 @@ export async function handleAuthRoutes(req, res, ip) {
       const now = new Date();
       const expires = new Date(now.getTime() + 15 * 60_000);
       insertMagicLinkStmt.run(token, email, projectId || null, now.toISOString(), expires.toISOString());
-      sendJson(res, 200, { devLink: `http://localhost:${PORT}/api/auth/verify?token=${token}` });
+      const proto = req.headers['x-forwarded-proto'] || 'http';
+      const origin = `${proto}://${req.headers.host}`;
+      sendJson(res, 200, { devLink: `${origin}/api/auth/verify?token=${token}` });
     } catch (err) {
       sendJson(res, 400, { error: 'invalid request body' });
     }

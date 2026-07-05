@@ -166,7 +166,7 @@ async function selectTab(key) {
   const mod = MODULES.find(m => m.key === key);
   try {
     const impl = await import(mod.file);
-    await impl.render(out, project);
+    await impl.render(out, project, selectTab);
   } catch (err) {
     out.innerHTML = `<div class="card"><p class="notbuilt">${esc(mod.label)} isn't built yet.</p></div>`;
   }
@@ -186,6 +186,19 @@ async function init() {
     project = await res.json();
   } catch (err) {
     root.innerHTML = `<div class="card"><p class="err">Couldn't load this project — is the backend running?</p></div>`;
+    return;
+  }
+  // This whole workspace (every module tab) assumes the full roadmap shape —
+  // agencies/flags/risks/etc. An unpaid project only ever gets a teaser shape
+  // (see server/routes/projects.js), so send the visitor back to unlock it
+  // instead of letting every tab fail on undefined content.
+  if (!project.paid) {
+    root.innerHTML = `
+      <div class="card">
+        <p style="margin:0 0 14px;">This roadmap hasn't been unlocked yet.</p>
+        <a class="btn" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box;" href="index.html?project=${encodeURIComponent(id)}">See my full roadmap</a>
+      </div>
+    `;
     return;
   }
   shell();

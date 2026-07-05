@@ -3,11 +3,10 @@
 // (list). Self-contained Anthropic call following server/llm.js's pattern —
 // not importing from llm.js since its callAnthropic/callGemini are wired to
 // the permit-roadmap SYSTEM_PROMPT specifically.
-import { readBody, sendJson } from '../http-utils.js';
+import { readBody, sendJson, requirePaid } from '../http-utils.js';
 import { isRateLimited } from '../rate-limit.js';
+import { callAnthropicJSON } from '../ai.js';
 import { getProjectStmt, insertCostStmt, getCostsByProjectStmt } from '../db.js';
-
-const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
 
 const SYSTEM_PROMPT = `You are Setback's cost estimator for U.S. construction and improvement projects. Given a project's location, description, and trade, break down the likely costs into line items.
 
@@ -19,23 +18,6 @@ Respond with ONLY valid JSON (no markdown, no preamble), in exactly this shape:
 {"costs":[{"category":"short category name","lowEstimate":1200,"highEstimate":2600,"note":"one sentence on what drives this range"}]}
 Keep it to the 4-8 categories that actually apply.`;
 
-async function fetchWithTimeout(url, options, ms) {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), ms);
-  try {
-    return await fetch(url, { ...options, signal: controller.signal });
-  } finally {
-    clearTimeout(id);
-  }
-}
-
-function extractJson(text) {
-  let t = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-  const s = t.indexOf('{'), e = t.lastIndexOf('}');
-  if (s > -1 && e > -1) t = t.slice(s, e + 1);
-  return JSON.parse(t);
-}
-
 function isValidCostEstimate(obj) {
   return obj && Array.isArray(obj.costs) && obj.costs.every(c =>
     c && typeof c.category === 'string' &&
@@ -46,26 +28,9 @@ function isValidCostEstimate(obj) {
 
 async function generateCostEstimate(project) {
   const userText = `Project location: ${project.location}\nProject description: ${project.description}\nTrade: ${project.trade}`;
-  const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': ANTHROPIC_KEY,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1200,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userText }]
-    })
-  }, 60_000);
-  if (!res.ok) throw new Error(`Anthropic returned ${res.status}`);
-  const data = await res.json();
-  const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
-  const result = extractJson(text);
-  if (!isValidCostEstimate(result)) throw new Error('Cost estimate response failed schema validation');
-  return result;
+  return callAnthropicJSON({
+    systemPrompt: SYSTEM_PROMPT, userText, maxTokens: 1200, isValid: isValidCostEstimate
+  });
 }
 
 function costRowToJson(row) {
@@ -86,6 +51,7 @@ export async function handleCostRoutes(req, res, ip) {
     const id = req.url.split('/')[3];
     const project = getProjectStmt.get(id);
     if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }
+    if (requirePaid(res, project)) return true;
     const costs = getCostsByProjectStmt.all(id).map(costRowToJson);
     sendJson(res, 200, { costs });
     return true;
@@ -95,6 +61,7 @@ export async function handleCostRoutes(req, res, ip) {
     const id = req.url.split('/')[3];
     const project = getProjectStmt.get(id);
     if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }
+    if (requirePaid(res, project)) return true;
 
     // Already generated — return the existing breakdown instead of paying
     // for another LLM call and duplicating rows.

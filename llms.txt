@@ -5,8 +5,8 @@
 Setback is not legal advice and does not replace an official agency determination. See /disclaimer.html.
 
 ## Product
-- [Get a roadmap](setback-app.html): the main tool — describe a project and location, get a permit roadmap
-- [Pricing](pricing.md): $19 introductory rate (first 100), $39 standard
+- [Get a roadmap](index.html): the main tool — describe a project and location, get a permit roadmap
+- Pricing: $19 introductory rate (first 100 roadmaps), $39 standard — shown in full on [Get a roadmap](index.html)
 - [For permit expediters](expediters.html): bulk pack for expediting firms, $999/50 roadmaps
 - [How it works](how-it-works.html): what the roadmap is based on, and what to independently confirm
 

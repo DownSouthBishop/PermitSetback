@@ -3,7 +3,10 @@
 // directly — this file only holds the bits that are genuinely common
 // (fetch plumbing, escaping, icons), so tracks aren't copy-pasting them.
 
-export const BACKEND_ORIGIN = 'http://localhost:8787';
+// Same origin as whatever served this page — the Node backend serves this
+// frontend itself (see server/static.js), so there is nothing to configure
+// after deploy.
+export const BACKEND_ORIGIN = window.location.origin;
 
 export async function fetchWithTimeout(url, options, ms) {
   const controller = new AbortController();

@@ -6,7 +6,10 @@ import { dirname, join } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export const db = new DatabaseSync(join(__dirname, 'data.db'));
+// Overridable so tests (and any future parallel worker) can point at a throwaway
+// file instead of the real dev/production data.db.
+const DB_PATH = process.env.SETBACK_DB_PATH || join(__dirname, 'data.db');
+export const db = new DatabaseSync(DB_PATH);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS roadmaps (
@@ -137,10 +140,14 @@ db.exec(`
     created_at TEXT NOT NULL
   );
 
-  -- Task Center.
+  -- Task Center. source_id identifies which underlying finding/flag a task
+  -- was derived from (e.g. "flag:2", "risk:<finding-id>") so re-syncing on
+  -- every view doesn't insert duplicates for the same concern. NULL for
+  -- tasks that aren't tied to a specific finding.
   CREATE TABLE IF NOT EXISTS project_tasks (
     id TEXT PRIMARY KEY,
     project_id TEXT NOT NULL,
+    source_id TEXT,
     title TEXT NOT NULL,
     detail TEXT,
     status TEXT NOT NULL DEFAULT 'open',
@@ -187,7 +194,13 @@ for (const stmt of [
   "ALTER TABLE projects ADD COLUMN name TEXT",
   "ALTER TABLE projects ADD COLUMN status TEXT",
   "ALTER TABLE projects ADD COLUMN confidence_score INTEGER",
-  "ALTER TABLE projects ADD COLUMN risk_score INTEGER"
+  "ALTER TABLE projects ADD COLUMN risk_score INTEGER",
+  // Paywall gate: the full roadmap (agencies/flags/risks/narrative) is only
+  // ever returned once paid = 1. Every project starts unpaid.
+  "ALTER TABLE projects ADD COLUMN paid INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE projects ADD COLUMN paid_at TEXT",
+  // Task Center dedup key — see project_tasks CREATE TABLE comment above.
+  "ALTER TABLE project_tasks ADD COLUMN source_id TEXT"
 ]) {
   try { db.exec(stmt); } catch (err) { /* column already exists — fine */ }
 }
@@ -207,13 +220,22 @@ export const insertEvent = db.prepare(
 export const getInsightStmt = db.prepare('SELECT summary, report_count FROM insights WHERE LOWER(location) = LOWER(?) AND trade = ?');
 
 // --- projects + accounts -------------------------------------------------
+// paid starts 0 (schema default) — a project is created the moment a roadmap
+// is generated, before any payment, so the row exists to gate.
 export const insertProject = db.prepare(`
   INSERT INTO projects (id, user_id, location, description, trade, provider, agencies, flags, risks, timeline, timeline_note, narrative, extra, created_at, updated_at)
   VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 export const getProjectStmt = db.prepare('SELECT * FROM projects WHERE id = ?');
 export const updateProjectOutcomeStmt = db.prepare('UPDATE projects SET outcome_status = ?, outcome_reported_at = ?, updated_at = ? WHERE id = ?');
-export const linkProjectToUserStmt = db.prepare('UPDATE projects SET user_id = ?, updated_at = ? WHERE id = ?');
+// Only ever called after confirming the project is currently unclaimed
+// (user_id IS NULL) — see routes/auth.js. Guards against a known project id
+// being used to reassign an already-claimed project to a different account.
+export const linkProjectToUserStmt = db.prepare('UPDATE projects SET user_id = ?, updated_at = ? WHERE id = ? AND user_id IS NULL');
+// Dev-stub payment gate — flips paid on a project so GET /api/projects/:id
+// starts returning full content. Stands in for a real payment confirmation
+// (e.g. a Stripe webhook) until that's wired up; see routes/projects.js.
+export const markProjectPaidStmt = db.prepare(`UPDATE projects SET paid = 1, paid_at = ?, updated_at = ? WHERE id = ?`);
 export const getProjectsByUserStmt = db.prepare(`
   SELECT id, location, description, trade, outcome_status, created_at
   FROM projects WHERE user_id = ? ORDER BY created_at DESC
@@ -267,10 +289,12 @@ export const getTimelinePhasesByProjectStmt = db.prepare(
 );
 
 export const insertTaskStmt = db.prepare(`
-  INSERT INTO project_tasks (id, project_id, title, detail, status, due_date, created_at, updated_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO project_tasks (id, project_id, source_id, title, detail, status, due_date, created_at, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 export const getTasksByProjectStmt = db.prepare('SELECT * FROM project_tasks WHERE project_id = ? ORDER BY created_at ASC');
+export const getTaskBySourceStmt = db.prepare('SELECT * FROM project_tasks WHERE project_id = ? AND source_id = ?');
+export const updateTaskStatusStmt = db.prepare('UPDATE project_tasks SET status = ?, updated_at = ? WHERE id = ? AND project_id = ?');
 
 export const insertDocumentStmt = db.prepare(`
   INSERT INTO project_documents (id, project_id, doc_type, content, created_at, updated_at)
