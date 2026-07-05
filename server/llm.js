@@ -91,6 +91,80 @@ async function callGemini(userText) {
   return extractJson(text);
 }
 
+// --- AI Advisor: persistent, multi-turn chat scoped to one project --------
+// Unlike generateRoadmap, this never regenerates the roadmap from scratch —
+// it answers one question at a time against the project's existing context
+// plus whatever's already been said, so the conversation actually
+// accumulates instead of repeating itself.
+
+function advisorSystemPrompt(project) {
+  return `You are Setback's AI Advisor for one specific construction/permitting project. A permit roadmap has already been generated for this project — it's given below as context. Do not regenerate or restate the roadmap wholesale; answer the contractor's specific question, referencing the existing roadmap only where directly relevant. Be concise, practical, and specific to this project. If a question changes something material (e.g. "what if I move the pool"), reason about how it would change the agencies, flags, risks, timeline, or narrative already on file, without inventing certainty you don't have — hedge appropriately, same as the original roadmap.
+
+Project context:
+Location: ${project.location}
+Description: ${project.description}
+Trade: ${project.trade}
+Agencies: ${JSON.stringify(project.agencies)}
+Flags: ${JSON.stringify(project.flags)}
+Risks: ${JSON.stringify(project.risks)}
+Timeline: ${project.timeline} — ${project.timelineNote}
+Narrative on file: ${project.narrative}
+
+Reply in plain prose, not JSON, and do not use markdown formatting (no **bold**, no #headers, no bullet lists with - or *) — this is displayed as plain text, so write it the way you'd write a plain-text message. Use short paragraphs and line breaks for structure instead.`;
+}
+
+async function callAnthropicChat(systemPrompt, messages) {
+  const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': ANTHROPIC_KEY,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: messages.map(m => ({ role: m.role, content: m.content }))
+    })
+  }, 60_000);
+  if (!res.ok) throw new Error(`Anthropic returned ${res.status}`);
+  const data = await res.json();
+  return (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+}
+
+async function callGeminiChat(systemPrompt, messages) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_KEY}`;
+  const contents = messages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
+  const res = await fetchWithTimeout(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ systemInstruction: { parts: [{ text: systemPrompt }] }, contents })
+  }, 60_000);
+  if (!res.ok) throw new Error(`Gemini returned ${res.status}`);
+  const data = await res.json();
+  return (data.candidates?.[0]?.content?.parts?.map(p => p.text).join('\n') || '').trim();
+}
+
+// project: plain object with location/description/trade/agencies/flags/risks/timeline/timelineNote/narrative
+// history: prior messages as [{role: 'user'|'assistant', content}], oldest first
+// userMessage: the new message to answer, not yet in history
+export async function askAdvisor(project, history, userMessage) {
+  const messages = [...history, { role: 'user', content: userMessage }];
+  const systemPrompt = advisorSystemPrompt(project);
+  try {
+    const reply = await callAnthropicChat(systemPrompt, messages);
+    if (!reply) throw new Error('Anthropic returned an empty reply');
+    return { ok: true, provider: 'anthropic', reply };
+  } catch (err) {
+    console.error('Anthropic advisor call failed:', err.message);
+    if (!GOOGLE_KEY) throw err;
+    const reply = await callGeminiChat(systemPrompt, messages);
+    if (!reply) throw new Error('Gemini fallback returned an empty reply');
+    return { ok: true, provider: 'gemini-fallback', reply };
+  }
+}
+
 export async function generateRoadmap(location, description, trade) {
   // Cheap, synchronous, indexed lookup — no LLM call on this path. If the
   // offline learning job (learn.js) hasn't produced an insight for this

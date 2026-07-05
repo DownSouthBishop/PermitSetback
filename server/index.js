@@ -9,6 +9,7 @@ import { sendJson } from './http-utils.js';
 import { handleLegacyRoutes } from './routes/legacy.js';
 import { handleProjectsRoutes } from './routes/projects.js';
 import { handleAuthRoutes } from './routes/auth.js';
+import { handleAdvisorRoutes } from './routes/advisor.js';
 
 const PORT = process.env.PORT || 8787;
 
@@ -32,6 +33,7 @@ const server = createServer(async (req, res) => {
   if (await handleLegacyRoutes(req, res, ip)) return;
   if (await handleProjectsRoutes(req, res)) return;
   if (await handleAuthRoutes(req, res, ip)) return;
+  if (await handleAdvisorRoutes(req, res)) return;
 
   sendJson(res, 404, { error: 'not found' });
 });
