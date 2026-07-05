@@ -13,6 +13,7 @@ import { handleAdvisorRoutes } from './routes/advisor.js';
 import { handleFeasibilityRoutes } from './routes/feasibility.js';
 import { handleRiskRoutes } from './routes/risk.js';
 import { handleTimelineRoutes } from './routes/timeline.js';
+import { handleCostRoutes } from './routes/cost.js';
 
 const PORT = process.env.PORT || 8787;
 
@@ -40,6 +41,7 @@ const server = createServer(async (req, res) => {
   if (await handleFeasibilityRoutes(req, res)) return;
   if (await handleRiskRoutes(req, res)) return;
   if (await handleTimelineRoutes(req, res, ip)) return;
+  if (await handleCostRoutes(req, res, ip)) return;
 
   sendJson(res, 404, { error: 'not found' });
 });
