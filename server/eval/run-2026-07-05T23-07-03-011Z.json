@@ -1,0 +1,254 @@
+{
+  "generatedAt": "2026-07-05T23:07:03.048Z",
+  "passCount": 3,
+  "total": 3,
+  "results": [
+    {
+      "id": "adu-los-angeles-ca",
+      "provider": "anthropic",
+      "elapsedMs": 35110,
+      "result": {
+        "agencies": [
+          {
+            "name": "Los Angeles Department of Building and Safety (LADBS) — ADU Building Permit",
+            "detail": "Primary permit authority for structural, architectural, mechanical, electrical, and plumbing review. A full plan set stamped by a licensed architect or engineer will be required given new construction scope."
+          },
+          {
+            "name": "Los Angeles Department of City Planning — Zoning Clearance",
+            "detail": "Confirms ADU compliance with AB 68/SB 9 state ADU law as locally implemented. Reviews setbacks, lot coverage, height limits, and unit counts. LA generally allows ADUs by-right in most residential zones, but zoning clearance is still required."
+          },
+          {
+            "name": "Los Angeles Department of Water and Power (LADWP) — Utility Service",
+            "detail": "New detached ADUs typically require a separate utility service connection or sub-panel coordination. LADWP must approve any new electrical service and will require coordination for meter installation."
+          },
+          {
+            "name": "LA County Sanitation / Bureau of Sanitation — Sewer Connection",
+            "detail": "New ADU unit requires confirmation of sewer capacity and a connection permit. A sewer connection fee is commonly assessed based on bedroom count or fixture units."
+          },
+          {
+            "name": "California Energy Commission — Title 24 Compliance",
+            "detail": "All new ADU construction must meet California Title 24 Part 6 energy standards, including envelope insulation, HVAC efficiency, and solar-ready or solar-required provisions under the 2022 Building Energy Efficiency Standards."
+          }
+        ],
+        "flags": [
+          "California state ADU law (Government Code §65852.2) limits LADBS's ability to deny a compliant ADU, but the project must still meet objective standards — confirm your lot is not in a Very High Fire Hazard Severity Zone (VHFHZ), which triggers additional ember-resistant construction requirements under Chapter 7A of the CBC.",
+          "Los Angeles has a 4-foot minimum side and rear setback requirement for new detached ADUs. Front setback rules prohibit placement between the primary structure and the front street in most cases. Confirm exact setback with your specific parcel's zoning designation.",
+          "Lot coverage limits still apply to ADUs in LA. The combined footprint of all structures typically cannot exceed 40% of lot area in standard residential zones — verify this hasn't been consumed by the primary dwelling, garage, or other structures.",
+          "2022 California Building Code (CBC) requires solar PV on new ADUs unless the roof is shaded or otherwise exempted under Title 24 mandatory measures. Factor this into design and cost early.",
+          "New construction ADUs trigger school impact fees payable to the local school district (LAUSD for most of LA). At 600 sq ft, fees are assessed per square foot and can add several thousand dollars to soft costs — confirm current LAUSD fee schedule.",
+          "Seismic Zone D requirements apply throughout Los Angeles. Detached ADU foundations must meet CBC Chapter 18 footing depths and lateral bracing requirements. A licensed structural engineer should review the foundation design given LA's high seismic exposure."
+        ],
+        "risks": [
+          "Incomplete or non-stamped plan sets are the single most common cause of LADBS rejection. Engage a licensed architect familiar with LA ADU submissions early — LADBS ePlans is the required submission portal and has specific file/layer naming conventions.",
+          "Fire Hazard Severity Zone designation can surface late if not checked upfront. If the parcel falls in a VHFHZ, Chapter 7A materials (Class A roofing, ember-resistant vents, ignition-resistant siding) become mandatory and can require plan revisions after initial review.",
+          "Sewer capacity issues can stall a project significantly. Order a sewer capacity check from the Bureau of Sanitation before finalizing design — if a lateral upgrade is required, it can add months and significant cost.",
+          "Title 24 energy calculations submitted without a HERS rater pre-engagement often fail on first review. Retain a certified HERS rater and energy consultant before submitting to ensure compliance documentation is complete.",
+          "Owner-builder exemptions are limited in LA — if the property will not be owner-occupied, a licensed general contractor is typically required. Confirm occupancy intent and contractor licensing before permit application to avoid rejection."
+        ],
+        "timeline": "8–16 weeks before construction start",
+        "timelineNote": "LADBS ADU plan check times vary widely — standard review currently runs 6–10 weeks, but corrections cycles, VHFHZ flags, or utility coordination issues can push total pre-construction permitting to 4 months or more.",
+        "narrative": "I am applying for a building permit to construct a new detached accessory dwelling unit (ADU) on my residential property in Los Angeles, California. The proposed ADU is a single-story structure of approximately 600 square feet of conditioned living space, to be located within the rear yard of the subject parcel. The unit is new construction on a concrete perimeter foundation and will include full kitchen, bathroom, and living accommodations. The project is designed in compliance with California Government Code Section 65852.2, the Los Angeles Municipal Code ADU provisions, and the 2022 California Building Code, including Title 24 energy efficiency standards. Plans have been prepared by a licensed architect and include architectural, structural, mechanical, electrical, and plumbing drawings. The project will connect to existing on-site utilities with appropriate service upgrades as required by LADWP and the Bureau of Sanitation. I respectfully request plan check review and permit issuance to proceed with construction."
+      },
+      "checks": [
+        {
+          "name": "did not incorrectly flag as unrecognized",
+          "pass": true
+        },
+        {
+          "name": "agencies count in [3,6]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "flags count in [3,6]",
+          "pass": true,
+          "detail": 6
+        },
+        {
+          "name": "risks count in [3,6]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "mentions one of [adu/accessory dwelling]",
+          "pass": true
+        },
+        {
+          "name": "mentions one of [streamlin/ministerial/by-right/by right/state law/65852]",
+          "pass": true
+        },
+        {
+          "name": "no unhedged specific citations",
+          "pass": false,
+          "detail": [
+            "FHZ), which triggers additional ember-resistant construction requirements under Chapter 7A of the CBC. Los Angeles has a 4-foot minimum side and rear setback requirement",
+            "quirements apply throughout Los Angeles. Detached ADU foundations must meet CBC Chapter 18 footing depths and lateral bracing requirements. A licensed structural engineer",
+            "odations. The project is designed in compliance with California Government Code Section 65852.2, the Los Angeles Municipal Code ADU provisions, and the 2022 California Build"
+          ],
+          "warningOnly": true
+        }
+      ],
+      "allPass": true
+    },
+    {
+      "id": "solar-los-angeles-ca",
+      "provider": "anthropic",
+      "elapsedMs": 35022,
+      "result": {
+        "agencies": [
+          {
+            "name": "Los Angeles Department of Building and Safety (LADBS) — Solar/PV Permit",
+            "detail": "Primary permit authority for rooftop solar installations. Requires an electrical permit (and often a building permit if structural work is involved) reviewed under the LAMC and California Building/Electrical Codes. Small residential systems may qualify for LADBS's over-the-counter or self-certification expedited review."
+          },
+          {
+            "name": "Los Angeles Department of Water and Power (LADWP) — Interconnection Application",
+            "detail": "As the local utility, LADWP must approve grid interconnection and net energy metering (NEM) before the system can be energized. Submit the interconnection application early; LADWP review is often the longest step in the process."
+          },
+          {
+            "name": "California Public Utilities Commission (CPUC) — NEM Tariff Compliance",
+            "detail": "State-level rules govern net energy metering eligibility and billing structure (currently NEM 3.0 / Net Billing Tariff). LADWP is a publicly owned utility and sets its own NEM rules, but state policy context still applies."
+          },
+          {
+            "name": "Los Angeles Department of City Planning — Zoning Review",
+            "detail": "Solar panels on residential rooftops are generally permitted by right in all LA zones under California's Solar Rights Act, but placement, height above roofline, and historic district overlays can trigger additional review."
+          },
+          {
+            "name": "California Energy Commission (CEC) — Equipment Listing",
+            "detail": "All inverters and PV modules must appear on the CEC-approved equipment list as a condition of permitting and utility interconnection. Confirm equipment eligibility before finalizing system design."
+          }
+        ],
+        "flags": [
+          "LADWP NEM program: LADWP operates independently of PG&E/SCE and has its own NEM tariff structure. As of 2024, LADWP's net metering program differs from the CPUC's NEM 3.0 rules — confirm current LADWP NEM rates and export compensation before sizing the system.",
+          "Historic Preservation Overlay Zones (HPOZs): If the home is within an HPOZ or is a Mills Act property, the Office of Historic Resources may require a Certificate of Appropriateness before LADBS will issue the solar permit. Panels may need to be non-visible from the street.",
+          "Structural roof load: LADBS requires a structural analysis confirming the existing roof framing can support added dead load from racking and panels. If the roof structure is older or non-standard, a licensed structural engineer's stamp may be required.",
+          "California Building Code Title 24 / SB 100 compliance: Systems must meet California's mandatory solar and energy storage requirements. The project must be documented to comply with applicable Title 24 Part 6 energy provisions.",
+          "Fire setback requirements: The 2022 California Fire Code (adopted locally) requires specific access pathways and setbacks around panels on the roof surface (typically 36-inch pathways at ridge, hips, and edges). Non-compliance is a leading cause of plan check correction.",
+          "HOA restrictions: If the property is governed by an HOA, California Civil Code §714 limits HOA authority to block solar but permits reasonable aesthetic restrictions. Obtain HOA approval in writing before installation to avoid disputes."
+        ],
+        "risks": [
+          "LADWP interconnection backlog: LADWP interconnection review can run 4–12 weeks independently of the building permit. Submit the interconnection application concurrently with or immediately after the LADBS permit application to avoid a sequential delay that pushes energization months out.",
+          "Incomplete electrical single-line diagram: LADBS plan check most commonly rejects solar applications for an incomplete or non-code-compliant single-line diagram. Use a licensed C-46 or C-10 contractor and ensure the diagram shows all disconnects, overcurrent protection, conduit routing, and service panel details.",
+          "Roof age and re-roofing trigger: If the existing roof covering is near end of life, LADBS inspectors or the contractor may flag that panels should not be installed over a roof requiring replacement within a few years. Replacing the roof after panel installation is costly — assess roof condition before permitting.",
+          "Panel-to-roofline height exceedance: LA zoning limits solar panel height above the roof surface (commonly flagged at more than 12 inches above the roofline on street-facing slopes in some overlay zones). Verify mounting height with the zoning counter if the design uses tilt-up racking.",
+          "Unpermitted prior electrical work: If the home has unpermitted electrical upgrades (common in older LA stock), LADBS inspectors may require corrections to the existing service panel as a condition of final inspection for the solar permit."
+        ],
+        "timeline": "6–14 weeks from application to system energization",
+        "timelineNote": "LADBS plan check (especially first-submittal corrections) and LADWP interconnection approval run largely in parallel but each carry independent queues; LADWP interconnection is most often the critical-path item.",
+        "narrative": "I am the owner of an existing single-family residence located in the City of Los Angeles and am proposing to install a rooftop photovoltaic solar energy system on the primary structure. The proposed system will consist of [X] solar modules mounted on a flush or low-tilt racking system affixed to the existing roof framing, with a total system capacity of approximately [X] kW-DC. A UL-listed string inverter or microinverter system will be installed, with all equipment selected from the California Energy Commission approved equipment list. The installation will include all required DC and AC disconnects, overcurrent protection devices, and conduit runs per the California Electrical Code. The system is designed to comply with California Fire Code roof access and setback requirements. I am simultaneously submitting an interconnection application to LADWP for net energy metering enrollment. All work will be performed by a licensed California contractor. The purpose of this installation is to generate on-site renewable electricity for residential use."
+      },
+      "checks": [
+        {
+          "name": "did not incorrectly flag as unrecognized",
+          "pass": true
+        },
+        {
+          "name": "agencies count in [3,6]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "flags count in [3,6]",
+          "pass": true,
+          "detail": 6
+        },
+        {
+          "name": "risks count in [3,6]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "mentions one of [fire/setback/clearance/pathway]",
+          "pass": true
+        },
+        {
+          "name": "mentions one of [net metering/interconnection/utility]",
+          "pass": true
+        },
+        {
+          "name": "no unhedged specific citations",
+          "pass": true,
+          "warningOnly": true
+        }
+      ],
+      "allPass": true
+    },
+    {
+      "id": "adu-seattle-wa",
+      "provider": "anthropic",
+      "elapsedMs": 34783,
+      "result": {
+        "agencies": [
+          {
+            "name": "Seattle Department of Construction & Inspections (SDCI) — Land Use / MHA Review",
+            "detail": "SDCI determines whether the site meets ADU land use eligibility (lot size, existing unit requirements, MHA applicability). A land use permit or design review may be triggered depending on lot size and unit count."
+          },
+          {
+            "name": "Seattle Department of Construction & Inspections (SDCI) — Building Permit",
+            "detail": "A full building permit is required for new detached ADU (DADU) construction, covering structural, architectural, energy code, and life-safety compliance. Seattle requires construction documents stamped by a licensed architect or engineer."
+          },
+          {
+            "name": "Seattle Public Utilities (SPU) — Side Sewer / Water",
+            "detail": "A side sewer permit is required to connect the DADU to the sewer main; SPU reviews water service capacity. A separate water meter for the DADU may be required or elected."
+          },
+          {
+            "name": "Seattle City Light (SCL) — Electrical Service",
+            "detail": "A separate electrical service connection or sub-panel for the DADU must be coordinated with SCL. An electrical permit through SDCI is also required."
+          },
+          {
+            "name": "King County Assessor",
+            "detail": "Not a permitting agency, but the new DADU will trigger a reassessment of the parcel's improvements. Owners should anticipate a property tax increase upon certificate of occupancy."
+          }
+        ],
+        "flags": [
+          "Seattle's ADU ordinance (updated 2019+) allows up to two ADUs per lot (one attached, one detached), but the lot must contain a principal single-family or low-rise multifamily structure already — confirm existing primary unit is established before applying.",
+          "DADU size is capped at 1,000 sq ft of gross floor area (or up to 1,000 sq ft depending on lot size); height limits are typically 24 ft for a one-story DADU or up to 16 ft at exterior wall plate — confirm current limits with SDCI as these were updated in 2019 and may be further amended.",
+          "Setback requirements for a DADU are typically 5 ft rear and 5 ft side in residential zones, but may be reduced to as little as 3 ft under certain conditions — verify the specific zone (SF 5000, SF 7200, LR, etc.) for your parcel on the SDCI GIS portal.",
+          "Seattle enforces the Washington State Energy Code (WSEC) with local amendments — new construction must meet current envelope, mechanical, and lighting energy standards, and a separate energy code compliance form is submitted with the building permit.",
+          "Geotechnical/soils conditions are a significant flag in Seattle: many lots fall in Liquefaction-Prone Areas or on slopes exceeding 15% gradient, which may trigger an Environmentally Critical Areas (ECA) review and require a geotechnical report before permit issuance.",
+          "Seattle has no owner-occupancy requirement for DADUs as of the 2019 reform — however, short-term rental use (Airbnb, VRBO) of a DADU is subject to Seattle's short-term rental licensing ordinance, which is a separate compliance track if applicable."
+        ],
+        "risks": [
+          "ECA (Environmentally Critical Areas) designation — steep slopes, erosion hazard, liquefaction, or wetland buffers affect a large percentage of Seattle lots. Pull the parcel's ECA map overlay before designing; discovering an ECA trigger after permit submission causes significant redesign delays.",
+          "Under-documented construction drawings: SDCI requires complete architectural and structural plans including footing/foundation details, framing plans, and energy compliance documentation. Incomplete submittals are the single most common cause of corrections and re-review cycles — engage a licensed architect or designer experienced with Seattle DADUs.",
+          "Frost-depth footings: Seattle's frost depth is relatively shallow (~12 inches) but SDCI and the IBC as locally adopted still require footings to bear on undisturbed soil below frost; combined with Seattle's expansive clay soils, a geotechnical engineer recommendation on footing depth and bearing capacity is strongly advisable to avoid field-stop notices.",
+          "Side sewer capacity and connection point: if the existing home's sewer lateral is old (clay or Orangeburg pipe), SPU may require a full lateral replacement to connect the DADU, adding cost and time. Scope the sewer lateral condition early with a CCTV inspection.",
+          "Addressing and utility coordination delays: SDCI must assign a separate address to the DADU, and SCL service extension design can add 4–8 weeks to the pre-construction timeline independently of permit review — initiate SCL new service application concurrently with building permit submission."
+        ],
+        "timeline": "4–9 months from first submission to permit issuance",
+        "timelineNote": "Range is driven primarily by SDCI's current over-the-counter vs. plan review queue (which fluctuates), whether an ECA review is triggered, and the completeness of the initial submittal — a well-prepared application by an experienced DADU designer can reach the lower end.",
+        "narrative": "I am applying for a building permit to construct a new detached accessory dwelling unit (DADU) on my property located in Seattle, Washington. The proposed DADU is a new, single-story (or two-story, as applicable) structure to be sited in the rear yard of an existing single-family residential lot. The project includes full foundation construction, wood-frame or alternative structural system, complete mechanical, electrical, and plumbing systems, and connection to existing water and sanitary sewer services via new laterals. The unit is designed to comply with Seattle's DADU size, height, and setback standards as well as the Washington State Energy Code with Seattle amendments. Construction documents have been prepared by a licensed design professional and include architectural, structural, and energy compliance components. I respectfully request review and approval of this permit application so that construction may proceed in full conformance with applicable City of Seattle and Washington State codes."
+      },
+      "checks": [
+        {
+          "name": "did not incorrectly flag as unrecognized",
+          "pass": true
+        },
+        {
+          "name": "agencies count in [3,6]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "flags count in [3,6]",
+          "pass": true,
+          "detail": 6
+        },
+        {
+          "name": "risks count in [3,6]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "mentions one of [adu/accessory dwelling]",
+          "pass": true
+        },
+        {
+          "name": "no unhedged specific citations",
+          "pass": true,
+          "warningOnly": true
+        }
+      ],
+      "allPass": true
+    }
+  ]
+}

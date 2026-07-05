@@ -1,0 +1,1002 @@
+{
+  "generatedAt": "2026-07-05T23:01:01.223Z",
+  "passCount": 11,
+  "total": 15,
+  "results": [
+    {
+      "id": "pool-broward-fl",
+      "provider": "anthropic",
+      "elapsedMs": 34501,
+      "result": {
+        "agencies": [
+          {
+            "name": "Broward County Building Division / Municipal Building Department",
+            "detail": "Most pool permits in Broward County are pulled through the municipality (e.g., Fort Lauderdale, Pembroke Pines, Coral Springs) rather than the county directly. The building department reviews structural plans, barrier/fence compliance, electrical, and plumbing for the pool system."
+          },
+          {
+            "name": "Florida Building Code – Pool & Barrier Permit",
+            "detail": "Florida mandates a separate pool barrier (fence) permit or combined review under FBC Chapter 4 (Residential Pools) and the Pool/Spa Safety Act (F.S. 515). Barrier must be in place before water is introduced."
+          },
+          {
+            "name": "Electrical Permit (Local AHJ)",
+            "detail": "All pool bonding, grounding, GFCI protection, and equipment circuits require a standalone electrical sub-permit reviewed by the local Authority Having Jurisdiction, inspected separately from the pool structure."
+          },
+          {
+            "name": "Broward County Environmental Planning & Community Resilience",
+            "detail": "If the property is near a canal, lake, or coastal water body — common in Broward — an environmental or water-body setback review may apply. Confirm whether a SFWMD (South Florida Water Management District) permit is triggered."
+          },
+          {
+            "name": "South Florida Water Management District (SFWMD)",
+            "detail": "Dewatering during pool excavation in Broward's high water table environment typically requires a SFWMD dewatering permit. This is frequently overlooked and can halt excavation if not obtained in advance."
+          },
+          {
+            "name": "HOA / Deed Restriction Review (if applicable)",
+            "detail": "Many Broward communities have HOAs with architectural review requirements that run parallel to — and independent of — government permitting. HOA approval does not substitute for permits, and vice versa."
+          }
+        ],
+        "flags": [
+          "Florida Pool/Spa Safety Act (F.S. 515) requires at least one of seven drowning-prevention features before the pool can be filled — a compliant barrier/fence is the most common choice, and it must be completed and inspected before water is introduced.",
+          "Broward County's high water table (often 2–5 ft below grade) means pools require hydrostatic relief valves and the shell must be engineered for buoyancy — a Florida-licensed engineer's signed and sealed structural plan is required.",
+          "10-foot setback from the property line: many Broward municipalities require a minimum 5–10 ft pool setback from side/rear property lines, but the fence itself may have a different (often smaller) setback allowance — confirm both with your specific municipality.",
+          "Pool equipment (pump, heater, filter) has its own setback requirements, typically a minimum of 3–5 ft from property lines, and must comply with local noise ordinances — confirm equipment pad placement early.",
+          "Hurricane/wind exposure: Broward is in a High-Velocity Hurricane Zone (HVHZ). Pool equipment enclosures, screen enclosures, and any attached structures must meet enhanced wind load requirements under FBC HVHZ provisions."
+        ],
+        "risks": [
+          "Missing the SFWMD dewatering permit before excavation begins — this is one of the most common causes of stop-work orders on Broward pool projects. Obtain it concurrently with the building permit, not after.",
+          "Submitting plans without a Florida-licensed engineer's sealed structural drawings — Broward building departments will reject incomplete submittals, resetting your review clock. Hire a pool contractor whose engineer seals plans upfront.",
+          "Barrier/fence non-compliance at rough inspection — the fence must meet FBC Section 454 specifications (min. 4 ft height, self-closing/self-latching gate, no climbable protrusions) exactly as shown on approved plans. Field changes without revised plans cause failed inspections.",
+          "Utility conflicts discovered during excavation — Broward has dense underground utility infrastructure. Call 811 (Sunshine 811) at least 3 business days before digging; unmarked private lines (gas, irrigation) are owner's responsibility to locate.",
+          "Setback encroachment discovered after survey — if an as-built survey reveals the pool shell or fence is within the required setback, the municipality can require redesign or variance, adding months. Commission a boundary survey and stake corners before excavation."
+        ],
+        "timeline": "8–16 weeks before pool is complete and usable",
+        "timelineNote": "Plan review alone typically runs 4–8 weeks in busy Broward municipalities; SFWMD dewatering permits, HOA approvals, and inspection scheduling (especially electrical and final barrier) drive the longer end of the range.",
+        "narrative": "I am applying for a permit to construct a new residential inground swimming pool measuring 15 feet by 30 feet on my property located in Broward County, Florida. The pool will be constructed of reinforced gunite/concrete with a depth to be specified on the accompanying engineer-sealed structural drawings, which account for local soil conditions, the high water table, and buoyancy requirements. The pool shell will be equipped with hydrostatic relief valves as required. All electrical work, including bonding, grounding, and GFCI-protected circuits for the pump and equipment, will be performed under a separate electrical sub-permit by a licensed electrical contractor. A compliant pool barrier consisting of a minimum 4-foot-high fence with self-closing, self-latching gates will be installed in accordance with Florida Building Code Section 454 and the Florida Pool/Spa Safety Act (F.S. 515) prior to introduction of water. The pool equipment pad will be positioned to meet all applicable setback requirements. The proposed pool structure will be setback approximately 10 feet from the nearest property line. I respectfully request plan review and permit issuance for this project."
+      },
+      "checks": [
+        {
+          "name": "did not incorrectly flag as unrecognized",
+          "pass": true
+        },
+        {
+          "name": "agencies count in [3,6]",
+          "pass": true,
+          "detail": 6
+        },
+        {
+          "name": "flags count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "risks count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "mentions one of [barrier/fence/enclosure]",
+          "pass": true
+        },
+        {
+          "name": "mentions one of [setback/property line]",
+          "pass": true
+        },
+        {
+          "name": "no unhedged specific citations",
+          "pass": false,
+          "detail": [
+            "da mandates a separate pool barrier (fence) permit or combined review under FBC Chapter 4 (Residential Pools) and the Pool/Spa Safety Act (F.S. 515). Barrier must be in",
+            "ont. Barrier/fence non-compliance at rough inspection — the fence must meet FBC Section 454 specifications (min. 4 ft height, self-closing/self-latching gate, no climbable",
+            "self-latching gates will be installed in accordance with Florida Building Code Section 454 and the Florida Pool/Spa Safety Act (F.S. 515) prior to introduction of water."
+          ],
+          "warningOnly": true
+        }
+      ],
+      "allPass": true
+    },
+    {
+      "id": "roof-miami-dade-fl",
+      "provider": "anthropic",
+      "elapsedMs": 32498,
+      "result": {
+        "agencies": [
+          {
+            "name": "Miami-Dade County Building Department (or Municipal Building Dept if incorporated)",
+            "detail": "Issues the roofing permit and enforces the Florida Building Code (FBC) as locally amended. Requires permit application, contractor licensing verification, product approval documentation, and inspections at dry-in and final stages."
+          },
+          {
+            "name": "Miami-Dade Notice of Acceptance (NOA) Product Approval",
+            "detail": "Miami-Dade County maintains its own high-velocity hurricane zone (HVHZ) product approval system. Every component — shingles, underlayment, fasteners, ridge vents — must carry a valid Miami-Dade NOA number before installation begins."
+          },
+          {
+            "name": "Florida Department of Business and Professional Regulation (DBPR)",
+            "detail": "Contractor must hold a valid state-licensed roofing contractor license (or local Certificate of Competency) to pull the permit; unlicensed work is a common cause of stop-work orders."
+          },
+          {
+            "name": "HOA / Deed Restriction Review (if applicable)",
+            "detail": "Many Miami-Dade communities have HOA architectural review requirements governing shingle color and style. HOA approval is typically required before or concurrent with permit application, though it is separate from the building permit."
+          }
+        ],
+        "flags": [
+          "HVHZ Requirement: Miami-Dade is entirely within the High-Velocity Hurricane Zone under the FBC. This imposes stricter installation standards than the rest of Florida — standard asphalt shingles sold nationally often do NOT carry Miami-Dade NOA approval and cannot be used here.",
+          "Miami-Dade NOA for Every Component: Not just the shingle — underlayment (typically two layers of approved 30# felt or equivalent), nails, starter strips, and ridge caps must each have a valid NOA. Verify all product NOAs are current and not expired before ordering materials.",
+          "Deck Attachment and Nail Pattern: FBC HVHZ requires specific fastening patterns (commonly 6-nail or 6d/8d ring-shank nails at prescribed spacing). Inspectors will verify nail type, spacing, and penetration depth — get the NOA installation instructions on-site.",
+          "25% Re-Roof Rule / Full Tear-Off: Florida law generally prohibits installing a new roof over an existing layer when more than 25% of the roof is being replaced. A full replacement almost certainly triggers a complete tear-off to the deck; deck condition must be assessed and any deteriorated sheathing replaced before inspection.",
+          "Wind Mitigation Inspection Opportunity: After final inspection, the homeowner should consider a separate wind mitigation inspection (OIR-B1-1802 form). A compliant HVHZ installation can generate significant homeowner's insurance premium discounts — this is a strong selling point and should be offered proactively."
+        ],
+        "risks": [
+          "Using non-NOA-approved products: Contractors sometimes order standard national-brand shingles that lack a Miami-Dade NOA. The inspector will reject the installation and require tear-off. Confirm NOA numbers for every product before the job starts.",
+          "Improper underlayment installation: HVHZ requires a self-adhering or mechanically fastened two-layer underlayment system in most cases. Incorrect sequencing or lapping causes failed dry-in inspections. Reference the specific NOA installation instructions, not just the product label.",
+          "Unpermitted work: Some homeowners attempt to re-roof without a permit to save cost. Miami-Dade actively enforces this; unpermitted roofs are flagged at resale, can void insurance claims, and may require full removal. Always pull the permit.",
+          "Deck damage discovered mid-job: Miami-Dade's humid climate and hurricane exposure frequently produce hidden rotted sheathing. Budget a contingency for deck board replacement — inspectors will not sign off on a final with soft or delaminated decking visible.",
+          "Contractor licensing gap: Verify the roofing contractor holds either a state-issued roofing license or a Miami-Dade Certificate of Competency. Using an unlicensed sub or handyman triggers stop-work orders and potential fines that delay the project weeks."
+        ],
+        "timeline": "3–6 weeks before construction start",
+        "timelineNote": "Miami-Dade building department permit review for a straightforward re-roof is often 1–2 weeks if submitted with complete NOA documentation; delays occur when product approvals are missing, when the municipality (e.g., City of Miami, Coral Gables) has a separate review queue, or when deck inspection reveals additional repair scope.",
+        "narrative": "I am the owner of an existing single-family residence located in Miami-Dade County, Florida, and I am submitting this application for a permit to perform a full roof replacement. The existing roofing system consists of asphalt shingles, which will be completely removed down to the structural deck. All deteriorated or damaged sheathing will be replaced as needed prior to installation of the new system. The replacement roofing system will consist of Miami-Dade NOA-approved asphalt shingles, installed over an NOA-approved underlayment system in full conformance with the Florida Building Code, High-Velocity Hurricane Zone provisions, and the manufacturers' approved installation instructions. All components — including shingles, underlayment, fasteners, and accessories — carry valid Miami-Dade Notices of Acceptance. Work will be performed by a licensed roofing contractor holding the appropriate state license or local Certificate of Competency. I respectfully request timely review and issuance of the roofing permit so that construction may proceed in accordance with all applicable codes and product approvals."
+      },
+      "checks": [
+        {
+          "name": "did not incorrectly flag as unrecognized",
+          "pass": true
+        },
+        {
+          "name": "agencies count in [3,6]",
+          "pass": true,
+          "detail": 4
+        },
+        {
+          "name": "flags count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "risks count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "mentions one of [wind/hurricane]",
+          "pass": true
+        },
+        {
+          "name": "mentions one of [noa/notice of acceptance/product approval]",
+          "pass": true
+        },
+        {
+          "name": "no unhedged specific citations",
+          "pass": true,
+          "warningOnly": true
+        }
+      ],
+      "allPass": true
+    },
+    {
+      "id": "adu-los-angeles-ca",
+      "provider": "anthropic",
+      "elapsedMs": 32472,
+      "result": {
+        "agencies": [
+          {
+            "name": "Los Angeles Department of Building and Safety (LADBS) – ADU Building Permit",
+            "detail": "Primary permit authority for new construction. Requires full plan check submission including architectural, structural, and MEP drawings. ADU applications can be submitted online via the LADBS ePlan system."
+          },
+          {
+            "name": "Los Angeles Department of City Planning – Zoning Clearance",
+            "detail": "Confirms ADU compliance with lot coverage, setbacks, height limits, and state ADU law (CA Gov. Code §65852.2). Detached ADUs in LA typically require 4-ft rear and side setbacks; confirm for your specific zone."
+          },
+          {
+            "name": "Los Angeles Department of Water and Power (LADWP) – Utility Service",
+            "detail": "New detached ADU requires a separate utility service connection review. LADWP must approve meter and service upgrades if new electrical or water service is added."
+          },
+          {
+            "name": "Los Angeles Bureau of Sanitation – Sewer Connection",
+            "detail": "Reviews sewer lateral capacity and connection for the new unit. A sewer connection permit or capacity verification is commonly required for a new dwelling unit."
+          },
+          {
+            "name": "South Coast Air Quality Management District (SCAQMD)",
+            "detail": "May apply if project involves demolition of existing structures with potential asbestos or regulated materials. Generally not a trigger for pure new construction on a clear lot."
+          }
+        ],
+        "flags": [
+          "California state ADU law (SB 9, AB 2221, AB 976) significantly limits what local agencies can restrict — LA cannot impose owner-occupancy requirements, and ADUs under 800 sq ft cannot be denied solely on lot coverage or FAR grounds. Know your state rights before accepting any local denial.",
+          "Los Angeles has its own Accessory Dwelling Unit Ordinance (LAMC Section 12.22 A.33) which must be read alongside state law — confirm current adopted standards at LADBS, as LA's ordinance has been updated multiple times since 2020.",
+          "Detached ADUs in LA are generally limited to 1,200 sq ft maximum and 16 ft height (or up to 18 ft in some zones near transit) — your 600 sq ft unit is well within limits, but height must still be verified for your zone.",
+          "Seismic Zone 4 / high seismic hazard: LA requires CBC (California Building Code) seismic design for all new construction. Foundation and framing must be engineered to current seismic standards — a licensed structural engineer's stamped drawings are effectively required.",
+          "If the property is in a Very High Fire Hazard Severity Zone (VHFHSZ), Chapter 7A of the CBC applies, requiring ignition-resistant construction materials, ember-resistant vents, and defensible space compliance — check your parcel at the LA County fire hazard mapping portal.",
+          "School fees (Los Angeles Unified School District developer fees) are assessed on new habitable square footage and are due at permit issuance — budget approximately $4–5 per sq ft (confirm current rate with LADBS at submittal)."
+        ],
+        "risks": [
+          "Incomplete or non-stamped structural drawings are the leading cause of plan check correction cycles at LADBS. Engage a licensed architect and structural engineer early, and ensure drawings include foundation design with seismic detailing before submission.",
+          "Utility capacity issues — if the main panel or sewer lateral lacks capacity for an additional unit, LADWP or Bureau of Sanitation can stall a project for months. Commission a utility capacity assessment before finalizing the design.",
+          "Title 24 energy compliance (CalGreen + energy code) must be met for new ADU construction. A non-compliant energy report is a common plan check flag — have a certified energy consultant prepare the CF1R documentation as part of the permit package.",
+          "If any unpermitted structures exist on the property, LADBS may flag them during plan check and require legalization or removal before ADU permit issuance. Review the property's permit history in advance.",
+          "Neighbor or HOA objections: while state law limits local discretionary review, HOAs may still assert architectural review authority over aesthetics. Resolve any HOA approval requirements before construction begins to avoid stop-work disputes."
+        ],
+        "timeline": "3–6 months before construction start",
+        "timelineNote": "LADBS standard plan check for ADUs currently runs 4–10 weeks; projects using pre-approved standard plans or the city's ADU Standard Plan Program can compress to 2–4 weeks, while complex lots or correction cycles extend the range significantly.",
+        "narrative": "I am applying for a building permit to construct a new detached accessory dwelling unit (ADU) on my property located in the City of Los Angeles. The proposed ADU is a single-story, new construction structure of approximately 600 square feet, situated in the rear yard of the existing single-family lot. The unit will be used as a long-term residential dwelling in compliance with California Government Code Section 65852.2 and the Los Angeles Municipal Code Section 12.22 A.33. Construction will include a new concrete foundation, wood-frame exterior walls, and a new roof system, all designed to meet the 2022 California Building Code including Title 24 energy and seismic requirements. New utility connections for electrical, plumbing, and sewer service are proposed. All work will be performed by licensed California contractors. I respectfully request full building plan check review and issuance of all applicable permits to authorize this project."
+      },
+      "checks": [
+        {
+          "name": "did not incorrectly flag as unrecognized",
+          "pass": true
+        },
+        {
+          "name": "agencies count in [3,6]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "flags count in [3,5]",
+          "pass": false,
+          "detail": 6
+        },
+        {
+          "name": "risks count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "mentions one of [adu/accessory dwelling]",
+          "pass": true
+        },
+        {
+          "name": "mentions one of [streamlin/ministerial/by-right/by right/state law/65852]",
+          "pass": true
+        },
+        {
+          "name": "no unhedged specific citations",
+          "pass": false,
+          "detail": [
+            "required. If the property is in a Very High Fire Hazard Severity Zone (VHFHSZ), Chapter 7A of the CBC applies, requiring ignition-resistant construction materials, ember",
+            "a long-term residential dwelling in compliance with California Government Code Section 65852.2 and the Los Angeles Municipal Code Section 12.22 A.33. Construction will incl",
+            "h California Government Code Section 65852.2 and the Los Angeles Municipal Code Section 12.22 A.33. Construction will include a new concrete foundation, wood-frame exteri"
+          ],
+          "warningOnly": true
+        }
+      ],
+      "allPass": false
+    },
+    {
+      "id": "solar-los-angeles-ca",
+      "provider": "anthropic",
+      "elapsedMs": 30836,
+      "result": {
+        "agencies": [
+          {
+            "name": "Los Angeles Department of Building and Safety (LADBS) – Solar/Electrical Permit",
+            "detail": "Primary permit authority for rooftop solar PV installations. Requires a building permit and electrical permit covering structural loading, roof attachment, and all electrical work from panels through inverter to main service panel."
+          },
+          {
+            "name": "Los Angeles Department of Water and Power (LADWP) – Interconnection Application",
+            "detail": "As the local utility, LADWP must approve grid interconnection and net energy metering (NEM) enrollment before system energization. Submit the interconnection application early — LADWP review is a common schedule driver."
+          },
+          {
+            "name": "California Public Utilities Commission (CPUC) – NEM 3.0 Compliance",
+            "detail": "State-level net metering policy (NEM 3.0, effective April 2023) governs export compensation rates. Installer must ensure system sizing and NEM enrollment comply with current CPUC rules, which changed significantly from NEM 2.0."
+          },
+          {
+            "name": "Los Angeles Department of City Planning – Historic/HOA Review",
+            "detail": "If the property is in a Historic Preservation Overlay Zone (HPOZ) or designated landmark, additional design review is required. HOAs may also impose aesthetic guidelines, though California law (Civil Code §714) limits HOA authority to reject solar outright."
+          }
+        ],
+        "flags": [
+          "LADBS uses the California Residential Code (CRC) and California Electrical Code (CEC) as amended locally — ensure plans reference the current adopted code cycle (2022 CRC as of this writing).",
+          "Los Angeles is in a high-seismic zone (Seismic Design Category D). Roof attachment hardware and racking systems must be engineered for lateral seismic loads; a wet-stamped structural letter or engineer-of-record sign-off is commonly required.",
+          "LADWP interconnection review is separate from and in addition to LADBS permitting — both must be complete before the system can be turned on. LADWP timelines are independent of the city permit.",
+          "Properties in an HPOZ (e.g., Angelino Heights, Spahn Ranch area neighborhoods) face additional discretionary review and may require panels not to be visible from the public right-of-way.",
+          "California Title 24 (Building Energy Efficiency Standards) mandates solar on new construction, but for existing homes this is a voluntary improvement — confirm your installer is aware of any applicable reach codes the City of LA has adopted."
+        ],
+        "risks": [
+          "Incomplete or missing structural calculations: LADBS plan checkers frequently flag solar submittals that lack a signed structural analysis showing the roof framing can support panel dead loads plus seismic forces. Provide a stamped engineer's letter or use a pre-approved racking system with documentation upfront.",
+          "LADWP interconnection backlog causing energization delays: Even after LADBS issues a permit and the city inspection passes, LADWP's interconnection queue can add 4–12 weeks. Submit the LADWP application concurrently with or immediately after the LADBS application.",
+          "Electrical single-line diagram errors: LADBS rejections most commonly occur on the electrical sheets — missing load calculations, incorrect wire sizing, or omitted rapid shutdown (NEC 2020 Article 690.12) labeling. Use a licensed C-46 or C-10 contractor familiar with current LADBS solar standards.",
+          "NEM 3.0 sizing strategy: Systems submitted for NEM 3.0 enrollment are subject to different export compensation than NEM 2.0. Oversizing to offset battery charging under the new tariff structure requires careful design — confirm system size with your installer before permit submittal to avoid costly redesigns.",
+          "HOA or CC&R conflicts: Even though California law restricts HOAs from outright denial, HOAs can impose reasonable restrictions. Failing to obtain required HOA approval before installation can result in removal demands and legal disputes even after the city permit is issued."
+        ],
+        "timeline": "6–14 weeks from application to energization",
+        "timelineNote": "LADBS plan check typically runs 2–4 weeks (over-the-counter approval is possible for straightforward systems); LADWP interconnection review is the most variable leg, often 4–10 weeks and running concurrently.",
+        "narrative": "I am submitting this application for a rooftop photovoltaic solar energy system to be installed on my existing single-family residence located in the City of Los Angeles. The proposed system consists of [X] solar panels with a total nameplate capacity of [X kW DC], mounted on a flush-mounted racking system affixed to the existing composition shingle roof. All roof penetrations will be flashed and sealed per manufacturer specifications and applicable code requirements. The system includes a [string/microinverter] inverter, rapid shutdown device compliant with NEC Article 690.12, and a utility-interactive interconnection to the existing main service panel, which will be [upgraded/maintained at its current rating]. Structural loading has been analyzed and is documented in the attached engineer's letter confirming the existing roof framing is adequate to support the proposed installation. All electrical work will be performed by a California-licensed contractor. I respectfully request building and electrical permit approval to proceed with this installation."
+      },
+      "checks": [
+        {
+          "name": "did not incorrectly flag as unrecognized",
+          "pass": true
+        },
+        {
+          "name": "agencies count in [3,6]",
+          "pass": true,
+          "detail": 4
+        },
+        {
+          "name": "flags count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "risks count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "mentions one of [fire/setback/clearance/pathway]",
+          "pass": false
+        },
+        {
+          "name": "mentions one of [net metering/interconnection/utility]",
+          "pass": true
+        },
+        {
+          "name": "no unhedged specific citations",
+          "pass": false,
+          "detail": [
+            "g load calculations, incorrect wire sizing, or omitted rapid shutdown (NEC 2020 Article 690.12) labeling. Use a licensed C-46 or C-10 contractor familiar with current LADB",
+            "des a [string/microinverter] inverter, rapid shutdown device compliant with NEC Article 690.12, and a utility-interactive interconnection to the existing main service pane"
+          ],
+          "warningOnly": true
+        }
+      ],
+      "allPass": false
+    },
+    {
+      "id": "deck-charleston-sc",
+      "provider": "anthropic",
+      "elapsedMs": 34579,
+      "result": {
+        "agencies": [
+          {
+            "name": "City of Charleston Department of Planning, Preservation & Sustainability – Building Permit",
+            "detail": "Issues the primary building permit for the deck structure. Requires stamped construction drawings showing framing, ledger attachment, post footings, guardrails, and stair details per the South Carolina Residential Building Code (IRC-based)."
+          },
+          {
+            "name": "City of Charleston Board of Architectural Review (BAR)",
+            "detail": "Downtown Charleston is largely within a BAR review district. Any exterior addition visible from a public right-of-way — including a deck — typically requires BAR approval before a building permit is issued. This is one of the most common delay points for downtown projects."
+          },
+          {
+            "name": "City of Charleston Zoning / Development Review",
+            "detail": "Verifies setback compliance, lot coverage, and impervious surface limits for the specific zoning district (DR-1F, DR-2, etc.). Downtown parcels are often small and tight on coverage; a site plan with dimensions is required."
+          },
+          {
+            "name": "South Carolina OCRM (Office of Coastal Resource Management)",
+            "detail": "If the property is within a Critical Area (tidelands, coastal zone, or near a waterway), OCRM permits or a consistency determination may be required before local permits are issued. Confirm whether the parcel falls within the Critical Area boundary."
+          },
+          {
+            "name": "Charleston County Assessor / Stormwater",
+            "detail": "Adding deck area may trigger an impervious surface review under the county or city stormwater ordinance. A gravel or open-slat deck may be treated differently than a solid surface — confirm classification with the city's stormwater division."
+          }
+        ],
+        "flags": [
+          "Board of Architectural Review (BAR) jurisdiction: Most of downtown Charleston falls within a historic district or BAR overlay. Material choices (wood species, color, railing style) will be scrutinized. BAR pre-application meetings are strongly recommended before finalizing design.",
+          "Setbacks in downtown zoning districts are often very tight — rear and side setbacks can be as little as 3–5 feet depending on the specific district. Confirm your district's setback table before finalizing deck footprint.",
+          "Ledger attachment to historic masonry: Many downtown homes have brick or stucco-clad masonry walls. Attaching a ledger to masonry requires engineered flashing and fastening details; a freestanding deck design may be easier to permit.",
+          "Frost depth is not a primary concern in Charleston, but wind and coastal loading is. Footings and framing must meet ASCE 7 wind requirements for the Charleston area (high-wind zone, 130+ mph design wind speed). Engineer-stamped drawings are commonly required.",
+          "Lot coverage and impervious surface limits in downtown districts are frequently already at or near the maximum for existing lots. A survey and lot coverage calculation are typically required as part of zoning review."
+        ],
+        "risks": [
+          "BAR denial or redesign request: Submitting without a pre-application BAR meeting risks a denial and a 4–6 week reset. Attend a pre-app meeting, present materials and design intent early, and use historically compatible materials (e.g., Ipe or painted pressure-treated wood vs. composite) to reduce friction.",
+          "Ledger-to-masonry attachment failure in plan review: Plans without engineered ledger details on a masonry wall are commonly rejected. Resolve this upfront — either hire a structural engineer for the ledger detail or design the deck as freestanding.",
+          "Incomplete site plan: Downtown permit applications are frequently sent back for missing dimensions, missing property lines, or failure to show all existing structures. Submit a dimensioned site plan showing the house footprint, proposed deck, all property lines, and setbacks from day one.",
+          "OCRM jurisdiction surprise: If the property is within or adjacent to a tidal or wetland critical area, an OCRM permit adds 60–90+ days. Pull the OCRM critical area map early and confirm boundary status before proceeding.",
+          "Wind load / structural adequacy: Charleston is in a high-wind zone. If submitted drawings do not reflect correct wind uplift design for posts, connections, and guardrails, the plans examiner will reject or require a structural engineer's stamp. Budget for engineering if not already planned."
+        ],
+        "timeline": "10–20 weeks total from design start to permit issuance",
+        "timelineNote": "The BAR review cycle (typically monthly meeting schedule) is the primary driver of the longer end of the range; a complete, pre-reviewed BAR submission can compress the timeline significantly, while revisions or a continuance can add 4–8 weeks per cycle.",
+        "narrative": "I am applying for a building permit to construct a new attached deck at my single-family residence located in downtown Charleston, South Carolina. The proposed deck will be constructed of [describe material, e.g., pressure-treated lumber with Ipe decking] and attached to the rear of the existing structure. The deck will measure approximately [X feet] by [Y feet], totaling [Z square feet] of deck area, and will be located [describe setback distances] from all property lines. The structure will include [guardrails / stairs / both] designed in accordance with the South Carolina Residential Building Code. Footing design accounts for the applicable wind load requirements per ASCE 7. The project is designed to be compatible with the historic character of the property and surrounding streetscape, and I am prepared to present materials and design details to the Board of Architectural Review as required. All work will be performed by a licensed South Carolina contractor. I respectfully request review and approval of the enclosed construction documents."
+      },
+      "checks": [
+        {
+          "name": "did not incorrectly flag as unrecognized",
+          "pass": true
+        },
+        {
+          "name": "agencies count in [3,6]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "flags count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "risks count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "mentions one of [historic/bar/architectural review]",
+          "pass": true
+        },
+        {
+          "name": "no unhedged specific citations",
+          "pass": true,
+          "warningOnly": true
+        }
+      ],
+      "allPass": true
+    },
+    {
+      "id": "fence-denver-co",
+      "provider": "anthropic",
+      "elapsedMs": 21818,
+      "result": {
+        "agencies": [
+          {
+            "name": "Denver Community Planning and Development (CPD) — Zoning / Fence Permit",
+            "detail": "Reviews fence height, material, and placement against Denver Zoning Code. A building permit is generally required for fences over 4 feet; a 6-foot fence in a rear/side yard typically qualifies but must meet zone-district setback and opacity rules."
+          },
+          {
+            "name": "Denver Building Permits & Inspections",
+            "detail": "Issues the over-the-counter or standard building permit for the fence. An inspection may be required upon completion to verify compliance with approved plans."
+          },
+          {
+            "name": "HOA Architectural Review (if applicable)",
+            "detail": "Many Denver neighborhoods have active HOAs that require pre-approval for fence style, height, and material before any work begins. HOA approval must typically precede city permitting."
+          }
+        ],
+        "flags": [
+          "Denver Zoning Code generally limits residential fences to 4 feet in the front yard and 6 feet in the rear/side yard, but exact allowances vary by zone district — confirm your specific zone at denvergov.org/MyNeighborhood.",
+          "Corner lots face stricter rules: fences near the intersection of two streets often must not exceed 3-4 feet within a sight-triangle area to maintain traffic visibility.",
+          "If the fence falls on or near a shared property line, Denver typically requires the finished side to face outward (toward neighbors), and a property survey may be needed to confirm the line location.",
+          "Fences within utility or drainage easements are generally prohibited or restricted — check your title/plat for recorded easements before finalizing fence placement.",
+          "Some Denver neighborhoods (especially those within historic districts or overlay zones such as the Potter-Highlands or South Pearl area) have additional design review requirements through the Landmark Preservation Commission."
+        ],
+        "risks": [
+          "Incorrect placement: Installing the fence even a few inches over the property line can trigger neighbor disputes and a city stop-work order requiring relocation. Obtain a plot plan or recent survey before digging.",
+          "Skipping the permit: Unpermitted fences can surface during home sale inspections, requiring retroactive permitting or removal. Pull the permit before installation, not after.",
+          "Sight-triangle violations on corner lots: A 6-foot fence placed too close to a street intersection will fail inspection and must be shortened or moved — identify this constraint before purchasing materials.",
+          "Easement encroachment: Fence posts set inside a utility easement may be ordered removed by Denver Public Works or the utility provider. Pull your plat map from Denver's GIS portal before layout.",
+          "HOA denial after city approval: Receiving a city permit does not override HOA covenants. Confirm HOA rules first to avoid having to tear out approved work."
+        ],
+        "timeline": "2–4 weeks before construction",
+        "timelineNote": "Simple fence permits in Denver are often handled over-the-counter or online within a few business days, but HOA review and any required survey work can extend the overall timeline significantly.",
+        "narrative": "I am submitting this permit application for the installation of a new 6-foot wood privacy fence enclosing the rear yard of my residential property. The fence will be constructed using pressure-treated lumber posts set in concrete footings, with cedar or pine privacy boards on the exterior face. The fence will be positioned along the interior property lines as confirmed by the recorded plat, remaining clear of all utility easements and drainage corridors. No portion of the fence will encroach upon the front yard or any designated sight-triangle area. The project is intended to provide privacy and security while fully complying with applicable Denver Zoning Code height and opacity requirements for the rear yard. All work will be performed by a licensed contractor, and I respectfully request a standard building permit for this improvement."
+      },
+      "checks": [
+        {
+          "name": "did not incorrectly flag as unrecognized",
+          "pass": true
+        },
+        {
+          "name": "agencies count in [3,6]",
+          "pass": true,
+          "detail": 3
+        },
+        {
+          "name": "flags count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "risks count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "mentions one of [hoa/zoning/height]",
+          "pass": true
+        },
+        {
+          "name": "no unhedged specific citations",
+          "pass": true,
+          "warningOnly": true
+        }
+      ],
+      "allPass": true
+    },
+    {
+      "id": "addition-austin-tx",
+      "provider": "anthropic",
+      "elapsedMs": 28320,
+      "result": {
+        "agencies": [
+          {
+            "name": "City of Austin Development Services Department (DSD) – Building Permit",
+            "detail": "Primary permit authority for residential additions. Requires building plans, site plan showing setbacks, floor plans, and structural drawings stamped by a licensed engineer or architect if the addition exceeds certain thresholds."
+          },
+          {
+            "name": "City of Austin DSD – Zoning Review",
+            "detail": "Verifies the addition complies with the applicable zoning district's impervious cover limits, setbacks, FAR, and compatibility standards. SF-3 and similar districts carry strict compatibility triggers when near multifamily or commercial zones."
+          },
+          {
+            "name": "City of Austin Watershed Protection Department",
+            "detail": "Reviews new impervious cover added by the addition footprint and any grading changes. Projects that push total impervious cover over the lot's allowed percentage may require a variance or mitigation measures."
+          },
+          {
+            "name": "City of Austin Austin Energy – Mechanical/Electrical Review",
+            "detail": "Electrical and HVAC extensions to the new bedroom and bathroom must comply with Austin Energy's Green Building requirements and the Texas NEC adoption. Separate electrical and mechanical permits are typically required."
+          },
+          {
+            "name": "City of Austin DSD – Plumbing Permit",
+            "detail": "New bathroom rough-in, drain, waste, and vent (DWV) work requires a separate plumbing permit reviewed under the Texas State Plumbing License Law and local amendments."
+          }
+        ],
+        "flags": [
+          "Compatibility Standards trigger: If your lot is within 540 feet of a property zoned multifamily or commercial, Austin's compatibility rules may cap the addition's height and require additional setbacks — confirm your zoning overlay before finalizing design.",
+          "Impervious cover cap: Most Austin residential lots (SF-3, the most common district) allow 45% impervious cover. The new addition footprint counts; exceeding the cap requires a variance through the Board of Adjustment.",
+          "Rear setback: Standard SF-3 rear setback is 10 feet, but lots platted before certain dates or in older neighborhoods may have different recorded setbacks — verify against your specific plat.",
+          "Historic or Neighborhood Plan overlay: Many central Austin neighborhoods have additional design review requirements (e.g., McMansion Ordinance / Subchapter F) that govern massing, height, and articulation even for single-story additions.",
+          "Tree ordinance: Austin's Heritage Tree rules prohibit impacting trees ≥19 inches diameter (DBH) without a variance. Critical Root Zone encroachment by the new foundation must be assessed before design is finalized."
+        ],
+        "risks": [
+          "Impervious cover overage discovered at plan review: Applicants frequently undercount existing concrete, patios, and driveways. Commission a current impervious cover calculation before submitting to avoid a redesign cycle.",
+          "Compatibility height violation: Additions designed without accounting for the compatibility setback slope can be rejected late in review. Have your designer confirm compatibility applicability on day one.",
+          "Foundation design without geotechnical consideration: Central Austin sits on expansive clay soils (Austin Chalk/Del Rio Clay). Slab foundations for additions frequently require pier-and-beam or reinforced post-tension designs — a structural engineer familiar with local soils should size the foundation to avoid cracking and permit rejection.",
+          "Missing energy compliance documentation: Texas requires a Manual J load calculation and energy code compliance report (IECC) for the conditioned addition space. Omitting this is a common cause of incomplete-application notices.",
+          "Contractor licensing gap: All trades (plumbing, electrical, mechanical) must be performed by Texas-licensed contractors. Using unlicensed subs is grounds for stop-work orders and can void inspections."
+        ],
+        "timeline": "8–14 weeks before construction start",
+        "timelineNote": "Austin DSD's residential permit queue currently runs 4–8 weeks for plan review; projects that trigger compatibility review, tree review, or watershed variance can add another 4–6 weeks or require a Board of Adjustment hearing.",
+        "narrative": "I am submitting this application for a residential addition to my single-family home located in Austin, Texas. The proposed project consists of a new bedroom and full bathroom constructed at the rear of the existing structure, with a new foundation, framing, roofing, and all associated mechanical, electrical, and plumbing systems. The addition is designed to be architecturally consistent with the existing home and will comply with all applicable zoning setbacks, impervious cover limitations, and compatibility standards for the property's zoning district. Structural plans have been prepared with consideration of local expansive soil conditions. All plumbing, electrical, and mechanical work will be performed by Texas-licensed contractors under separate trade permits. The project will not impact any Heritage Trees, and total impervious cover upon completion will remain within the allowable percentage for the lot. I respectfully request review and approval of the enclosed building permit application."
+      },
+      "checks": [
+        {
+          "name": "did not incorrectly flag as unrecognized",
+          "pass": true
+        },
+        {
+          "name": "agencies count in [3,6]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "flags count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "risks count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "mentions one of [varies/vary/confirm/check with/depends on]",
+          "pass": true
+        },
+        {
+          "name": "no unhedged specific citations",
+          "pass": true,
+          "warningOnly": true
+        }
+      ],
+      "allPass": true
+    },
+    {
+      "id": "pool-phoenix-az",
+      "provider": "anthropic",
+      "elapsedMs": 31167,
+      "result": {
+        "agencies": [
+          {
+            "name": "City of Phoenix Development Services Department – Residential Pool Permit",
+            "detail": "Primary permit authority for inground pool construction. Requires submission of site plan, pool construction drawings (often engineer-stamped), barrier/fencing plan, and equipment layout. Inspections are required at steel/bonding, plumbing rough-in, and final stages."
+          },
+          {
+            "name": "City of Phoenix Zoning – Residential Setbacks Review",
+            "detail": "Verifies the pool placement complies with residential zoning setbacks; inground pools in Phoenix typically must maintain a minimum setback from property lines (commonly 5 ft for pools in R-series zones, but confirm for your specific zoning district). Also checks lot coverage limits."
+          },
+          {
+            "name": "Maricopa County Environmental Services – Pool Health & Safety",
+            "detail": "Applies if the property is in unincorporated Maricopa County — but since this is within City of Phoenix limits, county health oversight is generally superseded by city code. Confirm whether any county-level swimming pool sanitation registration is still required."
+          },
+          {
+            "name": "City of Phoenix Building Safety – Electrical Permit",
+            "detail": "A separate electrical permit is typically required for pool bonding, grounding, pump/motor wiring, lighting, and GFCI protection per NEC Article 680. A licensed electrical contractor must perform and sign off on this work."
+          },
+          {
+            "name": "HOA Architectural Review (if applicable)",
+            "detail": "If the property is in a homeowners association, written architectural approval is commonly required before permit submittal. HOA approval runs parallel to city permitting and can add 2–4 weeks if not started early."
+          }
+        ],
+        "flags": [
+          "Arizona state law (and Phoenix city code) mandates a compliant pool barrier — a minimum 5-foot-tall, non-climbable fence or wall completely enclosing the pool, with self-closing, self-latching gates. This is strictly enforced and must be shown on the permit drawings before approval.",
+          "Phoenix requires pool equipment (pump, filter, heater) to meet setback and noise ordinance requirements; equipment pads are commonly required to be 3–5 ft from property lines — verify exact clearance with Development Services.",
+          "Pool construction in Phoenix must include a permanently installed pool alarm or approved door/window alarms on all house openings to the pool area as an alternative barrier layer — confirm which combination satisfies current Phoenix pool safety code.",
+          "Underground utilities (water, gas, electric, sewer) must be located via Arizona 811 (Blue Stake) before excavation. This is legally required and must be documented prior to digging.",
+          "Phoenix is in a high-caliche soil zone — subsurface caliche rock layers are common and can significantly affect excavation method and cost; soil conditions may require an amended construction approach that should be reflected in contractor bids and timeline."
+        ],
+        "risks": [
+          "Barrier non-compliance is the single most common reason pool permits are rejected in Phoenix. Ensure the submitted site plan shows a fully enclosed, code-compliant barrier with gate hardware specs before submittal to avoid a plan-check correction cycle.",
+          "Failing to call Blue Stake (811) before excavation can result in a stop-work order and liability for utility damage. Schedule the utility locate at least 3 business days before any digging begins.",
+          "Incomplete or non-engineer-stamped pool structural drawings are a frequent cause of plan check rejection. Phoenix commonly requires a licensed structural or civil engineer to stamp pool shell drawings for inground pools — confirm this requirement with Development Services at pre-application.",
+          "Electrical final inspection failures due to improper bonding or GFCI placement are common. Ensure your pool contractor coordinates closely with the electrical subcontractor and that all work follows NEC Article 680 before calling for final inspection.",
+          "Caliche or unexpected subsurface conditions discovered during excavation can delay construction 1–3 weeks if not anticipated. Request that your contractor include a contingency scope for hard-rock excavation in the contract."
+        ],
+        "timeline": "6–12 weeks before pool completion",
+        "timelineNote": "Plan check processing at Phoenix Development Services typically runs 3–5 weeks for residential pools; HOA review, engineering turnaround, and scheduling of multiple required inspections drive the longer end of the range.",
+        "narrative": "I am applying for a permit to construct a new residential inground swimming pool at the above-referenced single-family property located within the City of Phoenix. The proposed pool is approximately 15 feet wide by 30 feet long and will be located in the rear yard, maintaining all required setbacks from property lines and structures as shown on the enclosed site plan. The pool shell will be constructed of gunite/shotcrete with steel reinforcement per the attached engineer-stamped structural drawings. The project includes installation of a recirculating pump, filtration system, and pool equipment pad, all positioned in compliance with applicable setback and noise requirements. A fully enclosed, code-compliant pool barrier with self-closing and self-latching gate hardware is included in this application. A separate electrical permit will be obtained for all bonding, grounding, and GFCI-protected wiring associated with this pool. Arizona 811 utility locates will be completed prior to excavation. I respectfully request plan review and permit issuance to proceed with this improvement."
+      },
+      "checks": [
+        {
+          "name": "did not incorrectly flag as unrecognized",
+          "pass": true
+        },
+        {
+          "name": "agencies count in [3,6]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "flags count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "risks count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "mentions one of [barrier/fence/enclosure]",
+          "pass": true
+        },
+        {
+          "name": "no unhedged specific citations",
+          "pass": false,
+          "detail": [
+            "ol bonding, grounding, pump/motor wiring, lighting, and GFCI protection per NEC Article 680. A licensed electrical contractor must perform and sign off on this work. HOA A",
+            "dinates closely with the electrical subcontractor and that all work follows NEC Article 680 before calling for final inspection. Caliche or unexpected subsurface condition"
+          ],
+          "warningOnly": true
+        }
+      ],
+      "allPass": true
+    },
+    {
+      "id": "addition-chicago-il",
+      "provider": "anthropic",
+      "elapsedMs": 29265,
+      "result": {
+        "agencies": [
+          {
+            "name": "City of Chicago Department of Buildings (DOB) – Building Permit",
+            "detail": "Primary permit authority for all structural work, foundation excavation, framing, and new occupied space. A full permit application with architectural/structural drawings stamped by an Illinois-licensed architect or structural engineer is required."
+          },
+          {
+            "name": "City of Chicago DOB – Zoning Review",
+            "detail": "Reviews the addition for compliance with the Chicago Zoning Ordinance, including setbacks, FAR (floor area ratio), lot coverage, and building height limits for the applicable zoning district (typically RS, RT, or RM for residential)."
+          },
+          {
+            "name": "Chicago Department of Water Management (DWM)",
+            "detail": "Reviews and approves any impacts to water or sewer service lines, including required sump pit installation and overhead plumbing conversion — commonly triggered by basement foundation work in Chicago."
+          },
+          {
+            "name": "City of Chicago DOB – Mechanical, Electrical, and Plumbing (MEP) Permits",
+            "detail": "Separate sub-permits for HVAC extension, electrical service expansion, and any plumbing rough-in within the new basement and addition. Licensed trade contractors must pull their own permits."
+          },
+          {
+            "name": "Illinois Environmental Protection Agency (IEPA) / City of Chicago – Stormwater / Green Permit",
+            "detail": "Projects disturbing soil and adding impervious area may trigger stormwater management review under Chicago's Stormwater Ordinance. Green Permit incentives may be available for sustainable design elements."
+          }
+        ],
+        "flags": [
+          "Chicago's Zoning Ordinance imposes strict lot coverage maximums (commonly 50-60% depending on district) and rear/side setbacks that vary by zoning classification — confirm your specific district at the City's zoning map before finalizing addition footprint.",
+          "Chicago requires overhead plumbing conversion for any new or substantially renovated basement to prevent sewer backup; this is a firm code requirement enforced by DWM and must be included in permit drawings.",
+          "Chicago frost depth is 42 inches — all new footings for the basement foundation must bear at or below this depth per local practice and code. Structural drawings must explicitly document footing depth.",
+          "A Chicago-licensed contractor is required for most permitted work; the general contractor and all trades must hold current City of Chicago licenses, not just state licenses.",
+          "A Party Wall Agreement or neighbor notification may be required if the addition approaches or shares a property line, particularly on narrow Chicago city lots with standard 25-foot widths."
+        ],
+        "risks": [
+          "Incomplete or unstamped drawings are the top reason for permit rejection in Chicago — engage an Illinois-licensed architect early to produce code-compliant permit-ready drawings that address both building and zoning requirements simultaneously.",
+          "Undiscovered soil conditions (fill, underground obstructions, or groundwater) are common on older Chicago lots and can cause foundation redesign mid-project; a geotechnical soil boring before finalizing the structural design is strongly advisable.",
+          "Zoning non-conformities on the existing house (pre-existing setback violations, excess lot coverage) can block addition approval until a variance is obtained from the Zoning Board of Appeals — this can add 3-6 months; confirm existing conformity first.",
+          "Failure to include overhead plumbing conversion in the original permit package will result in plan rejection or a mandatory amendment; coordinate with a licensed plumber before submittal.",
+          "Chicago DOB plan review queues for full permits with structural work can be lengthy; delays are reduced by using the Electronic Plan Review (ePlan) system correctly and responding to reviewer comments within the required window."
+        ],
+        "timeline": "10-20 weeks before construction can begin",
+        "timelineNote": "The range is driven primarily by zoning complexity, DOB plan review queue depth, and whether a Zoning Board variance is needed — straightforward in-zoning projects trend toward the lower end, while non-conforming lots or design revisions push toward 20+ weeks.",
+        "narrative": "I am proposing a room addition with a full basement foundation to my existing single-family residence located in Chicago, Illinois. The addition will be constructed in conformance with the Chicago Building Code, the Chicago Zoning Ordinance, and all applicable mechanical, electrical, and plumbing codes. The new foundation will be excavated to a minimum depth of 42 inches below grade to comply with local frost depth requirements, and all footings will be designed by a licensed structural engineer. The basement will include an overhead plumbing system in accordance with City of Chicago Department of Water Management requirements. The addition is designed to remain within the applicable setback, height, and lot coverage limits for the zoning district. All work will be performed by City of Chicago-licensed contractors. I am submitting complete architectural and structural drawings stamped by an Illinois-licensed professional for full plan review. I respectfully request review and approval of this permit application."
+      },
+      "checks": [
+        {
+          "name": "did not incorrectly flag as unrecognized",
+          "pass": true
+        },
+        {
+          "name": "agencies count in [3,6]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "flags count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "risks count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "mentions one of [frost/footing depth/foundation depth]",
+          "pass": true
+        },
+        {
+          "name": "no unhedged specific citations",
+          "pass": true,
+          "warningOnly": true
+        }
+      ],
+      "allPass": true
+    },
+    {
+      "id": "fence-rural-montana",
+      "provider": "anthropic",
+      "elapsedMs": 30595,
+      "result": {
+        "agencies": [
+          {
+            "name": "Beaverhead County Planning & Zoning",
+            "detail": "Reviews fence installations for compliance with county zoning regulations, including setback requirements from property lines, roads, and rights-of-way. A zoning compliance permit or written confirmation of exemption should be obtained before construction."
+          },
+          {
+            "name": "Beaverhead County Road & Bridge Department",
+            "detail": "Reviews any fencing near county road rights-of-way. Fences must typically be set back from the edge of the road ROW; encroachment permits may be required if fencing is near or along a county road."
+          },
+          {
+            "name": "Montana Department of Transportation (MDT)",
+            "detail": "If the property borders a state highway, MDT regulates fence placement within state highway ROW corridors. An encroachment permit from MDT is required before installing fencing within their jurisdiction."
+          },
+          {
+            "name": "Montana Department of Fish, Wildlife & Parks (FWP)",
+            "detail": "In rural Beaverhead County, fencing near streams, wetlands, or wildlife corridors may require coordination with FWP. Wildlife-friendly fencing guidelines (e.g., smooth bottom wire, specific rail heights) are strongly encouraged and sometimes required for properties in migration corridors."
+          },
+          {
+            "name": "U.S. Bureau of Land Management (BLM) — Dillon Field Office",
+            "detail": "If the property adjoins or is near BLM-administered land, fence placement along shared boundaries requires BLM coordination. Unauthorized encroachment onto federal land is a significant liability; a boundary survey is advisable before installation."
+          }
+        ],
+        "flags": [
+          "Beaverhead County is largely rural and agricultural — Montana's open-range laws (MCA Title 81) are relevant here. Fence obligations between neighbors can differ depending on whether land is open range; confirm open-range status for the area before assuming liability defaults.",
+          "Wildlife migration is a major concern in Beaverhead County. Montana FWP and local conservation districts actively promote wildlife-friendly fence standards (e.g., top rail no higher than 42 inches, smooth bottom wire at least 18 inches off ground, no barbed wire on top in migration corridors). Non-compliant fencing near known migration routes may face community or agency pushback.",
+          "A significant portion of Beaverhead County borders BLM or U.S. Forest Service land. A certified boundary survey is strongly recommended before installation to avoid inadvertent encroachment on federal land.",
+          "If fencing crosses or is near a stream, irrigation ditch, or wetland, a 310 Permit from the local Conservation District (Beaverhead Conservation District) may be required under Montana's Streambed and Land Preservation Act.",
+          "Dillon city limits have separate municipal fencing regulations if any portion of the property falls within city boundaries — confirm jurisdiction carefully."
+        ],
+        "risks": [
+          "Encroachment on BLM or Forest Service land: In a county where federal land is interspersed with private parcels, fencing even a few feet over the line can trigger removal orders and fines. Mitigate by obtaining a current survey from a licensed Montana land surveyor before breaking ground.",
+          "Open-range liability misunderstanding: If the property is in open-range territory, Montana law may place fencing obligations differently than the owner expects. Consult with a local attorney or the county extension office before assuming the fence defines livestock responsibility.",
+          "Right-of-way violation along rural roads: County and state road ROWs in rural Montana are often wider than they appear on the ground. Installing a fence inside the ROW without a permit can result in mandatory removal at the owner's expense. Request ROW maps from Beaverhead County Road & Bridge and MDT before setting posts.",
+          "Streambed/wetland permit delays: If any fence line crosses drainage features, the 310 Permit process through Beaverhead Conservation District can add 30–60 days. Identify all water features along the fence line early and apply concurrently.",
+          "Wildlife-fence non-compliance causing project redesign: If the property is flagged as within a pronghorn or deer migration corridor, late-stage redesign to meet FWP guidelines can delay installation significantly. Consult FWP's Dillon regional office early."
+        ],
+        "timeline": "2–8 weeks before construction",
+        "timelineNote": "Simple fencing away from roads, water features, and federal land boundaries can move quickly; projects requiring BLM coordination, MDT encroachment permits, or a 310 Permit from the Conservation District will sit at the longer end of the range.",
+        "narrative": "I am proposing to install a new fence enclosing the perimeter of my rural residential property located in Beaverhead County, Montana. The fence is intended to define property boundaries, manage livestock access, and provide general property security. The installation will utilize standard agricultural fencing materials appropriate for the rural setting, and I intend to site all fence lines within my deeded property boundaries, set back appropriately from any county road or state highway rights-of-way. I have reviewed the proximity of the proposed fence lines to any stream corridors, wetlands, or drainage features and will apply for a 310 Permit through the Beaverhead Conservation District if required. I am committed to incorporating Montana Fish, Wildlife & Parks wildlife-friendly fencing guidelines where the fence line intersects known wildlife movement areas. All work will be performed in compliance with applicable Beaverhead County zoning regulations, Montana open-range statutes, and any applicable state or federal land boundary requirements."
+      },
+      "checks": [
+        {
+          "name": "did not incorrectly flag as unrecognized",
+          "pass": true
+        },
+        {
+          "name": "agencies count in [3,6]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "flags count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "risks count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "mentions one of [confirm/check/varies/local/may not]",
+          "pass": true
+        },
+        {
+          "name": "no unhedged specific citations",
+          "pass": true,
+          "warningOnly": true
+        }
+      ],
+      "allPass": true
+    },
+    {
+      "id": "roof-vague-columbus-oh",
+      "provider": "anthropic",
+      "elapsedMs": 1997,
+      "result": {
+        "unrecognized": true,
+        "message": "Please clarify your roofing project — for example, are you doing a full tear-off and replacement, patching specific damaged sections, or adding new roofing material over existing — so I can build an accurate permitting roadmap for Columbus, Ohio."
+      },
+      "checks": [
+        {
+          "name": "did not incorrectly flag as unrecognized",
+          "pass": false
+        }
+      ],
+      "allPass": false
+    },
+    {
+      "id": "adu-seattle-wa",
+      "provider": "anthropic",
+      "elapsedMs": 32019,
+      "result": {
+        "agencies": [
+          {
+            "name": "Seattle Department of Construction & Inspections (SDCI) — Building Permit",
+            "detail": "Primary permit authority for new construction. Requires a full building permit for any new detached ADU (DADU); plans must be stamped by a licensed Washington State architect or engineer if over certain thresholds. Electronic plan review through the Seattle Services Portal."
+          },
+          {
+            "name": "SDCI — Land Use / Zoning Review",
+            "detail": "Verifies compliance with Seattle's ADU code (SMC 23.44.041 for single-family zones). Reviews setbacks, lot coverage, height limits, owner-occupancy rules (recently relaxed), and the number of ADUs allowed on the parcel."
+          },
+          {
+            "name": "Seattle Public Utilities (SPU) — Side Sewer Permit",
+            "detail": "Required if the DADU connects to the municipal sewer system. SPU issues a side sewer permit and may require a licensed side sewer contractor to perform the work and inspect the connection."
+          },
+          {
+            "name": "Seattle City Light (SCL) — Electrical Service",
+            "detail": "New electrical service or panel upgrade for a detached structure requires coordination with SCL for the service entrance, meter socket, and any new service lateral. An electrical permit through SDCI is also required."
+          },
+          {
+            "name": "King County Assessor",
+            "detail": "Not a permitting body, but the completed DADU will be assessed and will affect property taxes. No action required during permitting, but owners should anticipate a reassessment after final inspection."
+          }
+        ],
+        "flags": [
+          "Seattle's ADU regulations (updated under the 2019 ADU reform ordinance) allow up to two ADUs per lot (one attached, one detached) on most single-family and some lowrise-zoned lots — confirm your parcel's zoning designation before assuming eligibility.",
+          "Owner-occupancy is no longer required in Seattle as of 2019, but confirm this has not been amended and that any deed restrictions or HOA covenants don't impose a separate requirement.",
+          "Height limit for a DADU is typically 24 feet (ridge) with a 12-foot plate height maximum, but this varies by lot slope and proximity to property lines — verify against current SMC 23.44.041.",
+          "Setback requirements for a DADU are commonly 5 feet from rear and side lot lines, but corner lots, alley lots, and lots with existing structures may face different standards — confirm with SDCI early.",
+          "Seattle is located in a high seismic zone (Seismic Design Category D or higher). Foundation and framing must meet IBC/IRC seismic provisions; a structural engineer stamp is strongly advisable and may be required for the foundation design.",
+          "Tree Protection: Seattle's Tree Protection Ordinance (SMC 25.11) may restrict construction that impacts trees 6 inches DBH or larger — a tree survey may be required before permit approval."
+        ],
+        "risks": [
+          "Lot coverage exceedance: DADUs count toward the maximum impervious surface and lot coverage limits (commonly 35% lot coverage in SF zones). Measure existing coverage including driveway, patios, and primary structure before designing; exceeding limits will require redesign or a variance.",
+          "Incomplete geotechnical information: Seattle has significant areas of liquefaction-prone soils, steep slopes, and landslide hazard areas. If the parcel is in a mapped hazard zone, a geotechnical report will be required — ordering this early prevents delays mid-review.",
+          "Design non-compliance with current energy code: Washington State has adopted aggressive energy codes (WAC 51-11R). DADUs must meet current residential energy code, including envelope, mechanical, and lighting requirements. Missing this in initial plans is a common correction trigger.",
+          "Sewer capacity and side sewer condition: SPU may require a video inspection of the existing side sewer before approving a new connection. An aging or deteriorated lateral could require full replacement, adding cost and schedule.",
+          "Permit queue timing: SDCI's over-the-counter review is not available for new construction DADUs; projects enter standard plan review, which can run 3–6 months depending on workload. Submit complete, code-compliant drawings to avoid correction cycles that restart the clock."
+        ],
+        "timeline": "4–8 months total before construction start",
+        "timelineNote": "The range is driven primarily by SDCI plan review queue depth (currently 3–6 months for new construction), completeness of initial submittal, and whether geotechnical or tree review is triggered — a clean, complete first submittal is the single biggest schedule lever.",
+        "narrative": "I am submitting a building permit application for a new detached accessory dwelling unit (DADU) to be constructed in the rear yard of my single-family property located in Seattle, Washington. The proposed DADU is a new, ground-up structure intended for residential occupancy and will include a full kitchen, bathroom, and sleeping area. The design has been prepared in accordance with the Seattle Municipal Code Chapter 23.44.041 governing accessory dwelling units, and complies with applicable setback, height, and lot coverage requirements for the zoning designation of this parcel. The structure will be connected to existing municipal water and sewer services via a new side sewer lateral and will receive a new electrical service coordinated with Seattle City Light. Construction will conform to the current Washington State Building Code, including seismic design requirements applicable to Seattle's high-seismic-hazard designation, and will meet all current Washington State Energy Code requirements. I respectfully request full building permit review for this project."
+      },
+      "checks": [
+        {
+          "name": "did not incorrectly flag as unrecognized",
+          "pass": true
+        },
+        {
+          "name": "agencies count in [3,6]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "flags count in [3,5]",
+          "pass": false,
+          "detail": 6
+        },
+        {
+          "name": "risks count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "mentions one of [adu/accessory dwelling]",
+          "pass": true
+        },
+        {
+          "name": "no unhedged specific citations",
+          "pass": false,
+          "detail": [
+            "rea. The design has been prepared in accordance with the Seattle Municipal Code Chapter 23.44.041 governing accessory dwelling units, and complies with applicable setback"
+          ],
+          "warningOnly": true
+        }
+      ],
+      "allPass": false
+    },
+    {
+      "id": "elevator-other-denver-co",
+      "provider": "anthropic",
+      "elapsedMs": 30202,
+      "result": {
+        "agencies": [
+          {
+            "name": "Denver Community Planning and Development (CPD) – Building Permit",
+            "detail": "A building permit is required for installation of a residential elevator in an existing single-family home. Plans must demonstrate compliance with the Denver Building and Fire Code (which adopts the IBC/IRC with local amendments), including structural support for the shaft and machine room."
+          },
+          {
+            "name": "Denver Building Inspection – Mechanical/Elevator Permit",
+            "detail": "A separate elevator permit is required under Colorado's elevator safety program. The elevator installation must comply with ASME A17.1/CSA B44 Safety Code for Elevators and Escalators (or ASME A17.3 for existing installations). Inspections are required at rough-in and final."
+          },
+          {
+            "name": "Colorado Division of Oil and Public Safety (OPS) – Elevator Program",
+            "detail": "Colorado state law requires all elevators (including residential units in single-family homes when they serve more than one family or are voluntarily registered) to be inspected and certified. Confirm with OPS whether your private single-family elevator requires state registration and a Certificate of Inspection."
+          },
+          {
+            "name": "Denver CPD – Zoning / Land Use (if exterior shaft added)",
+            "detail": "If the elevator shaft requires any exterior addition or bump-out, a zoning review for setbacks, lot coverage, and building height under the Denver Zoning Code will be triggered. Interior-only installations typically do not require a separate zoning review."
+          },
+          {
+            "name": "Licensed Elevator Contractor (State Requirement)",
+            "detail": "Colorado requires that elevator installation and alteration work be performed by a licensed elevator contractor and supervised by a licensed elevator mechanic. Verify contractor licensing with the Colorado Division of Oil and Public Safety before signing contracts."
+          }
+        ],
+        "flags": [
+          "Colorado's single-family residential elevator exemption from state OPS oversight is narrow — confirm with the Division of Oil and Public Safety whether your specific installation triggers mandatory state inspection and certification, as this affects your permit path.",
+          "Denver sits in Seismic Design Category B; the elevator shaft structure and anchorage must be reviewed for seismic loads per ASCE 7, which is commonly overlooked on residential elevator submittals.",
+          "Denver's frost depth is approximately 36 inches — if any new footing or pit excavation is required at the base of the elevator shaft, footings must extend to this depth to prevent frost heave.",
+          "If the home was built before 1978, a lead and asbestos inspection/clearance is commonly required before any demolition or wall-opening work in Denver.",
+          "Structural engineering drawings stamped by a Colorado-licensed PE are typically required for the shaft framing, floor penetrations, and load path down to the foundation — especially critical in an existing home where the original structure was not designed for elevator loads."
+        ],
+        "risks": [
+          "Incomplete structural drawings are the most common cause of permit rejection for residential elevator projects. Submit PE-stamped plans showing the full load path from the elevator rail anchorage through each floor to the foundation before submittal to avoid a major revision cycle.",
+          "Selecting an elevator system (hydraulic, cable-drum, pneumatic, or MRL) before confirming pit depth and overhead clearance requirements can require costly redesign — coordinate with the elevator contractor and structural engineer before finalizing the system type.",
+          "Failure to notify Denver CPD that work is in an existing occupied single-family home can result in incorrect plan review routing. Flag it explicitly as an alteration to an existing structure, not new construction.",
+          "Unpermitted electrical work for the elevator power supply is a frequent violation. A licensed electrician must pull a separate electrical permit for the dedicated circuit, disconnect, and controls — this is often overlooked as a separate permit requirement.",
+          "If the project is in a designated historic district or the home is a contributing structure, Denver Landmark Preservation review may be required before any structural or exterior alterations, adding significant time to the approval process."
+        ],
+        "timeline": "6–14 weeks before installation can begin",
+        "timelineNote": "Range is driven primarily by how quickly PE-stamped structural drawings can be completed and whether Denver CPD routes the application to over-the-counter review or full plan review queue, which can vary significantly by submittal completeness.",
+        "narrative": "I am applying for permits to install a residential elevator within my existing single-family home located in Denver, Colorado. The scope of work includes opening floor diaphragms on the affected levels to create a vertical shaft, constructing the shaft enclosure with fire-rated assembly as required, installing the elevator equipment including cab, rails, drive system, and controls, and providing a dedicated electrical circuit for the unit. All structural modifications will be designed by a Colorado-licensed professional engineer and will account for existing load paths, seismic requirements per ASCE 7 and the Denver Building and Fire Code, and a frost-protected pit footing as applicable. The elevator system will be installed by a Colorado-licensed elevator contractor in full conformance with ASME A17.1/CSA B44. The installation is entirely interior to the existing building envelope. No change of occupancy or use is proposed. I am requesting building, elevator, and electrical permits and welcome pre-application consultation to ensure complete and coordinated submittal."
+      },
+      "checks": [
+        {
+          "name": "did not incorrectly flag as unrecognized",
+          "pass": true
+        },
+        {
+          "name": "agencies count in [3,6]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "flags count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "risks count in [3,5]",
+          "pass": true,
+          "detail": 5
+        },
+        {
+          "name": "no unhedged specific citations",
+          "pass": true,
+          "warningOnly": true
+        }
+      ],
+      "allPass": true
+    },
+    {
+      "id": "nonsense-description-valid-location",
+      "provider": "anthropic",
+      "elapsedMs": 3308,
+      "result": {
+        "unrecognized": true,
+        "message": "The project description doesn't describe a real construction or improvement project — please provide a clear description of what you'd like to build or improve (for example: 'adding a 400 sq ft deck to the rear of my home' or 'installing a rooftop solar array on a commercial building')."
+      },
+      "checks": [
+        {
+          "name": "flags as unrecognized",
+          "pass": true
+        }
+      ],
+      "allPass": true
+    },
+    {
+      "id": "nonsense-both",
+      "provider": "anthropic",
+      "elapsedMs": 2436,
+      "result": {
+        "unrecognized": true,
+        "message": "The project description doesn't describe a real construction or improvement project — please provide details such as the type of work (e.g., deck, addition, pool, fence), the scope, and any relevant site conditions so I can build an accurate permitting roadmap."
+      },
+      "checks": [
+        {
+          "name": "flags as unrecognized",
+          "pass": true
+        }
+      ],
+      "allPass": true
+    }
+  ]
+}

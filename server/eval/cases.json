@@ -1,0 +1,151 @@
+{
+  "_readme": "Eval set for server/llm.js generateRoadmap(). Each case's themeGroups is a list of synonym groups; the generated agencies+flags+risks+narrative text must contain at least one keyword from EVERY group to pass. These are deliberately well-known, stable, nationally-documented facts (not obscure local minutiae) so a human can sanity-check the rubric itself. Run: node server/eval/run.js",
+  "cases": [
+    {
+      "id": "pool-broward-fl",
+      "location": "Broward County, Florida",
+      "description": "Building a new 15x30 inground pool with a fence, about 10 feet from the property line",
+      "notes": "Anchor: FL state law requires a compliant pool barrier before water is introduced (FL Statute 515 / FBC Ch. 454). High water table is a well-documented Broward-area concern.",
+      "expectUnrecognized": false,
+      "themeGroups": [
+        ["barrier", "fence", "enclosure"],
+        ["setback", "property line"]
+      ]
+    },
+    {
+      "id": "roof-miami-dade-fl",
+      "location": "Miami-Dade County, Florida",
+      "description": "Full roof replacement on an existing single family home, asphalt shingle to asphalt shingle",
+      "notes": "Anchor: Miami-Dade/Broward are High-Velocity Hurricane Zone (HVHZ) — roofing products need NOA (Notice of Acceptance). Well-documented, checkable fact.",
+      "expectUnrecognized": false,
+      "themeGroups": [
+        ["wind", "hurricane"],
+        ["noa", "notice of acceptance", "product approval"]
+      ]
+    },
+    {
+      "id": "adu-los-angeles-ca",
+      "location": "Los Angeles, California",
+      "description": "Building a new detached accessory dwelling unit in the backyard, 600 sq ft, new construction",
+      "notes": "Anchor: California has a specific statewide ADU law (Gov. Code 65852.2) requiring streamlined/ministerial approval — a well-documented, checkable fact.",
+      "expectUnrecognized": false,
+      "themeGroups": [
+        ["adu", "accessory dwelling"],
+        ["streamlin", "ministerial", "by-right", "by right", "state law", "65852"]
+      ]
+    },
+    {
+      "id": "solar-los-angeles-ca",
+      "location": "Los Angeles, California",
+      "description": "Installing rooftop solar panels on an existing single family home",
+      "notes": "Anchor: CA fire code requires setback/pathway clearance around roof-mounted solar; utility interconnection/net metering is a standard step. Well-documented facts.",
+      "expectUnrecognized": false,
+      "themeGroups": [
+        ["fire", "setback", "clearance", "pathway"],
+        ["net metering", "interconnection", "utility"]
+      ]
+    },
+    {
+      "id": "deck-charleston-sc",
+      "location": "Charleston, South Carolina",
+      "description": "Building a new deck attached to the house, existing single family home in the downtown area",
+      "notes": "Anchor: downtown Charleston is a well-documented historic district with its own architectural review board (BAR).",
+      "expectUnrecognized": false,
+      "themeGroups": [
+        ["historic", "bar", "architectural review"]
+      ]
+    },
+    {
+      "id": "fence-denver-co",
+      "location": "Denver, Colorado",
+      "description": "Installing a new 6 foot privacy fence around the backyard",
+      "notes": "Baseline normal case — no exotic anchor fact, just checks a simple project still gets a sane, well-formed answer.",
+      "expectUnrecognized": false,
+      "themeGroups": [
+        ["hoa", "zoning", "height"]
+      ]
+    },
+    {
+      "id": "addition-austin-tx",
+      "location": "Austin, Texas",
+      "description": "Adding a new bedroom and bathroom addition to the back of an existing house, new construction",
+      "notes": "Anchor: Texas has no uniform statewide residential building code adoption — a correct answer should hedge that requirements vary by the specific city/county rather than state a single confident statewide rule.",
+      "expectUnrecognized": false,
+      "themeGroups": [
+        ["varies", "vary", "confirm", "check with", "depends on"]
+      ]
+    },
+    {
+      "id": "pool-phoenix-az",
+      "location": "Phoenix, Arizona",
+      "description": "Building a new inground pool, 15x30, in the backyard of an existing single family home",
+      "notes": "Contrast case with #1 — AZ also requires pool barriers, but climate/soil concerns should differ from Florida's high-water-table framing.",
+      "expectUnrecognized": false,
+      "themeGroups": [
+        ["barrier", "fence", "enclosure"]
+      ]
+    },
+    {
+      "id": "addition-chicago-il",
+      "location": "Chicago, Illinois",
+      "description": "Adding a new room addition with a full basement foundation to an existing house",
+      "notes": "Anchor: cold-climate jurisdictions require footings below the frost line — a well-documented, checkable requirement for Chicago.",
+      "expectUnrecognized": false,
+      "themeGroups": [
+        ["frost", "footing depth", "foundation depth"]
+      ]
+    },
+    {
+      "id": "fence-rural-montana",
+      "location": "Beaverhead County, Montana",
+      "description": "Installing a new fence around a rural residential property",
+      "notes": "Sparse-jurisdiction case — a correct answer should hedge (small/rural counties often have minimal zoning) rather than invent confident specifics it can't know.",
+      "expectUnrecognized": false,
+      "themeGroups": [
+        ["confirm", "check", "varies", "local", "may not"]
+      ]
+    },
+    {
+      "id": "roof-vague-columbus-oh",
+      "location": "Columbus, Ohio",
+      "description": "Fixing my roof",
+      "notes": "Deliberately vague description — tests that the model still produces a valid, appropriately-generic (not wildly over-specific) answer rather than fabricating false precision to compensate for missing detail.",
+      "expectUnrecognized": false,
+      "themeGroups": []
+    },
+    {
+      "id": "adu-seattle-wa",
+      "location": "Seattle, Washington",
+      "description": "Building a new detached accessory dwelling unit in the backyard, new construction",
+      "notes": "Anchor: Washington State also has ADU-friendly state legislation (HB 1337) — second state-law case in a different state to check the model isn't just pattern-matching California specifically.",
+      "expectUnrecognized": false,
+      "themeGroups": [
+        ["adu", "accessory dwelling"]
+      ]
+    },
+    {
+      "id": "elevator-other-denver-co",
+      "location": "Denver, Colorado",
+      "description": "Installing a residential home elevator in an existing single family house",
+      "notes": "Rare/'Other' trade category — checks generalization beyond the seven named trade chips rather than a hardcoded response for common trades only.",
+      "expectUnrecognized": false,
+      "themeGroups": []
+    },
+    {
+      "id": "nonsense-description-valid-location",
+      "location": "Denver, Colorado",
+      "description": "asdlkfj rainbow sparkles nothing real whatsoever",
+      "notes": "Valid-sounding location, nonsense description — the model's OWN unrecognized-project judgment (independent of the client's separate geocode check) should catch this.",
+      "expectUnrecognized": true,
+      "themeGroups": []
+    },
+    {
+      "id": "nonsense-both",
+      "location": "qwerty asdf",
+      "description": "blah blah nothing real",
+      "notes": "Nonsense location AND description reaching the model directly (bypassing the client's geocode pre-check) — tests the model as a second line of defense, not just the client-side check.",
+      "expectUnrecognized": true,
+      "themeGroups": []
+    }
+  ]
+}
