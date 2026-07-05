@@ -74,6 +74,78 @@ async function callAnthropic(userText) {
   return extractJson(text);
 }
 
+export const TIMELINE_SYSTEM_PROMPT = `You are Setback, an expert permitting analyst for U.S. construction and improvement projects — any trade: pools, decks, additions, roofing, solar, fencing, garages, driveways, and beyond.
+
+Given a project's location, description, and trade, break the project into its realistic phases from start to finish — feasibility/planning, design, engineering (if applicable), permitting, revision cycles, construction, inspections, and completion/closeout. Not every project needs every phase; skip phases that clearly don't apply (e.g. no engineering phase for a simple fence permit) and add a phase if the project genuinely needs one not listed here.
+
+Flag the phase or phases most likely to blow the schedule as the bottleneck — commonly permitting review or a revision cycle, but use judgment for the specific project. Be honest that estimates are ranges, not guarantees.
+
+Respond with ONLY valid JSON (no markdown, no preamble), in exactly this shape:
+{"phases":[{"name":"phase name","estimatedDuration":"realistic range e.g. '2-3 weeks'","isBottleneck":true,"note":"one sentence on what happens in this phase and/or why it's flagged"}]}
+List phases in chronological order. Keep to the 5-9 phases that actually apply.`;
+
+export function isValidTimelinePhases(obj) {
+  return obj && typeof obj === 'object' && Array.isArray(obj.phases) && obj.phases.every(p =>
+    p && typeof p === 'object' && typeof p.name === 'string'
+  );
+}
+
+async function callAnthropicTimeline(userText) {
+  const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': ANTHROPIC_KEY,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1500,
+      system: TIMELINE_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userText }]
+    })
+  }, 60_000);
+  if (!res.ok) throw new Error(`Anthropic returned ${res.status}`);
+  const data = await res.json();
+  const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+  return extractJson(text);
+}
+
+async function callGeminiTimeline(userText) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_KEY}`;
+  const res = await fetchWithTimeout(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: TIMELINE_SYSTEM_PROMPT }] },
+      contents: [{ role: 'user', parts: [{ text: userText }] }]
+    })
+  }, 60_000);
+  if (!res.ok) throw new Error(`Gemini returned ${res.status}`);
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.map(p => p.text).join('\n') || '';
+  return extractJson(text);
+}
+
+// Generates the ordered phase breakdown for the Timeline module. Mirrors
+// generateRoadmap's Anthropic-primary, Gemini-fallback shape.
+export async function generateTimelinePhases(location, description, trade) {
+  const userText = `Project location: ${location}\nProject description: ${description}\nTrade: ${trade}`;
+
+  try {
+    const result = await callAnthropicTimeline(userText);
+    if (isValidTimelinePhases(result)) return { ok: true, provider: 'anthropic', phases: result.phases };
+    throw new Error('Anthropic response failed schema validation');
+  } catch (err) {
+    console.error('Anthropic timeline call failed:', err.message);
+    if (!GOOGLE_KEY) throw err;
+
+    const result = await callGeminiTimeline(userText);
+    if (isValidTimelinePhases(result)) return { ok: true, provider: 'gemini-fallback', phases: result.phases };
+    throw new Error('Gemini fallback response also failed schema validation');
+  }
+}
+
 async function callGemini(userText) {
   // Model id current as of writing — check for a newer Flash model if this starts failing.
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_KEY}`;
