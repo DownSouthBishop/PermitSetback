@@ -70,7 +70,7 @@ async function callAnthropic(userText) {
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userText }]
     })
-  }, 60_000);
+  }, 150_000);
   if (!res.ok) throw new Error(`Anthropic returned ${res.status}`);
   const data = await res.json();
   // No project row exists yet at this point in the flow (this call is what
@@ -111,7 +111,7 @@ async function callAnthropicTimeline(userText, projectId) {
       system: TIMELINE_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userText }]
     })
-  }, 60_000);
+  }, 150_000);
   if (!res.ok) throw new Error(`Anthropic returned ${res.status}`);
   const data = await res.json();
   logUsage({ callType: 'timeline', projectId, usage: data.usage });
@@ -128,7 +128,7 @@ async function callGeminiTimeline(userText, projectId) {
       systemInstruction: { parts: [{ text: TIMELINE_SYSTEM_PROMPT }] },
       contents: [{ role: 'user', parts: [{ text: userText }] }]
     })
-  }, 60_000);
+  }, 150_000);
   if (!res.ok) throw new Error(`Gemini returned ${res.status}`);
   const data = await res.json();
   logUsage({ callType: 'timeline', projectId, provider: 'gemini-fallback', model: 'gemini-2.5-flash', usage: data.usageMetadata && { input_tokens: data.usageMetadata.promptTokenCount, output_tokens: data.usageMetadata.candidatesTokenCount } });
@@ -165,7 +165,7 @@ async function callGemini(userText) {
       systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
       contents: [{ role: 'user', parts: [{ text: userText }] }]
     })
-  }, 60_000);
+  }, 150_000);
   if (!res.ok) throw new Error(`Gemini returned ${res.status}`);
   const data = await res.json();
   logUsage({ callType: 'roadmap', provider: 'gemini-fallback', model: 'gemini-2.5-flash', usage: data.usageMetadata && { input_tokens: data.usageMetadata.promptTokenCount, output_tokens: data.usageMetadata.candidatesTokenCount } });
@@ -209,7 +209,7 @@ async function callAnthropicChat(systemPrompt, messages, projectId) {
       system: systemPrompt,
       messages: messages.map(m => ({ role: m.role, content: m.content }))
     })
-  }, 60_000);
+  }, 150_000);
   if (!res.ok) throw new Error(`Anthropic returned ${res.status}`);
   const data = await res.json();
   logUsage({ callType: 'advisor', projectId, usage: data.usage });
@@ -223,7 +223,7 @@ async function callGeminiChat(systemPrompt, messages, projectId) {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ systemInstruction: { parts: [{ text: systemPrompt }] }, contents })
-  }, 60_000);
+  }, 150_000);
   if (!res.ok) throw new Error(`Gemini returned ${res.status}`);
   const data = await res.json();
   logUsage({ callType: 'advisor', projectId, provider: 'gemini-fallback', model: 'gemini-2.5-flash', usage: data.usageMetadata && { input_tokens: data.usageMetadata.promptTokenCount, output_tokens: data.usageMetadata.candidatesTokenCount } });

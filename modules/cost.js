@@ -68,7 +68,7 @@ export async function render(container, project) {
     const status = container.querySelector('#genStatus');
     status.innerHTML = '';
     try {
-      const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/cost`, { method: 'POST' }, 60000);
+      const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/cost`, { method: 'POST' }, 160000);
       const body = await res.json();
       if (!res.ok) throw new Error(body.error || `Backend returned ${res.status}`);
       renderCosts(container, project, body.costs);

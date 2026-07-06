@@ -777,7 +777,7 @@ async function generateRoadmap(){
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ location: state.project.location, description: state.project.description })
-    }, 70000);
+    }, 160000);
     if (!res.ok) throw new Error(`Backend returned ${res.status}`);
     const data = await res.json();
     if (data.unrecognized){

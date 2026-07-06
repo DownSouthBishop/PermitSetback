@@ -42,7 +42,7 @@ function renderEmpty(container, project) {
       const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/timeline`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
-      }, 60000);
+      }, 160000);
       if (!res.ok) throw new Error(`Backend returned ${res.status}`);
       const phases = await res.json();
       renderPhases(container, project, phases);

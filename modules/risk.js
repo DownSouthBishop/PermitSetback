@@ -35,7 +35,7 @@ async function runCheck(container, project) {
   const card = container.querySelector('.card') || container;
   card.innerHTML = `<h3>${ICON.alert} Risk Intelligence</h3><p style="color:var(--ink-soft);font-size:13px;">Assessing permitting, cost, schedule, and compliance risk for this project...</p>`;
   try {
-    const res = await fetchWithTimeout(riskUrl(project), { method: 'POST' }, 60000);
+    const res = await fetchWithTimeout(riskUrl(project), { method: 'POST' }, 160000);
     if (!res.ok) throw new Error(`Backend returned ${res.status}`);
     const { findings } = await res.json();
     renderFindings(container, project, findings);

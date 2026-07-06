@@ -63,7 +63,7 @@ export async function render(container, project) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text })
-      }, 60000);
+      }, 160000);
       if (!res.ok) throw new Error(`Backend returned ${res.status}`);
       const { reply } = await res.json();
       messages.push({ role: 'assistant', content: reply });

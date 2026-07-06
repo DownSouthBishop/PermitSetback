@@ -79,7 +79,7 @@ async function callOnce({ systemPrompt, userText, maxTokens, timeoutMs, projectI
 // which breaks JSON.parse — intermittent, not systemic, so one retry with
 // the identical request is the pragmatic fix rather than chasing a specific
 // malformed sample.
-export async function callAnthropicJSON({ systemPrompt, userText, maxTokens = 1500, isValid, timeoutMs = 60_000, projectId, callType }) {
+export async function callAnthropicJSON({ systemPrompt, userText, maxTokens = 1500, isValid, timeoutMs = 150_000, projectId, callType }) {
   const args = { systemPrompt, userText, maxTokens, timeoutMs, projectId, callType };
   try {
     const result = await callOnce(args);
