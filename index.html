@@ -879,29 +879,27 @@ function openCheckout(){
   modal.setAttribute('aria-labelledby', 'modalTitle');
   modal.innerHTML = `
     <div class="modal fadein" id="modalBox" tabindex="-1" style="outline:none;">
-      <div class="demoflag">Demo checkout — connect Stripe to accept real payment</div>
-      <h3 id="modalTitle">Pay $19</h3>
-      <p style="color:var(--ink-soft);font-size:13px;margin:0 0 16px;">Setback — full permit roadmap (introductory rate)</p>
+      <h3 id="modalTitle">Unlock your roadmap</h3>
+      <p style="color:var(--ink-soft);font-size:13px;margin:0 0 16px;">Setback — full permit roadmap (introductory rate, $19)</p>
+      <div style="display:flex;gap:8px;">
+        <input id="accessCodeInput" placeholder="Access code" aria-label="Access code" style="flex:1;margin-bottom:0;">
+        <button class="btn" id="redeemCode" style="width:auto;">Unlock</button>
+      </div>
+      <div id="redeemErr"></div>
+      <div class="divider">or pay by card</div>
       <div class="walletbtns">
         <button class="walletbtn" disabled> Pay</button>
         <button class="walletbtn g" disabled>G Pay</button>
       </div>
-      <p class="walletnote">Not wired up yet — use the card form below.</p>
-      <div class="divider">or pay by card</div>
-      <input placeholder="Card number" aria-label="Card number" style="margin-bottom:10px;">
+      <p class="walletnote">Card payments aren't live yet.</p>
+      <input placeholder="Card number" aria-label="Card number" style="margin-bottom:10px;" disabled>
       <div style="display:flex;gap:10px;">
-        <input placeholder="MM / YY" aria-label="Expiry date">
-        <input placeholder="CVC" aria-label="Security code">
+        <input placeholder="MM / YY" aria-label="Expiry date" disabled>
+        <input placeholder="CVC" aria-label="Security code" disabled>
       </div>
-      <button class="btn" id="paynow" style="margin-top:6px;">Pay $19</button>
+      <button class="btn secondary" id="paynow" style="margin-top:6px;" disabled>Pay $19 — coming soon</button>
       <button class="btn secondary" id="cancelpay" style="margin-top:8px;">Cancel</button>
       <div id="payErr"></div>
-      <div class="divider">or</div>
-      <div style="display:flex;gap:8px;">
-        <input id="accessCodeInput" placeholder="Access code" aria-label="Access code" style="flex:1;margin-bottom:0;">
-        <button class="btn small" id="redeemCode" style="width:auto;">Unlock</button>
-      </div>
-      <div id="redeemErr"></div>
     </div>
   `;
   document.body.appendChild(modal);
