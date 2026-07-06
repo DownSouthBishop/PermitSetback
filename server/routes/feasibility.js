@@ -27,7 +27,8 @@ function isValidFindings(obj) {
 async function generateFeasibilityFindings(project) {
   const userText = `Project location: ${project.location}\nProject description: ${project.description}\nTrade: ${project.trade}`;
   const result = await callAnthropicJSON({
-    systemPrompt: SYSTEM_PROMPT, userText, maxTokens: 1500, isValid: isValidFindings
+    systemPrompt: SYSTEM_PROMPT, userText, maxTokens: 1500, isValid: isValidFindings,
+    projectId: project.id, callType: 'feasibility'
   });
   return result.findings;
 }

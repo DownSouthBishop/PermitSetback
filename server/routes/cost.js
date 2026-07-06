@@ -29,7 +29,8 @@ function isValidCostEstimate(obj) {
 async function generateCostEstimate(project) {
   const userText = `Project location: ${project.location}\nProject description: ${project.description}\nTrade: ${project.trade}`;
   return callAnthropicJSON({
-    systemPrompt: SYSTEM_PROMPT, userText, maxTokens: 1200, isValid: isValidCostEstimate
+    systemPrompt: SYSTEM_PROMPT, userText, maxTokens: 1200, isValid: isValidCostEstimate,
+    projectId: project.id, callType: 'cost'
   });
 }
 

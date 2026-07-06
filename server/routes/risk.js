@@ -29,7 +29,8 @@ function isValidRisks(obj) {
 async function generateRiskFindings(project) {
   const userText = `Project location: ${project.location}\nProject description: ${project.description}\nTrade: ${project.trade}`;
   const result = await callAnthropicJSON({
-    systemPrompt: SYSTEM_PROMPT, userText, maxTokens: 1500, isValid: isValidRisks
+    systemPrompt: SYSTEM_PROMPT, userText, maxTokens: 1500, isValid: isValidRisks,
+    projectId: project.id, callType: 'risk'
   });
   return result.risks;
 }

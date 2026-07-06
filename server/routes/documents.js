@@ -45,7 +45,8 @@ async function generateDocuments(project) {
   // to ask for shorter documents AND raised the ceiling, rather than either
   // alone.
   const result = await callAnthropicJSON({
-    systemPrompt: SYSTEM_PROMPT, userText, maxTokens: 6000, isValid: isValidDocuments, timeoutMs: 150_000
+    systemPrompt: SYSTEM_PROMPT, userText, maxTokens: 6000, isValid: isValidDocuments, timeoutMs: 150_000,
+    projectId: project.id, callType: 'documents'
   });
   return result.documents;
 }

@@ -196,6 +196,38 @@ db.exec(`
     project_id TEXT NOT NULL,
     redeemed_at TEXT NOT NULL
   );
+
+  -- Real per-call token usage and $ cost, one row per LLM call. This is what
+  -- turns "what does a roadmap actually cost us" from a guess into a number
+  -- you can query — see server/pricing.js for the rate table and
+  -- server/routes/admin-usage.js for the report built on top of this.
+  -- The refund guarantee ("send us the rejection notice... that's the whole
+  -- process") had no destination anywhere in the product before this — a
+  -- real gap between what's promised and what's buildable. This is that
+  -- destination: a real capture point, reviewed manually by the founder
+  -- (server/refund-claims.js), not an auto-processed refund — there's no
+  -- real payment processor wired up yet for this to auto-process against.
+  CREATE TABLE IF NOT EXISTS refund_claims (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    outcome TEXT NOT NULL,
+    details TEXT NOT NULL,
+    contact_email TEXT,
+    status TEXT NOT NULL DEFAULT 'open',
+    created_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS api_usage_log (
+    id TEXT PRIMARY KEY,
+    project_id TEXT,
+    call_type TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    model TEXT NOT NULL,
+    input_tokens INTEGER NOT NULL,
+    output_tokens INTEGER NOT NULL,
+    cost_usd REAL,
+    created_at TEXT NOT NULL
+  );
 `);
 
 // Schema evolves via additive, idempotent statements rather than a migration
@@ -343,3 +375,21 @@ export const insertConversationMessageStmt = db.prepare(`
 export const getConversationByProjectStmt = db.prepare(
   'SELECT * FROM project_conversations WHERE project_id = ? ORDER BY created_at ASC'
 );
+
+// --- Refund / guarantee claims ---------------------------------------------
+export const insertRefundClaimStmt = db.prepare(`
+  INSERT INTO refund_claims (id, project_id, outcome, details, contact_email, status, created_at)
+  VALUES (?, ?, ?, ?, ?, 'open', ?)
+`);
+export const listOpenRefundClaimsStmt = db.prepare("SELECT * FROM refund_claims WHERE status = 'open' ORDER BY created_at ASC");
+
+// --- API usage / cost tracking --------------------------------------------
+export const insertApiUsageStmt = db.prepare(`
+  INSERT INTO api_usage_log (id, project_id, call_type, provider, model, input_tokens, output_tokens, cost_usd, created_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+`);
+export const getUsageByProjectStmt = db.prepare('SELECT * FROM api_usage_log WHERE project_id = ? ORDER BY created_at ASC');
+export const getUsageSummaryStmt = db.prepare(`
+  SELECT call_type, COUNT(*) AS calls, SUM(input_tokens) AS input_tokens, SUM(output_tokens) AS output_tokens, SUM(cost_usd) AS cost_usd
+  FROM api_usage_log GROUP BY call_type ORDER BY cost_usd DESC
+`);

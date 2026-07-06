@@ -36,7 +36,7 @@
       "@type": "FAQPage",
       "mainEntity": [
         { "@type": "Question", "name": "Is this legal advice?", "acceptedAnswer": { "@type": "Answer", "text": "No. Setback is a research shortcut, not a legal determination. It's meant to be reviewed with your engineer and the permitting authorities — always confirm current requirements with the issuing agencies before you submit." } },
-        { "@type": "Question", "name": "What if Setback misses something?", "acceptedAnswer": { "@type": "Answer", "text": "If we miss an agency or permit your project clearly needed, that pull is refunded. Send us the rejection notice, or the jurisdiction's own code section, within 30 days — that's the whole process." } },
+        { "@type": "Question", "name": "What if Setback misses something?", "acceptedAnswer": { "@type": "Answer", "text": "If we miss an agency or permit your project clearly needed, that pull is refunded. Report a rejected outcome on your project page and file a claim right there, or email support@setback.example with the rejection notice or the jurisdiction's own code section, within 30 days — that's the whole process." } },
         { "@type": "Question", "name": "Do I need an account?", "acceptedAnswer": { "@type": "Answer", "text": "No account to generate a roadmap. If you want to save it and come back later, we'll send a link to your email — no password, ever." } },
         { "@type": "Question", "name": "What trades and locations do you cover?", "acceptedAnswer": { "@type": "Answer", "text": "Any construction or improvement trade, any US location — pools, decks, roofing, solar, fencing, additions, garages, and beyond." } },
         { "@type": "Question", "name": "Why is this so much cheaper than an expediter?", "acceptedAnswer": { "@type": "Answer", "text": "Because you're not paying for someone's time on hold with the county. You're paying for the lookup itself — the part that actually takes 60 seconds once you know where to look." } }
@@ -399,7 +399,7 @@
       </details>
       <details>
         <summary>What if Setback misses something?</summary>
-        <p>If we miss an agency or permit your project clearly needed, that pull is refunded. Send us the rejection notice, or the jurisdiction's own code section, within 30 days — that's the whole process.</p>
+        <p>If we miss an agency or permit your project clearly needed, that pull is refunded. Report a rejected outcome on your project page and file a claim right there, or email <a href="mailto:support@setback.example">support@setback.example</a> with the rejection notice or the jurisdiction's own code section, within 30 days — that's the whole process.</p>
       </details>
       <details>
         <summary>Do I need an account?</summary>
@@ -428,7 +428,7 @@
 <footer class="sitefoot">
   <div class="wrap-wide">
     <p class="disc">Setback produces a draft roadmap to review with your engineer and the permitting authorities — it is not legal advice and does not replace official agency determinations. Always confirm current requirements with the issuing agencies before submitting.</p>
-    <p class="disc"><a href="how-it-works.html">How it works</a> &middot; <a href="expediters.html">For expediters</a> &middot; <a href="terms.html">Terms</a> &middot; <a href="privacy.html">Privacy</a> &middot; <a href="disclaimer.html">Disclaimer</a></p>
+    <p class="disc"><a href="how-it-works.html">How it works</a> &middot; <a href="expediters.html">For expediters</a> &middot; <a href="terms.html">Terms</a> &middot; <a href="privacy.html">Privacy</a> &middot; <a href="disclaimer.html">Disclaimer</a> &middot; <a href="mailto:support@setback.example">Support</a></p>
   </div>
 </footer>
 
@@ -1126,7 +1126,40 @@ function renderFull(){
         body: JSON.stringify(body)
       }, 8000);
       if (!res.ok) throw new Error(`Backend returned ${res.status}`);
-      thanks.innerHTML = `<div class="creditbox">Thank you. Here's <b>SETBACK15</b> — $15 off your next roadmap, redeemable at checkout.</div>`;
+      const creditNote = `<div class="creditbox">Thank you. Here's <b>SETBACK15</b> — $15 off your next roadmap, redeemable at checkout.</div>`;
+      // Rejected is the one outcome that can mean the guarantee applies — if
+      // an agency or permit was missed, that's on us to make right. Give the
+      // actual path to say so, right here, instead of leaving the guarantee
+      // as a promise with nowhere to send the claim.
+      thanks.innerHTML = outcome === 'rejected'
+        ? creditNote + `
+          <div class="guarantee" style="margin-top:10px;">
+            <p style="margin:0 0 8px;"><b>If we missed an agency or permit requirement that caused this, you're covered.</b> Tell us what happened — the rejection notice or the code section we should have caught — and we'll make it right.</p>
+            <textarea id="claimDetails" rows="3" style="width:100%;box-sizing:border-box;margin-bottom:8px;" placeholder="What did we miss? (paste the rejection reason or code section if you have it)"></textarea>
+            <input id="claimEmail" type="email" placeholder="Email to follow up (optional)" style="width:100%;box-sizing:border-box;margin-bottom:8px;">
+            <button class="copybtn" id="claimSubmit">File a guarantee claim</button>
+            <div id="claimStatus" aria-live="polite"></div>
+          </div>`
+        : creditNote;
+      if (outcome === 'rejected') {
+        document.getElementById('claimSubmit').onclick = async () => {
+          const details = document.getElementById('claimDetails').value.trim();
+          const contactEmail = document.getElementById('claimEmail').value.trim();
+          const claimStatus = document.getElementById('claimStatus');
+          if (!details) { claimStatus.innerHTML = `<p style="color:var(--ink-soft);font-size:13px;">Tell us what we missed first.</p>`; return; }
+          claimStatus.innerHTML = `<p style="color:var(--ink-soft);font-size:13px;">Sending...</p>`;
+          try {
+            const claimRes = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(state.project.id)}/refund-claim`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ details, contactEmail })
+            }, 8000);
+            if (!claimRes.ok) throw new Error(`Backend returned ${claimRes.status}`);
+            claimStatus.innerHTML = `<p style="color:var(--ink-soft);font-size:13px;">Got it — we'll review and follow up within a few days.</p>`;
+            document.getElementById('claimSubmit').disabled = true;
+          } catch (err) {
+            claimStatus.innerHTML = `<p class="err">Couldn't send that — email support@setback.example directly instead.</p>`;
+          }
+        };
+      }
     } catch (err){
       document.querySelectorAll('#outcomeChoices .rbtn').forEach(x => x.disabled = false);
       thanks.innerHTML = `<div class="err">Couldn't save that — is the backend running? Try again in a moment.</div>`;

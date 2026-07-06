@@ -11,7 +11,8 @@ import { readBody, sendJson } from '../http-utils.js';
 import { isRateLimited } from '../rate-limit.js';
 import {
   getProjectStmt, updateProjectOutcomeStmt, insertOutcome, markProjectPaidStmt,
-  getAccessCodeStmt, incrementAccessCodeUsesStmt, insertAccessCodeRedemptionStmt
+  getAccessCodeStmt, incrementAccessCodeUsesStmt, insertAccessCodeRedemptionStmt,
+  insertRefundClaimStmt
 } from '../db.js';
 
 function projectRowToJson(row) {
@@ -128,6 +129,32 @@ export async function handleProjectsRoutes(req, res, ip) {
       const now = new Date().toISOString();
       updateProjectOutcomeStmt.run(outcome, now, now, id);
       insertOutcome.run(now, project.location, project.description, project.trade, outcome);
+      sendJson(res, 200, { ok: true });
+    } catch (err) {
+      sendJson(res, 400, { error: 'invalid request body' });
+    }
+    return true;
+  }
+
+  // The refund guarantee ("send us the rejection notice... that's the whole
+  // process") had no actual destination in the product before this. Anyone
+  // can file one — there's no automated eligibility check (the promise is
+  // "we missed something," which only a human can judge against the actual
+  // rejection notice) — this just makes sure the claim reaches someone
+  // instead of evaporating. Reviewed manually via server/refund-claims.js.
+  if (req.method === 'POST' && /^\/api\/projects\/[^/]+\/refund-claim$/.test(req.url)) {
+    if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
+    const id = req.url.split('/')[3];
+    try {
+      const { details, contactEmail } = JSON.parse((await readBody(req)) || '{}');
+      if (!details || typeof details !== 'string' || !details.trim()) {
+        sendJson(res, 400, { error: 'tell us what happened — a few words on what was missing or wrong' });
+        return true;
+      }
+      const project = getProjectStmt.get(id);
+      if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }
+
+      insertRefundClaimStmt.run(crypto.randomUUID(), id, project.outcome_status || 'rejected', details.trim().slice(0, 4000), (contactEmail || '').trim().slice(0, 200) || null, new Date().toISOString());
       sendJson(res, 200, { ok: true });
     } catch (err) {
       sendJson(res, 400, { error: 'invalid request body' });

@@ -23,6 +23,7 @@ import { handleDocumentsRoutes } from './routes/documents.js';
 import { handleOverviewRoutes } from './routes/overview.js';
 import { handleGeocodeRoutes } from './routes/geocode.js';
 import { handleStaticRoutes } from './static.js';
+import { runLearningPass } from './learn.js';
 
 const PORT = process.env.PORT || 8787;
 
@@ -70,3 +71,21 @@ export const server = createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Setback backend listening on http://localhost:${PORT}`);
 });
+
+// The outcome-learning loop (learn.js) used to require someone to remember
+// to run it by hand — a real mechanism that stayed dormant in practice.
+// Running it here, on a timer inside the same long-running process, is what
+// actually makes it compound: no external cron needed, matches this app's
+// one-deployable-service shape. Delayed 30s past boot so it never competes
+// with startup, then every 6 hours — frequent enough that a real beta
+// tester's outcome report surfaces same-day, infrequent enough not to waste
+// API calls when nothing new has come in (runLearningPass() is a no-op,
+// zero LLM calls, when no group has crossed the report threshold).
+// .unref() on both: this timer must never be the thing keeping the process
+// alive (it would otherwise stop `node --test` from exiting, since every
+// test file imports this module) — the HTTP server's own listening socket
+// is what keeps a real deployment alive, same as before this existed.
+setTimeout(() => {
+  runLearningPass();
+  setInterval(runLearningPass, 6 * 60 * 60 * 1000).unref();
+}, 30_000).unref();

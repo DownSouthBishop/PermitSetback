@@ -6,7 +6,29 @@
 // Gemini-fallback-aware implementation for those three — it could migrate
 // onto this helper later, but isn't required to; its needs (provider
 // fallback) are a level up from what this covers.
+import crypto from 'node:crypto';
+import { insertApiUsageStmt } from './db.js';
+import { estimateCostUsd } from './pricing.js';
+
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+const MODEL = 'claude-sonnet-4-6';
+
+// Every real call gets logged — this is what turns "what does this cost us"
+// from a guess into a query (see server/routes/admin-usage.js). Logging
+// failure is swallowed on purpose: a broken cost log must never break the
+// actual feature.
+export function logUsage({ projectId, callType, usage, model, provider }) {
+  try {
+    if (!usage) return;
+    const effectiveModel = model || MODEL;
+    const inputTokens = usage.input_tokens || 0;
+    const outputTokens = usage.output_tokens || 0;
+    const cost = estimateCostUsd(effectiveModel, inputTokens, outputTokens);
+    insertApiUsageStmt.run(crypto.randomUUID(), projectId || null, callType || 'unknown', provider || 'anthropic', effectiveModel, inputTokens, outputTokens, cost, new Date().toISOString());
+  } catch (err) {
+    console.error('logUsage failed (non-fatal):', err.message);
+  }
+}
 
 export async function fetchWithTimeout(url, options, ms) {
   const controller = new AbortController();
@@ -25,7 +47,7 @@ export function extractJson(text) {
   return JSON.parse(t);
 }
 
-async function callOnce({ systemPrompt, userText, maxTokens, timeoutMs }) {
+async function callOnce({ systemPrompt, userText, maxTokens, timeoutMs, projectId, callType }) {
   const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -34,7 +56,7 @@ async function callOnce({ systemPrompt, userText, maxTokens, timeoutMs }) {
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
+      model: MODEL,
       max_tokens: maxTokens,
       system: systemPrompt,
       messages: [{ role: 'user', content: userText }]
@@ -42,6 +64,7 @@ async function callOnce({ systemPrompt, userText, maxTokens, timeoutMs }) {
   }, timeoutMs);
   if (!res.ok) throw new Error(`Anthropic returned ${res.status}`);
   const data = await res.json();
+  logUsage({ projectId, callType, usage: data.usage });
   const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
   return extractJson(text);
 }
@@ -56,8 +79,8 @@ async function callOnce({ systemPrompt, userText, maxTokens, timeoutMs }) {
 // which breaks JSON.parse — intermittent, not systemic, so one retry with
 // the identical request is the pragmatic fix rather than chasing a specific
 // malformed sample.
-export async function callAnthropicJSON({ systemPrompt, userText, maxTokens = 1500, isValid, timeoutMs = 60_000 }) {
-  const args = { systemPrompt, userText, maxTokens, timeoutMs };
+export async function callAnthropicJSON({ systemPrompt, userText, maxTokens = 1500, isValid, timeoutMs = 60_000, projectId, callType }) {
+  const args = { systemPrompt, userText, maxTokens, timeoutMs, projectId, callType };
   try {
     const result = await callOnce(args);
     if (isValid && !isValid(result)) throw new Error('Response failed schema validation');

@@ -37,7 +37,7 @@ export async function handleTimelineRoutes(req, res, ip) {
     if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
 
     try {
-      const { phases } = await generateTimelinePhases(project.location, project.description, project.trade);
+      const { phases } = await generateTimelinePhases(project.location, project.description, project.trade, project.id);
       const now = new Date().toISOString();
       phases.forEach((phase, i) => {
         insertTimelinePhaseStmt.run(

@@ -3,6 +3,7 @@
 // (timeout, 5xx, or a 429 rate limit) — not raced in parallel, to avoid
 // paying for two calls on every request when one almost always succeeds.
 import { getInsightStmt } from './db.js';
+import { logUsage } from './ai.js';
 
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
 const GOOGLE_KEY = process.env.GOOGLE_API_KEY; // optional — fallback stays off until this is set
@@ -72,6 +73,10 @@ async function callAnthropic(userText) {
   }, 60_000);
   if (!res.ok) throw new Error(`Anthropic returned ${res.status}`);
   const data = await res.json();
+  // No project row exists yet at this point in the flow (this call is what
+  // produces the content that becomes the project) — logged project-less;
+  // still counted in the by-call-type cost totals.
+  logUsage({ callType: 'roadmap', usage: data.usage });
   const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
   return extractJson(text);
 }
@@ -92,7 +97,7 @@ export function isValidTimelinePhases(obj) {
   );
 }
 
-async function callAnthropicTimeline(userText) {
+async function callAnthropicTimeline(userText, projectId) {
   const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -109,11 +114,12 @@ async function callAnthropicTimeline(userText) {
   }, 60_000);
   if (!res.ok) throw new Error(`Anthropic returned ${res.status}`);
   const data = await res.json();
+  logUsage({ callType: 'timeline', projectId, usage: data.usage });
   const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
   return extractJson(text);
 }
 
-async function callGeminiTimeline(userText) {
+async function callGeminiTimeline(userText, projectId) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_KEY}`;
   const res = await fetchWithTimeout(url, {
     method: 'POST',
@@ -125,24 +131,25 @@ async function callGeminiTimeline(userText) {
   }, 60_000);
   if (!res.ok) throw new Error(`Gemini returned ${res.status}`);
   const data = await res.json();
+  logUsage({ callType: 'timeline', projectId, provider: 'gemini-fallback', model: 'gemini-2.5-flash', usage: data.usageMetadata && { input_tokens: data.usageMetadata.promptTokenCount, output_tokens: data.usageMetadata.candidatesTokenCount } });
   const text = data.candidates?.[0]?.content?.parts?.map(p => p.text).join('\n') || '';
   return extractJson(text);
 }
 
 // Generates the ordered phase breakdown for the Timeline module. Mirrors
 // generateRoadmap's Anthropic-primary, Gemini-fallback shape.
-export async function generateTimelinePhases(location, description, trade) {
+export async function generateTimelinePhases(location, description, trade, projectId) {
   const userText = `Project location: ${location}\nProject description: ${description}\nTrade: ${trade}`;
 
   try {
-    const result = await callAnthropicTimeline(userText);
+    const result = await callAnthropicTimeline(userText, projectId);
     if (isValidTimelinePhases(result)) return { ok: true, provider: 'anthropic', phases: result.phases };
     throw new Error('Anthropic response failed schema validation');
   } catch (err) {
     console.error('Anthropic timeline call failed:', err.message);
     if (!GOOGLE_KEY) throw err;
 
-    const result = await callGeminiTimeline(userText);
+    const result = await callGeminiTimeline(userText, projectId);
     if (isValidTimelinePhases(result)) return { ok: true, provider: 'gemini-fallback', phases: result.phases };
     throw new Error('Gemini fallback response also failed schema validation');
   }
@@ -161,6 +168,7 @@ async function callGemini(userText) {
   }, 60_000);
   if (!res.ok) throw new Error(`Gemini returned ${res.status}`);
   const data = await res.json();
+  logUsage({ callType: 'roadmap', provider: 'gemini-fallback', model: 'gemini-2.5-flash', usage: data.usageMetadata && { input_tokens: data.usageMetadata.promptTokenCount, output_tokens: data.usageMetadata.candidatesTokenCount } });
   const text = data.candidates?.[0]?.content?.parts?.map(p => p.text).join('\n') || '';
   return extractJson(text);
 }
@@ -187,7 +195,7 @@ Narrative on file: ${project.narrative}
 Reply in plain prose, not JSON, and do not use markdown formatting (no **bold**, no #headers, no bullet lists with - or *) — this is displayed as plain text, so write it the way you'd write a plain-text message. Use short paragraphs and line breaks for structure instead.`;
 }
 
-async function callAnthropicChat(systemPrompt, messages) {
+async function callAnthropicChat(systemPrompt, messages, projectId) {
   const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -204,10 +212,11 @@ async function callAnthropicChat(systemPrompt, messages) {
   }, 60_000);
   if (!res.ok) throw new Error(`Anthropic returned ${res.status}`);
   const data = await res.json();
+  logUsage({ callType: 'advisor', projectId, usage: data.usage });
   return (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
 }
 
-async function callGeminiChat(systemPrompt, messages) {
+async function callGeminiChat(systemPrompt, messages, projectId) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_KEY}`;
   const contents = messages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
   const res = await fetchWithTimeout(url, {
@@ -217,6 +226,7 @@ async function callGeminiChat(systemPrompt, messages) {
   }, 60_000);
   if (!res.ok) throw new Error(`Gemini returned ${res.status}`);
   const data = await res.json();
+  logUsage({ callType: 'advisor', projectId, provider: 'gemini-fallback', model: 'gemini-2.5-flash', usage: data.usageMetadata && { input_tokens: data.usageMetadata.promptTokenCount, output_tokens: data.usageMetadata.candidatesTokenCount } });
   return (data.candidates?.[0]?.content?.parts?.map(p => p.text).join('\n') || '').trim();
 }
 
@@ -227,13 +237,13 @@ export async function askAdvisor(project, history, userMessage) {
   const messages = [...history, { role: 'user', content: userMessage }];
   const systemPrompt = advisorSystemPrompt(project);
   try {
-    const reply = await callAnthropicChat(systemPrompt, messages);
+    const reply = await callAnthropicChat(systemPrompt, messages, project.id);
     if (!reply) throw new Error('Anthropic returned an empty reply');
     return { ok: true, provider: 'anthropic', reply };
   } catch (err) {
     console.error('Anthropic advisor call failed:', err.message);
     if (!GOOGLE_KEY) throw err;
-    const reply = await callGeminiChat(systemPrompt, messages);
+    const reply = await callGeminiChat(systemPrompt, messages, project.id);
     if (!reply) throw new Error('Gemini fallback returned an empty reply');
     return { ok: true, provider: 'gemini-fallback', reply };
   }

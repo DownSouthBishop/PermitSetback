@@ -1,8 +1,11 @@
 // Setback's learning loop — the piece that was missing entirely before.
-// Run manually for now: node --env-file=.env learn.js
-// (Once this is actually deployed, wire it to a real scheduler — cron,
-// Windows Task Scheduler, or a serverless cron trigger. Nothing here
-// requires that infrastructure to exist yet.)
+//
+// Runs two ways:
+//   1. Automatically, on an interval, inside the main server process (see
+//      index.js) — no external cron needed, matches this app's one-
+//      deployable-service shape. This is what makes the data moat real
+//      instead of dormant: it only compounds if it actually runs.
+//   2. Manually, for inspection: node --env-file=.env learn.js
 //
 // This is deliberately a single script doing one bounded job, not a
 // multi-agent system — per agent-designer's own pattern table, a bounded
@@ -19,24 +22,15 @@
 // separation is the whole point: expensive, occasional synthesis stays
 // offline; the hot path stays a single indexed SQL lookup.
 
-import { DatabaseSync } from 'node:sqlite';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { db } from './db.js';
+import { logUsage } from './ai.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
 
 // Lower than the ~20-report bar the plan sets for a public SEO-page stat —
 // this context is hedged and shown only to the model, not published as a
 // bold public claim, so a smaller sample is a defensible bar for it.
 const MIN_REPORTS = 5;
-
-if (!ANTHROPIC_KEY) {
-  console.error('ANTHROPIC_API_KEY is not set — copy server/.env.example to server/.env and fill it in.');
-  process.exit(1);
-}
-
-const db = new DatabaseSync(join(__dirname, 'data.db'));
 
 async function fetchWithTimeout(url, options, ms) {
   const controller = new AbortController();
@@ -74,55 +68,72 @@ async function synthesize(location, trade, rows) {
   }, 30_000);
   if (!res.ok) throw new Error(`Anthropic returned ${res.status}`);
   const data = await res.json();
+  logUsage({ callType: 'learn-insight', usage: data.usage });
   const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
   return { summary: text, approvedPct };
 }
 
-async function run() {
-  // Group case-insensitively — "Broward County, Florida" and "broward
-  // county, florida" are the same place and should accumulate together,
-  // not fragment into two groups that each fall short of the threshold.
-  const groups = db.prepare(`
-    SELECT MIN(location) AS location, trade, COUNT(*) AS n
-    FROM outcomes
-    GROUP BY LOWER(location), trade
-    HAVING n >= ?
-  `).all(MIN_REPORTS);
-
-  console.log(`Found ${groups.length} location/trade group(s) with >= ${MIN_REPORTS} real reports.`);
-  if (groups.length === 0) {
-    console.log(`Nothing to learn from yet — that's expected until real usage accumulates. Not a bug.`);
+// Exported so index.js can run this on a timer inside the long-running
+// server process, and so learn.js can still be invoked directly for a
+// one-off manual run. Never throws — a failed pass should never take down
+// the server or block the next scheduled attempt.
+export async function runLearningPass(log = console.log) {
+  if (!ANTHROPIC_KEY) {
+    log('Learning pass skipped — ANTHROPIC_API_KEY is not set.');
     return;
   }
 
-  const upsert = db.prepare(`
-    INSERT INTO insights (location, trade, report_count, approved_pct, summary, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?)
-    ON CONFLICT(location, trade) DO UPDATE SET
-      report_count = excluded.report_count,
-      approved_pct = excluded.approved_pct,
-      summary = excluded.summary,
-      updated_at = excluded.updated_at
-  `);
+  try {
+    // Group case-insensitively — "Broward County, Florida" and "broward
+    // county, florida" are the same place and should accumulate together,
+    // not fragment into two groups that each fall short of the threshold.
+    const groups = db.prepare(`
+      SELECT MIN(location) AS location, trade, COUNT(*) AS n
+      FROM outcomes
+      GROUP BY LOWER(location), trade
+      HAVING n >= ?
+    `).all(MIN_REPORTS);
 
-  for (const g of groups) {
-    const rows = db.prepare('SELECT outcome, description, created_at FROM outcomes WHERE LOWER(location) = LOWER(?) AND trade = ?').all(g.location, g.trade);
+    log(`[learn] Found ${groups.length} location/trade group(s) with >= ${MIN_REPORTS} real reports.`);
+    if (groups.length === 0) return;
 
-    if (looksAbusive(rows)) {
-      console.log(`Skipped ${g.location} / ${g.trade} — reports arrived in a suspicious burst, not treated as real signal.`);
-      continue;
+    const upsert = db.prepare(`
+      INSERT INTO insights (location, trade, report_count, approved_pct, summary, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(location, trade) DO UPDATE SET
+        report_count = excluded.report_count,
+        approved_pct = excluded.approved_pct,
+        summary = excluded.summary,
+        updated_at = excluded.updated_at
+    `);
+
+    for (const g of groups) {
+      const rows = db.prepare('SELECT outcome, description, created_at FROM outcomes WHERE LOWER(location) = LOWER(?) AND trade = ?').all(g.location, g.trade);
+
+      if (looksAbusive(rows)) {
+        log(`[learn] Skipped ${g.location} / ${g.trade} — reports arrived in a suspicious burst, not treated as real signal.`);
+        continue;
+      }
+
+      try {
+        const { summary, approvedPct } = await synthesize(g.location, g.trade, rows);
+        upsert.run(g.location, g.trade, rows.length, approvedPct, summary, new Date().toISOString());
+        log(`[learn] Updated insight for ${g.location} / ${g.trade} (${rows.length} reports, ${approvedPct}% approved): "${summary}"`);
+      } catch (err) {
+        console.error(`[learn] Failed to synthesize ${g.location} / ${g.trade}:`, err.message);
+      }
     }
-
-    try {
-      const { summary, approvedPct } = await synthesize(g.location, g.trade, rows);
-      upsert.run(g.location, g.trade, rows.length, approvedPct, summary, new Date().toISOString());
-      console.log(`Updated insight for ${g.location} / ${g.trade} (${rows.length} reports, ${approvedPct}% approved): "${summary}"`);
-    } catch (err) {
-      console.error(`Failed to synthesize ${g.location} / ${g.trade}:`, err.message);
-    }
+  } catch (err) {
+    console.error('[learn] Learning pass failed (non-fatal):', err.message);
   }
-
-  console.log('Done.');
 }
 
-run();
+// Only auto-run when executed directly (node learn.js), not when imported.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  if (!ANTHROPIC_KEY) {
+    console.error('ANTHROPIC_API_KEY is not set — copy server/.env.example to server/.env and fill it in.');
+    process.exit(1);
+  }
+  await runLearningPass();
+  console.log('Done.');
+}
