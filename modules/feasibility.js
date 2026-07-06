@@ -30,7 +30,7 @@ function renderFindings(container, project, findings) {
 
 async function runCheck(container, project) {
   const card = container.querySelector('.card') || container;
-  card.innerHTML = `<h3>${ICON.alert} Feasibility Intelligence</h3><p style="color:var(--ink-soft);font-size:13px;">Checking for flood zones, wetlands, HOA rules, historic districts, lot restrictions, utilities, and other concerns...</p>`;
+  card.innerHTML = `<h3>${ICON.alert} Feasibility Intelligence</h3><p style="color:var(--ink-soft);font-size:13px;"><span class="spinner"></span>Checking for flood zones, wetlands, HOA rules, historic districts, lot restrictions, utilities, and other concerns... this can take a minute or two.</p>`;
   try {
     const res = await fetchWithTimeout(findingsUrl(project), { method: 'POST' }, 160000);
     if (!res.ok) throw new Error(`Backend returned ${res.status}`);

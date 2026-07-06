@@ -101,6 +101,15 @@
   .err{ color:var(--risk); background:var(--risk-tint); border-radius:8px; padding:11px 13px; font-size:13px; margin-top:8px; }
   .hidden{ display:none; }
   .notbuilt{ color:var(--ink-soft); font-size:13.5px; }
+  .spinner{ display:inline-block; width:14px; height:14px; border:2px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; margin-right:8px; vertical-align:middle; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .micbtn{ flex:none; width:44px; height:44px; border-radius:50%; background:var(--paper-raised); border:1px solid var(--line); color:var(--ink-soft);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
+  .micbtn:hover{ border-color:var(--accent); color:var(--accent); }
+  .micbtn:active{ transform: scale(.94); }
+  .micbtn.listening{ background:var(--risk); border-color:var(--risk); color:#fff; animation:micpulse 1.4s ease-in-out infinite; }
+  @keyframes micpulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(179,38,30,.35); } 50%{ box-shadow:0 0 0 7px rgba(179,38,30,0); } }
+  #advisorMicStatus{ font-size:12px; color:var(--ink-soft); margin-top:6px; min-height:15px; }
   @media (prefers-reduced-motion: reduce){ *{ animation-duration:.001ms !important; transition-duration:.001ms !important; } }
 </style>
 </head>

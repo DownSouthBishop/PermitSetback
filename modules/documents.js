@@ -38,7 +38,7 @@ function renderDocs(container, documents) {
 }
 
 async function generate(container, project) {
-  container.innerHTML = `<div class="card"><p style="color:var(--ink-soft);font-size:13px;">Generating your document set — checklist, owner and contractor summaries, HOA and building department questions, inspection order...</p></div>`;
+  container.innerHTML = `<div class="card"><p style="color:var(--ink-soft);font-size:13px;"><span class="spinner"></span>Generating your document set — checklist, owner and contractor summaries, HOA and building department questions, inspection order... this can take a couple of minutes.</p></div>`;
   try {
     // Six full documents in one generation legitimately takes longer than
     // the usual 8-60s calls elsewhere in the app.

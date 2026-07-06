@@ -37,7 +37,7 @@ function renderEmpty(container, project) {
     const btn = container.querySelector('#genBtn');
     const status = container.querySelector('#genStatus');
     btn.disabled = true;
-    status.innerHTML = `<p style="color:var(--ink-soft);font-size:13px;margin-top:10px;">Generating...</p>`;
+    status.innerHTML = `<p style="color:var(--ink-soft);font-size:13px;margin-top:10px;"><span class="spinner"></span>Generating... this can take a minute or two.</p>`;
     try {
       const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/timeline`, {
         method: 'POST',

@@ -12,6 +12,12 @@ function bubble(role, content) {
   </div>`;
 }
 
+const MIC_ICON = `<svg aria-hidden="true" width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a2 2 0 0 0-2 2v5a2 2 0 1 0 4 0V3a2 2 0 0 0-2-2z"/><path d="M3.5 7a.5.5 0 0 1 .5.5V8a4 4 0 0 0 8 0v-.5a.5.5 0 0 1 1 0V8a5 5 0 0 1-4.5 4.975V14h1.5a.5.5 0 0 1 0 1h-4a.5.5 0 0 1 0-1H7v-1.025A5 5 0 0 1 3 8v-.5a.5.5 0 0 1 .5-.5z"/></svg>`;
+
+function micSupported() {
+  return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+}
+
 export async function render(container, project) {
   container.innerHTML = `
     <div class="card">
@@ -20,8 +26,10 @@ export async function render(container, project) {
       <div id="advisorErr"></div>
       <div style="display:flex;gap:8px;">
         <input id="advisorInput" placeholder="e.g. What if I move the pool 5 feet?" style="flex:1;background:var(--paper);border:1.5px solid var(--line);color:var(--ink);border-radius:8px;padding:11px 12px;font-size:14px;">
+        ${micSupported() ? `<button type="button" class="micbtn" id="advisorMic" title="Speak your question" aria-label="Speak your question">${MIC_ICON}</button>` : ''}
         <button class="btn small" id="advisorSend" style="width:auto;">Ask</button>
       </div>
+      <div id="advisorMicStatus"></div>
     </div>
   `;
 
@@ -29,6 +37,51 @@ export async function render(container, project) {
   const input = container.querySelector('#advisorInput');
   const sendBtn = container.querySelector('#advisorSend');
   const errBox = container.querySelector('#advisorErr');
+  const micBtn = container.querySelector('#advisorMic');
+  const micStatus = container.querySelector('#advisorMicStatus');
+
+  let listening = false;
+  let recognizer = null;
+  if (micBtn) {
+    micBtn.onclick = () => {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (listening) { recognizer && recognizer.stop(); return; }
+
+      recognizer = new SR();
+      recognizer.continuous = true;
+      recognizer.interimResults = true;
+      recognizer.lang = 'en-US';
+
+      const baseText = input.value.trim() ? input.value.trim() + ' ' : '';
+      let finalTranscript = '';
+
+      recognizer.onstart = () => {
+        listening = true;
+        micBtn.classList.add('listening');
+        micStatus.textContent = 'Listening — tap the mic again to stop.';
+      };
+      recognizer.onresult = (e) => {
+        let interim = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const t = e.results[i][0].transcript;
+          if (e.results[i].isFinal) finalTranscript += t + ' ';
+          else interim += t;
+        }
+        input.value = (baseText + finalTranscript + interim).trim();
+      };
+      recognizer.onerror = (e) => {
+        micStatus.textContent = e.error === 'not-allowed'
+          ? 'Microphone access was denied — you can still type your question.'
+          : "Didn't catch that — tap the mic to try again, or just type.";
+      };
+      recognizer.onend = () => {
+        listening = false;
+        micBtn.classList.remove('listening');
+        if (micStatus.textContent.startsWith('Listening')) micStatus.textContent = '';
+      };
+      recognizer.start();
+    };
+  }
 
   function renderLog(messages) {
     log.innerHTML = messages.length
@@ -54,7 +107,7 @@ export async function render(container, project) {
     input.value = '';
     input.disabled = true;
     sendBtn.disabled = true;
-    sendBtn.textContent = 'Thinking...';
+    sendBtn.innerHTML = `<span class="spinner"></span>Thinking...`;
     messages.push({ role: 'user', content: text });
     renderLog(messages);
 

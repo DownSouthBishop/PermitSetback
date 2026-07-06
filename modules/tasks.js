@@ -58,7 +58,18 @@ export async function render(container, project, goTo) {
           body: JSON.stringify({ status: wantDone ? 'done' : 'open' })
         }, 8000);
         if (!res.ok) throw new Error(`Backend returned ${res.status}`);
-        render(container, project, goTo);
+        // Update this one item in place instead of re-rendering the whole
+        // list — a full re-render immediately moves the checked item into
+        // a "Done" section that's often scrolled off-screen on a long
+        // list, so the item you just checked appears to vanish. Confirmed
+        // real: a checkbox that visibly worked read as "broken" to a live
+        // tester because of exactly this. It'll settle into its Done/Open
+        // grouping next time the tab is reloaded.
+        cb.disabled = false;
+        const wrapper = cb.closest('.agency, .flag');
+        const title = wrapper?.querySelector('b');
+        if (wrapper) wrapper.style.opacity = wantDone ? '.55' : '';
+        if (title) title.style.textDecoration = wantDone ? 'line-through' : '';
       } catch (err) {
         cb.checked = !wantDone;
         cb.disabled = false;

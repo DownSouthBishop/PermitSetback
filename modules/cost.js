@@ -64,9 +64,9 @@ export async function render(container, project) {
   const btn = container.querySelector('#generate');
   btn.onclick = async () => {
     btn.disabled = true;
-    btn.textContent = 'Generating...';
+    btn.innerHTML = `<span class="spinner"></span>Generating...`;
     const status = container.querySelector('#genStatus');
-    status.innerHTML = '';
+    status.innerHTML = `<p style="color:var(--ink-soft);font-size:12.5px;margin-top:8px;">This can take a minute or two.</p>`;
     try {
       const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/cost`, { method: 'POST' }, 160000);
       const body = await res.json();
