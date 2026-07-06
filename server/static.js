@@ -34,7 +34,6 @@ const SECURITY_HEADERS = {
   'x-content-type-options': 'nosniff',
   'x-frame-options': 'DENY',
   'referrer-policy': 'strict-origin-when-cross-origin',
-  'strict-transport-security': 'max-age=63072000; includeSubDomains',
   'content-security-policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; frame-ancestors 'none'",
   // No build step, no hashed filenames — a served file can change under a
   // browser's feet at any moment (exactly what happened here: a real user
@@ -43,6 +42,17 @@ const SECURITY_HEADERS = {
   // fetch the current file.
   'cache-control': 'no-cache, must-revalidate'
 };
+
+// HSTS only ever makes sense once real HTTPS is actually terminating this
+// traffic (Railway's edge, in production) — sending it over plain local
+// HTTP is actively harmful: a browser that honors it will try to upgrade
+// every future request to this origin to HTTPS, including API fetches,
+// and silently fail every one of them since there's no TLS listener here
+// at all. This reproduces as a bare "TypeError: Failed to fetch" with no
+// other clue, which is exactly what happened during real testing today.
+function isHttpsRequest(req) {
+  return req.socket.encrypted || (req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'https';
+}
 
 // Returns true if this handled the request (response already sent), false
 // if the caller should fall through to a 404. Only ever reached after every
@@ -59,7 +69,9 @@ export async function handleStaticRoutes(req, res) {
 
   try {
     const data = await readFile(filePath);
-    res.writeHead(200, { 'content-type': MIME[extname(filePath)] || 'application/octet-stream', ...SECURITY_HEADERS });
+    const headers = { 'content-type': MIME[extname(filePath)] || 'application/octet-stream', ...SECURITY_HEADERS };
+    if (isHttpsRequest(req)) headers['strict-transport-security'] = 'max-age=63072000; includeSubDomains';
+    res.writeHead(200, headers);
     res.end(data);
     return true;
   } catch (err) {
