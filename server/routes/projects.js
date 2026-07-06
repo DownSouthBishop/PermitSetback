@@ -12,7 +12,7 @@ import { isRateLimited } from '../rate-limit.js';
 import {
   getProjectStmt, updateProjectOutcomeStmt, insertOutcome, markProjectPaidStmt,
   getAccessCodeStmt, incrementAccessCodeUsesStmt, insertAccessCodeRedemptionStmt,
-  insertRefundClaimStmt, db
+  insertAccessCodeStmt, insertRefundClaimStmt, db
 } from '../db.js';
 import { createCheckoutSession, retrieveCheckoutSession } from '../stripe.js';
 
@@ -128,6 +128,26 @@ export async function handleProjectsRoutes(req, res, ip) {
       sendJson(res, 200, projectRowToJson(getProjectStmt.get(id)));
     } catch (err) {
       sendJson(res, 400, { error: 'invalid request body' });
+    }
+    return true;
+  }
+
+  // ponytail: one-off admin route for minting access codes without SSH/filesystem
+  // access to whatever host this runs on. Gated by ADMIN_SECRET; 404s entirely
+  // if that env var isn't set, so it's inert unless deliberately enabled.
+  if (req.method === 'POST' && req.url === '/api/admin/access-codes') {
+    const secret = process.env.ADMIN_SECRET;
+    if (!secret || req.headers['x-admin-secret'] !== secret) { sendJson(res, 404, { error: 'not found' }); return true; }
+    try {
+      const { code, label, maxUses, expiresAt } = JSON.parse((await readBody(req)) || '{}');
+      if (typeof code !== 'string' || !code.trim() || typeof label !== 'string' || !label.trim()) {
+        sendJson(res, 400, { error: 'code and label are required' }); return true;
+      }
+      const normalizedCode = code.trim().toUpperCase();
+      insertAccessCodeStmt.run(normalizedCode, label.trim(), maxUses ?? null, expiresAt ?? null, new Date().toISOString());
+      sendJson(res, 200, { code: normalizedCode });
+    } catch (err) {
+      sendJson(res, 400, { error: err.message.includes('UNIQUE') ? 'that code already exists' : 'invalid request body' });
     }
     return true;
   }
