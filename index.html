@@ -309,7 +309,6 @@
       <a class="heroCta" href="#tool">Show me my permits &darr;</a>
       <span class="heroCtaNote">$19 one time. No subscription. Refunded if we miss something.</span>
     </div>
-    <div class="pillrow" id="statsPill"></div>
   </div>
 </section>
 
@@ -645,10 +644,6 @@ async function loadStats(){
     if (typeof stats.introRoadmapsPaid === 'number' && stats.introRoadmapsPaid < 100){
       state.introRoadmapsPaid = stats.introRoadmapsPaid;
     }
-    const el = document.getElementById('statsPill');
-    if (!el || !stats.roadmapsGenerated) return; // nothing real to show yet — stay quiet rather than show a hollow "0"
-    el.innerHTML = `<div class="pill"><b>${stats.roadmapsGenerated.toLocaleString()}</b> roadmaps generated</div>` +
-      (stats.outcomesReported ? `<div class="pill"><b>${stats.outcomesReported.toLocaleString()}</b> outcomes reported</div>` : '');
   } catch (err) { /* stats are a nice-to-have, never block on them */ }
 }
 
@@ -1045,8 +1040,17 @@ function renderFull(){
   const flags = (r.flags||[]).map(f => `<div class="flag">${esc(f)}</div>`).join('');
   const risks = (r.risks||[]).map(x => `<div class="risk">${esc(x)}</div>`).join('');
 
+  const workspaceLink = (state.project && state.project.id) ? `
+    <div class="card" style="background:var(--accent-tint,#eef4ff);">
+      <h3>${ICON.doc} This is only the roadmap</h3>
+      <p style="color:var(--ink-soft);font-size:13.5px;margin:0 0 14px;">Feasibility screening, a cost estimate, a project timeline, a risk assessment, ready-to-hand-off documents, a task list, and an AI Advisor you can ask follow-up questions — all scoped to this project — live in your full Project Workspace.</p>
+      <a class="btn" href="project.html?id=${encodeURIComponent(state.project.id)}" style="display:block;text-align:center;text-decoration:none;">Open my Project Workspace</a>
+    </div>
+  ` : '';
+
   swapOut(`
     ${demoBanner()}
+    ${workspaceLink}
     <div class="card">
       <div class="section"><h3>${ICON.building} Every agency you'll answer to</h3>${agencies}</div>
       <div class="section"><h3>${ICON.flag} The rules that trip up projects like yours</h3>${flags}</div>
