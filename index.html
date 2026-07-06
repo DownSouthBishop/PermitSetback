@@ -882,17 +882,7 @@ function openCheckout(){
       </div>
       <div id="redeemErr"></div>
       <div class="divider">or pay by card</div>
-      <div class="walletbtns">
-        <button class="walletbtn" disabled> Pay</button>
-        <button class="walletbtn g" disabled>G Pay</button>
-      </div>
-      <p class="walletnote">Card payments aren't live yet.</p>
-      <input placeholder="Card number" aria-label="Card number" style="margin-bottom:10px;" disabled>
-      <div style="display:flex;gap:10px;">
-        <input placeholder="MM / YY" aria-label="Expiry date" disabled>
-        <input placeholder="CVC" aria-label="Security code" disabled>
-      </div>
-      <button class="btn secondary" id="paynow" style="margin-top:6px;" disabled>Pay $19 — coming soon</button>
+      <button class="btn secondary" id="paynow" style="margin-top:0;">Pay with card — redirects to Stripe</button>
       <button class="btn secondary" id="cancelpay" style="margin-top:8px;">Cancel</button>
       <div id="payErr"></div>
     </div>
@@ -913,13 +903,12 @@ function openCheckout(){
   document.getElementById('cancelpay').onclick = closeModal;
   document.getElementById('paynow').onclick = async () => {
     const btn = document.getElementById('paynow');
-    btn.innerHTML = `<span class="spinner"></span>Processing...`;
+    btn.innerHTML = `<span class="spinner"></span>Redirecting to Stripe...`;
     btn.disabled = true;
     document.getElementById('payErr').innerHTML = '';
-    document.removeEventListener('keydown', onKeydown);
 
     // The mock-data fallback path never created a server-side project (there
-    // was no server to create one against), so there's nothing to unlock —
+    // was no server to create one against), so there's nothing to charge —
     // the demo content is already all there is.
     if (state.isMock){
       logEvent('checkout_completed', { location: state.project.location, price: 19 });
@@ -928,24 +917,15 @@ function openCheckout(){
     }
 
     try {
-      // DEV STUB: this call marks the project paid with no real payment check —
-      // see server/routes/projects.js. A real integration replaces this fetch
-      // with a Stripe confirmation step that calls the same unlock server-side.
-      const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(state.project.id)}/unlock`, { method: 'POST' }, 8000);
-      if (!res.ok) throw new Error(`Backend returned ${res.status}`);
-      const project = await res.json();
-      state.result = {
-        agencies: project.agencies, flags: project.flags, risks: project.risks,
-        timeline: project.timeline, timelineNote: project.timelineNote, narrative: project.narrative
-      };
-      logEvent('checkout_completed', { location: state.project.location, price: 19 });
-      showEmailCapture(modal);
+      const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(state.project.id)}/create-checkout-session`, { method: 'POST' }, 15000);
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || `Backend returned ${res.status}`);
+      window.location.href = body.url;
     } catch (err){
-      console.error('Setback: unlock failed —', err);
-      document.getElementById('payErr').innerHTML = `<div class="err">Couldn't confirm that — is the backend running? Try again in a moment.</div>`;
-      btn.innerHTML = 'Pay $19';
+      console.error('Setback: Stripe checkout session failed —', err);
+      document.getElementById('payErr').innerHTML = `<div class="err">Couldn't start checkout — is the backend running? Try again in a moment.</div>`;
+      btn.innerHTML = 'Pay with card — redirects to Stripe';
       btn.disabled = false;
-      document.addEventListener('keydown', onKeydown);
     }
   };
 
@@ -1033,7 +1013,8 @@ function showEmailCapture(modal, heading){
   };
 }
 
-function renderFull(){
+function renderFull(opts){
+  opts = opts || {};
   setMarketingVisible(false);
   const r = state.result;
   const agencies = (r.agencies||[]).map(a => `<div class="agency"><b>${esc(a.name)}</b><p>${esc(a.detail)}</p></div>`).join('');
@@ -1048,8 +1029,25 @@ function renderFull(){
     </div>
   ` : '';
 
+  // A real Stripe payment redirects the whole page away and back, so the
+  // checkout modal's "save via email" step never gets a chance to run —
+  // access-code/dev-stub unlocks stay inside the same modal and don't have
+  // this problem. Offer the same save-by-email step inline instead, once,
+  // right after a fresh Stripe return.
+  const saveInlineCard = opts.offerSaveInline ? `
+    <div class="card" id="saveInlineCard">
+      <h3>${ICON.check} Payment complete</h3>
+      <label>Save this roadmap — enter your email to find it anytime</label>
+      <input type="email" id="saveInlineEmail" placeholder="you@email.com" aria-label="Email">
+      <div id="saveInlineErr"></div>
+      <button class="btn" id="saveInlineSubmit">Save my roadmap</button>
+      <p style="text-align:center;margin-top:10px;"><a id="saveInlineSkip" style="cursor:pointer;color:var(--accent-deep);font-size:13px;">Skip for now</a></p>
+    </div>
+  ` : '';
+
   swapOut(`
     ${demoBanner()}
+    ${saveInlineCard}
     ${workspaceLink}
     <div class="card">
       <div class="section"><h3>${ICON.building} Every agency you'll answer to</h3>${agencies}</div>
@@ -1083,6 +1081,43 @@ function renderFull(){
     </div>
     <p class="disc">This is an informational roadmap, not a permit guarantee or legal determination — confirm current requirements with the issuing agencies before submitting.</p>
   `);
+
+  if (opts.offerSaveInline){
+    const skipLink = document.getElementById('saveInlineSkip');
+    const submitBtn = document.getElementById('saveInlineSubmit');
+    skipLink.onclick = () => { document.getElementById('saveInlineCard').remove(); };
+    submitBtn.onclick = async () => {
+      const email = document.getElementById('saveInlineEmail').value.trim();
+      const errBox = document.getElementById('saveInlineErr');
+      if (!email || !email.includes('@')){
+        errBox.innerHTML = `<div class="err">Add a valid email, or skip for now.</div>`;
+        return;
+      }
+      submitBtn.innerHTML = `<span class="spinner"></span>Saving...`;
+      submitBtn.disabled = true;
+      try {
+        const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/auth/request-link`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, projectId: state.project.id })
+        }, 8000);
+        if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+        const { devLink } = await res.json();
+        const verifyToken = new URL(devLink).searchParams.get('token');
+        const ownLink = `${location.origin}${location.pathname}?verify=${encodeURIComponent(verifyToken)}`;
+        document.getElementById('saveInlineCard').innerHTML = `
+          <h3>${ICON.check} Saved</h3>
+          <p style="color:var(--ink-soft);font-size:13px;margin:0 0 14px;">There's no real email delivery yet, so here's your link directly:</p>
+          <p style="margin:0;"><a href="${esc(ownLink)}" style="color:var(--accent-deep);font-weight:600;">Your access link (temporary — real email delivery comes later)</a></p>
+        `;
+      } catch (err){
+        errBox.innerHTML = `<div class="err">Couldn't save that — is the backend running? You can try again or skip for now.</div>`;
+        submitBtn.innerHTML = 'Save my roadmap';
+        submitBtn.disabled = false;
+      }
+    };
+  }
+
   document.getElementById('copy').onclick = async () => {
     const copyBtn = document.getElementById('copy');
     const text = document.getElementById('narr').innerText;
@@ -1214,6 +1249,18 @@ async function init(){
 
   const projectId = params.get('project');
   if (projectId){
+    // Returning from Stripe's hosted Checkout page — confirm the session
+    // directly against Stripe's API before treating this project as paid.
+    // Confirmation is idempotent (a repeat visit or refresh just returns
+    // the already-paid project), so there's no harm re-running it.
+    const checkoutSessionId = params.get('checkout_session_id');
+    if (checkoutSessionId){
+      try {
+        await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(projectId)}/confirm-checkout?session_id=${encodeURIComponent(checkoutSessionId)}`, {}, 15000);
+      } catch (err){
+        console.error('Setback: Stripe checkout confirmation failed —', err);
+      }
+    }
     try {
       const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(projectId)}`, {}, 8000);
       if (res.ok){
@@ -1226,7 +1273,11 @@ async function init(){
             timeline: project.timeline, timelineNote: project.timelineNote, narrative: project.narrative
           };
           render({ hideIntake: true });
-          renderFull();
+          // A real Stripe payment involves a full page redirect away and
+          // back — unlike the access-code/dev-stub paths, there's no modal
+          // still open to offer "save via email" from. Offer it inline
+          // instead, once, right after a fresh Stripe return.
+          renderFull({ offerSaveInline: !!checkoutSessionId });
         } else {
           // Not paid yet — a visitor returning to a saved-but-unpurchased link
           // gets the same teaser everyone else gets, not the full content.

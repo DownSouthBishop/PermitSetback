@@ -12,8 +12,27 @@ import { isRateLimited } from '../rate-limit.js';
 import {
   getProjectStmt, updateProjectOutcomeStmt, insertOutcome, markProjectPaidStmt,
   getAccessCodeStmt, incrementAccessCodeUsesStmt, insertAccessCodeRedemptionStmt,
-  insertRefundClaimStmt
+  insertRefundClaimStmt, db
 } from '../db.js';
+import { createCheckoutSession, retrieveCheckoutSession } from '../stripe.js';
+
+// Same "first 100 paid roadmaps" intro-price check /api/stats already
+// exposes to the client for display — this is the one that actually
+// decides what to charge, server-side, never trusting a client-supplied
+// price. $19 while under the introductory cap, $39 after.
+function currentPriceCents() {
+  const paidCount = db.prepare('SELECT COUNT(*) AS n FROM projects WHERE paid = 1').get().n;
+  return paidCount < 100 ? 1900 : 3900;
+}
+
+// Stripe redirects the browser here directly, so it needs an absolute
+// URL — derived from the request itself (Host header + whether this hop
+// is HTTPS) rather than hardcoded, so it's correct in both local dev and
+// behind Railway's TLS-terminating edge.
+function originFromRequest(req) {
+  const proto = req.socket.encrypted || (req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'https' ? 'https' : 'http';
+  return `${proto}://${req.headers.host}`;
+}
 
 function projectRowToJson(row) {
   return {
@@ -109,6 +128,66 @@ export async function handleProjectsRoutes(req, res, ip) {
       sendJson(res, 200, projectRowToJson(getProjectStmt.get(id)));
     } catch (err) {
       sendJson(res, 400, { error: 'invalid request body' });
+    }
+    return true;
+  }
+
+  // Real Stripe Checkout — creates a session for this project at whatever
+  // the current server-decided price is, and returns the hosted Stripe URL
+  // for the frontend to redirect to. Nothing here marks a project paid;
+  // that only happens once /confirm-checkout (or the webhook) verifies the
+  // session actually completed with Stripe.
+  if (req.method === 'POST' && /^\/api\/projects\/[^/]+\/create-checkout-session$/.test(req.url)) {
+    if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
+    const id = req.url.split('/')[3];
+    const project = getProjectStmt.get(id);
+    if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }
+    if (project.paid) { sendJson(res, 200, projectRowToJson(project)); return true; }
+
+    try {
+      const origin = originFromRequest(req);
+      const session = await createCheckoutSession({
+        projectId: id,
+        amountCents: currentPriceCents(),
+        label: `Setback — ${project.trade} permit roadmap`,
+        successUrl: `${origin}/?project=${encodeURIComponent(id)}&checkout_session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${origin}/?project=${encodeURIComponent(id)}`
+      });
+      sendJson(res, 200, { url: session.url });
+    } catch (err) {
+      console.error('Stripe checkout session creation failed:', err.message);
+      sendJson(res, 502, { error: "Couldn't start checkout — try again in a moment." });
+    }
+    return true;
+  }
+
+  // The return leg: Stripe sent the browser back here with a session id.
+  // Verify directly against Stripe's API (never trust the query string
+  // alone) before marking anything paid — this alone is a legitimate,
+  // secure confirmation path even with no webhook reachable yet (e.g. local
+  // dev). The webhook (routes/stripe-webhook.js) is defense-in-depth for
+  // the case where someone closes the tab before the redirect completes.
+  const [confirmUrlPath, confirmQs] = req.url.split('?');
+  if (req.method === 'GET' && /^\/api\/projects\/[^/]+\/confirm-checkout$/.test(confirmUrlPath)) {
+    const id = confirmUrlPath.split('/')[3];
+    const sessionId = new URLSearchParams(confirmQs || '').get('session_id');
+    const project = getProjectStmt.get(id);
+    if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }
+    if (project.paid) { sendJson(res, 200, projectRowToJson(project)); return true; }
+    if (!sessionId) { sendJson(res, 400, { error: 'missing session_id' }); return true; }
+
+    try {
+      const session = await retrieveCheckoutSession(sessionId);
+      if (session.payment_status !== 'paid' || session.metadata?.projectId !== id) {
+        sendJson(res, 402, { error: 'payment not confirmed' });
+        return true;
+      }
+      const now = new Date().toISOString();
+      markProjectPaidStmt.run(now, now, id);
+      sendJson(res, 200, projectRowToJson(getProjectStmt.get(id)));
+    } catch (err) {
+      console.error('Stripe checkout confirmation failed:', err.message);
+      sendJson(res, 502, { error: "Couldn't confirm payment — try again in a moment." });
     }
     return true;
   }

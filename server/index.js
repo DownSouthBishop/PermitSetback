@@ -22,6 +22,7 @@ import { handleTasksRoutes } from './routes/tasks.js';
 import { handleDocumentsRoutes } from './routes/documents.js';
 import { handleOverviewRoutes } from './routes/overview.js';
 import { handleGeocodeRoutes } from './routes/geocode.js';
+import { handleStripeWebhookRoutes } from './routes/stripe-webhook.js';
 import { handleStaticRoutes } from './static.js';
 import { runLearningPass } from './learn.js';
 
@@ -63,6 +64,7 @@ export const server = createServer(async (req, res) => {
   if (await handleDocumentsRoutes(req, res, ip)) return;
   if (await handleOverviewRoutes(req, res)) return;
   if (await handleGeocodeRoutes(req, res, ip)) return;
+  if (await handleStripeWebhookRoutes(req, res)) return;
   if (await handleStaticRoutes(req, res)) return;
 
   sendJson(res, 404, { error: 'not found' });
