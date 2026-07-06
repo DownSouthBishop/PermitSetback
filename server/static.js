@@ -35,7 +35,13 @@ const SECURITY_HEADERS = {
   'x-frame-options': 'DENY',
   'referrer-policy': 'strict-origin-when-cross-origin',
   'strict-transport-security': 'max-age=63072000; includeSubDomains',
-  'content-security-policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; frame-ancestors 'none'"
+  'content-security-policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; frame-ancestors 'none'",
+  // No build step, no hashed filenames — a served file can change under a
+  // browser's feet at any moment (exactly what happened here: a real user
+  // kept hitting an old cached copy of index.html with a since-fixed
+  // timeout baked into its inline script). Never cache the shell; always
+  // fetch the current file.
+  'cache-control': 'no-cache, must-revalidate'
 };
 
 // Returns true if this handled the request (response already sent), false
