@@ -573,8 +573,21 @@ function toggleMic(){
 
 const root = document.getElementById('app');
 
+// The compare/how/who/faq/finalcta sections below #app are pre-purchase
+// persuasion content — aimed at a visitor still deciding. Once someone's
+// looking at their own unlocked roadmap they've already converted; showing
+// them "why Setback beats an expediter" again is a message-match problem,
+// not a conversion one. Hidden only during renderFull(), restored on any
+// fresh render() (a new visitor, or "add more detail" from the teaser).
+function setMarketingVisible(visible){
+  document.querySelectorAll('.compare, .how, .who, .faq, .finalcta').forEach(el => {
+    el.style.display = visible ? '' : 'none';
+  });
+}
+
 function render(opts){
   opts = opts || {};
+  setMarketingVisible(true);
   root.innerHTML = `
     <div class="card${opts.hideIntake ? ' hidden' : ''}" id="intakeCard">
       <h3 id="tool">Tell us about the job</h3>
@@ -883,6 +896,12 @@ function openCheckout(){
       <button class="btn" id="paynow" style="margin-top:6px;">Pay $19</button>
       <button class="btn secondary" id="cancelpay" style="margin-top:8px;">Cancel</button>
       <div id="payErr"></div>
+      <div class="divider">or</div>
+      <div style="display:flex;gap:8px;">
+        <input id="accessCodeInput" placeholder="Access code" aria-label="Access code" style="flex:1;margin-bottom:0;">
+        <button class="btn small" id="redeemCode" style="width:auto;">Unlock</button>
+      </div>
+      <div id="redeemErr"></div>
     </div>
   `;
   document.body.appendChild(modal);
@@ -936,12 +955,45 @@ function openCheckout(){
       document.addEventListener('keydown', onKeydown);
     }
   };
+
+  document.getElementById('redeemCode').onclick = async () => {
+    const codeInput = document.getElementById('accessCodeInput');
+    const redeemBtn = document.getElementById('redeemCode');
+    const errBox = document.getElementById('redeemErr');
+    const code = codeInput.value.trim();
+    errBox.innerHTML = '';
+    if (!code){ errBox.innerHTML = `<div class="err">Enter a code first.</div>`; return; }
+    if (state.isMock){ errBox.innerHTML = `<div class="err">Access codes need the backend running — this is demo data.</div>`; return; }
+
+    redeemBtn.disabled = true;
+    codeInput.disabled = true;
+    redeemBtn.textContent = '...';
+    try {
+      const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(state.project.id)}/redeem`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+      }, 8000);
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || `Backend returned ${res.status}`);
+      state.result = {
+        agencies: body.agencies, flags: body.flags, risks: body.risks,
+        timeline: body.timeline, timelineNote: body.timelineNote, narrative: body.narrative
+      };
+      logEvent('checkout_completed', { location: state.project.location, price: 0, viaCode: true });
+      showEmailCapture(modal, 'Access unlocked');
+    } catch (err){
+      errBox.innerHTML = `<div class="err">${esc(err.message || "Couldn't verify that code.")}</div>`;
+      redeemBtn.disabled = false;
+      codeInput.disabled = false;
+      redeemBtn.textContent = 'Unlock';
+    }
+  };
 }
 
-function showEmailCapture(modal){
+function showEmailCapture(modal, heading){
   const box = modal.querySelector('#modalBox');
   box.innerHTML = `
-    <h3 id="modalTitle">Payment complete</h3>
+    <h3 id="modalTitle">${esc(heading || 'Payment complete')}</h3>
     <label>Save this roadmap — enter your email to find it anytime</label>
     <input type="email" id="captureEmail" placeholder="you@email.com" aria-label="Email">
     <div id="captureErr"></div>
@@ -989,6 +1041,7 @@ function showEmailCapture(modal){
 }
 
 function renderFull(){
+  setMarketingVisible(false);
   const r = state.result;
   const agencies = (r.agencies||[]).map(a => `<div class="agency"><b>${esc(a.name)}</b><p>${esc(a.detail)}</p></div>`).join('');
   const flags = (r.flags||[]).map(f => `<div class="flag">${esc(f)}</div>`).join('');

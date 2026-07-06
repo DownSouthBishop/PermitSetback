@@ -61,7 +61,7 @@ export async function render(container, project) {
       <div class="card">
         <h3>${ICON.alert} Feasibility Intelligence</h3>
         <p style="color:var(--ink-soft);font-size:13px;">Check for flood zones, wetlands, HOA rules, historic districts, lot restrictions, utilities, and other concerns before you get to permits.</p>
-        <button class="copybtn" id="run">Run feasibility check</button>
+        <button class="btn" id="run" style="margin-top:4px;">Run feasibility check</button>
       </div>
     `;
     container.querySelector('#run').onclick = () => runCheck(container, project);

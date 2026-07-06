@@ -64,7 +64,7 @@ export async function render(container, project) {
       <div class="card">
         <h3>${ICON.alert} Risk Intelligence</h3>
         <p style="color:var(--ink-soft);font-size:13px;">Assess permitting, cost, schedule, and compliance risk before they turn into delays or overruns.</p>
-        <button class="copybtn" id="run">Run risk assessment</button>
+        <button class="btn" id="run" style="margin-top:4px;">Run risk assessment</button>
       </div>
     `;
     container.querySelector('#run').onclick = () => runCheck(container, project);

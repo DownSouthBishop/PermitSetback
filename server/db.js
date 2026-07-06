@@ -175,6 +175,27 @@ db.exec(`
     content TEXT NOT NULL,
     created_at TEXT NOT NULL
   );
+
+  -- Access codes: an unlock path independent of payment, for beta testers
+  -- and the founder. max_uses NULL means unlimited; expires_at NULL means
+  -- never expires. This stays alongside whatever real payment integration
+  -- comes later — codes are a permanent second door, not a temporary hack.
+  CREATE TABLE IF NOT EXISTS access_codes (
+    code TEXT PRIMARY KEY,
+    label TEXT NOT NULL,
+    max_uses INTEGER,
+    uses_count INTEGER NOT NULL DEFAULT 0,
+    expires_at TEXT,
+    created_at TEXT NOT NULL
+  );
+  -- One row per redemption, so it's visible which code unlocked which
+  -- project (and by extension, which beta tester did what).
+  CREATE TABLE IF NOT EXISTS access_code_redemptions (
+    id TEXT PRIMARY KEY,
+    code TEXT NOT NULL,
+    project_id TEXT NOT NULL,
+    redeemed_at TEXT NOT NULL
+  );
 `);
 
 // Schema evolves via additive, idempotent statements rather than a migration
@@ -236,6 +257,19 @@ export const linkProjectToUserStmt = db.prepare('UPDATE projects SET user_id = ?
 // starts returning full content. Stands in for a real payment confirmation
 // (e.g. a Stripe webhook) until that's wired up; see routes/projects.js.
 export const markProjectPaidStmt = db.prepare(`UPDATE projects SET paid = 1, paid_at = ?, updated_at = ? WHERE id = ?`);
+
+// --- access codes ---------------------------------------------------------
+export const getAccessCodeStmt = db.prepare('SELECT * FROM access_codes WHERE code = ?');
+export const insertAccessCodeStmt = db.prepare(`
+  INSERT INTO access_codes (code, label, max_uses, expires_at, created_at)
+  VALUES (?, ?, ?, ?, ?)
+`);
+export const incrementAccessCodeUsesStmt = db.prepare('UPDATE access_codes SET uses_count = uses_count + 1 WHERE code = ?');
+export const insertAccessCodeRedemptionStmt = db.prepare(`
+  INSERT INTO access_code_redemptions (id, code, project_id, redeemed_at)
+  VALUES (?, ?, ?, ?)
+`);
+export const listAccessCodesStmt = db.prepare('SELECT * FROM access_codes ORDER BY created_at DESC');
 export const getProjectsByUserStmt = db.prepare(`
   SELECT id, location, description, trade, outcome_status, created_at
   FROM projects WHERE user_id = ? ORDER BY created_at DESC

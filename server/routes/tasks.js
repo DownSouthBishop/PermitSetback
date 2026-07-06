@@ -23,13 +23,26 @@ function taskRowToJson(row) {
   return { id: row.id, title: row.title, detail: row.detail, status: row.status, createdAt: row.created_at, updatedAt: row.updated_at };
 }
 
+// Flags are one long sentence with no natural label — every flag-derived
+// task used to share the identical title "Address jurisdiction flag,"
+// making a 5-6-item list unscannable. Derive a short distinct title from the
+// flag's own leading clause instead; the full text still lives in detail.
+function shortTitleFromFlag(flagText) {
+  // Split only on em-dash or sentence-ending punctuation — NOT a plain
+  // hyphen, which shows up constantly in compound construction terms
+  // ("post-footing", "slope-rear", "tie-in") and would cut mid-word.
+  const clause = flagText.split(/\s*—\s*|(?<=[.:;])\s/)[0].trim();
+  const base = clause.length > 4 ? clause : flagText;
+  return base.length > 60 ? base.slice(0, 57).replace(/\s+\S*$/, '') + '…' : base;
+}
+
 function syncConcernTasks(project) {
   const now = new Date().toISOString();
 
   JSON.parse(project.flags || '[]').forEach((flagText, i) => {
     const sourceId = `flag:${i}`;
     if (!getTaskBySourceStmt.get(project.id, sourceId)) {
-      insertTaskStmt.run(crypto.randomUUID(), project.id, sourceId, 'Address jurisdiction flag', flagText, 'open', null, now, now);
+      insertTaskStmt.run(crypto.randomUUID(), project.id, sourceId, shortTitleFromFlag(flagText), flagText, 'open', null, now, now);
     }
   });
 

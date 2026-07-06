@@ -29,7 +29,7 @@ function renderEmpty(container, project) {
     <div class="card">
       <h3>${ICON.clock} Phase-by-phase schedule</h3>
       <p style="color:var(--ink-soft);font-size:13.5px;margin:0 0 14px;">Break this project down into its real phases — feasibility, design, permitting, construction, and beyond — with the phase most likely to slip flagged up front.</p>
-      <button class="rbtn" id="genBtn" style="flex:none;">Generate timeline</button>
+      <button class="btn" id="genBtn">Generate timeline</button>
       <div id="genStatus" aria-live="polite"></div>
     </div>
   `;

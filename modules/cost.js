@@ -56,7 +56,7 @@ export async function render(container, project) {
     <div class="card">
       <h3>${ICON.doc} No cost estimate yet</h3>
       <p style="color:var(--ink-soft);font-size:13.5px;margin:0 0 14px;">Generate a cost breakdown for this project — permit fees, engineering, construction, and contingency, all as ranges.</p>
-      <button class="copybtn" id="generate">Generate cost estimate</button>
+      <button class="btn" id="generate">Generate cost estimate</button>
       <div id="genStatus" aria-live="polite"></div>
     </div>
   `;

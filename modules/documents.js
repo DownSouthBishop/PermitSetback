@@ -70,7 +70,7 @@ export async function render(container, project) {
       <div class="card">
         <h3>${ICON.doc} Generate your document set</h3>
         <p style="color:var(--ink-soft);font-size:13.5px;margin:0 0 14px;">A permit checklist, owner and contractor summaries, HOA and building department questions, and the likely inspection order — all specific to this project.</p>
-        <button class="copybtn" id="generate">Generate documents</button>
+        <button class="btn" id="generate">Generate documents</button>
       </div>
       ${docCard(documents[0], 0)}
     `;

@@ -9,7 +9,10 @@
 // roadmap content from a client anymore.
 import { readBody, sendJson } from '../http-utils.js';
 import { isRateLimited } from '../rate-limit.js';
-import { getProjectStmt, updateProjectOutcomeStmt, insertOutcome, markProjectPaidStmt } from '../db.js';
+import {
+  getProjectStmt, updateProjectOutcomeStmt, insertOutcome, markProjectPaidStmt,
+  getAccessCodeStmt, incrementAccessCodeUsesStmt, insertAccessCodeRedemptionStmt
+} from '../db.js';
 
 function projectRowToJson(row) {
   return {
@@ -73,6 +76,39 @@ export async function handleProjectsRoutes(req, res, ip) {
       markProjectPaidStmt.run(new Date().toISOString(), new Date().toISOString(), id);
     }
     sendJson(res, 200, projectRowToJson(getProjectStmt.get(id)));
+    return true;
+  }
+
+  // Access-code unlock — a permanent second door alongside payment, for
+  // beta testers and the founder. Independent of whatever real payment
+  // integration replaces the /unlock dev-stub later; this keeps working
+  // exactly the same after that happens.
+  if (req.method === 'POST' && /^\/api\/projects\/[^/]+\/redeem$/.test(req.url)) {
+    if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
+    const id = req.url.split('/')[3];
+    const project = getProjectStmt.get(id);
+    if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }
+    try {
+      const { code } = JSON.parse((await readBody(req)) || '{}');
+      if (typeof code !== 'string' || !code.trim()) { sendJson(res, 400, { error: 'an access code is required' }); return true; }
+      const normalizedCode = code.trim().toUpperCase();
+      const accessCode = getAccessCodeStmt.get(normalizedCode);
+      if (!accessCode) { sendJson(res, 400, { error: 'invalid access code' }); return true; }
+      if (accessCode.expires_at && new Date(accessCode.expires_at).getTime() < Date.now()) {
+        sendJson(res, 400, { error: 'this access code has expired' }); return true;
+      }
+      if (accessCode.max_uses !== null && accessCode.uses_count >= accessCode.max_uses) {
+        sendJson(res, 400, { error: 'this access code has reached its use limit' }); return true;
+      }
+
+      const now = new Date().toISOString();
+      if (!project.paid) markProjectPaidStmt.run(now, now, id);
+      incrementAccessCodeUsesStmt.run(normalizedCode);
+      insertAccessCodeRedemptionStmt.run(crypto.randomUUID(), normalizedCode, id, now);
+      sendJson(res, 200, projectRowToJson(getProjectStmt.get(id)));
+    } catch (err) {
+      sendJson(res, 400, { error: 'invalid request body' });
+    }
     return true;
   }
 
