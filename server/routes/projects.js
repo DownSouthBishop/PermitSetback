@@ -1,4 +1,4 @@
-// Project persistence: GET /api/projects/:id, POST /api/projects/:id/unlock,
+// Project persistence: GET /api/projects/:id, checkout/confirm, redeem,
 // POST /api/projects/:id/outcome.
 //
 // There used to be a POST /api/projects here that accepted a fully-formed
@@ -111,27 +111,8 @@ function projectTeaserJson(row) {
 // Returns true if this module handled the request (response already sent),
 // false if the caller should try the next route module.
 export async function handleProjectsRoutes(req, res, ip) {
-  // DEV STUB — stands in for real payment confirmation (e.g. a Stripe
-  // webhook firing after a successful charge). Marks the project paid and
-  // hands back the full content. Whatever replaces this later should call
-  // markProjectPaidStmt the same way, only after verifying the charge.
-  if (req.method === 'POST' && /^\/api\/projects\/[^/]+\/unlock$/.test(req.url)) {
-    if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
-    const id = req.url.split('/')[3];
-    const project = getProjectStmt.get(id);
-    if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }
-    if (!project.paid) {
-      console.warn(`DEV MODE: unlocking project ${id} without payment verification — replace before real launch.`);
-      markProjectPaidStmt.run('full', new Date().toISOString(), new Date().toISOString(), id);
-    }
-    sendJson(res, 200, projectRowToJson(getProjectStmt.get(id)));
-    return true;
-  }
-
-  // Access-code unlock — a permanent second door alongside payment, for
-  // beta testers and the founder. Independent of whatever real payment
-  // integration replaces the /unlock dev-stub later; this keeps working
-  // exactly the same after that happens.
+  // Access-code unlock — a permanent second door alongside the real Stripe
+  // checkout flow, for beta testers and the founder.
   if (req.method === 'POST' && /^\/api\/projects\/[^/]+\/redeem$/.test(req.url)) {
     if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
     const id = req.url.split('/')[3];

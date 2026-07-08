@@ -493,10 +493,10 @@
 <script>
 // ============================================================
 // Setback — trade-universal AI permit roadmap tool
-// Full funnel (intake -> teaser -> paywall -> reveal -> outcome
-// report). Checkout below is a clearly-labeled DEMO — wiring real payment
-// means swapping the "Pay $19" handler's call to /api/projects/:id/unlock
-// for a real Stripe confirmation step. The AI call itself is already
+// Full funnel (intake -> teaser -> paywall -> reveal -> outcome report).
+// Checkout redirects to a real Stripe Checkout session
+// (create-checkout-session -> confirm-checkout, server/routes/projects.js);
+// there is no unauthenticated unlock path. The AI call itself is already
 // server-side only (POST /api/roadmap, server/llm.js) — the API key never
 // reaches this file, and the server withholds the full roadmap content
 // until the project is marked paid.
@@ -952,7 +952,8 @@ async function generateRoadmap(){
     }
     // The server generates and holds the full roadmap — this response only
     // ever carries counts. The actual agencies/flags/risks/narrative are
-    // fetched later, once /api/projects/:id/unlock confirms payment.
+    // fetched later, once a real Stripe payment (or a valid access/referral
+    // code) confirms the project as paid.
     state.project.id = data.id;
     state.provider = data.provider;
     state.counts = data.counts;

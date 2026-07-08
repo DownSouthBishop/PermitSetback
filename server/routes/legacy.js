@@ -4,10 +4,10 @@
 // POST /api/roadmap now creates the Project row itself and returns only
 // counts — not the agencies/flags/risks/narrative content. That content is
 // only ever returned once the project is paid (see routes/projects.js's
-// GET /api/projects/:id and POST /api/projects/:id/unlock). Previously this
-// endpoint returned the full result directly, which meant the entire paid
-// answer was already sitting in the browser before checkout ever ran; the
-// teaser screen was only hiding it, not gating it.
+// GET /api/projects/:id, gated on the real Stripe checkout/confirm/webhook
+// flow). Previously this endpoint returned the full result directly, which
+// meant the entire paid answer was already sitting in the browser before
+// checkout ever ran; the teaser screen was only hiding it, not gating it.
 import { readBody, sendJson } from '../http-utils.js';
 import { isRateLimited } from '../rate-limit.js';
 import { classifyTrade } from '../classify.js';
