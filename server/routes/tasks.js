@@ -27,13 +27,19 @@ function taskRowToJson(row) {
 // task used to share the identical title "Address jurisdiction flag,"
 // making a 5-6-item list unscannable. Derive a short distinct title from the
 // flag's own leading clause instead; the full text still lives in detail.
-function shortTitleFromFlag(flagText) {
+//
+// MAX_TITLE_LEN is deliberately tight (not just "under one line") — the
+// leading clause itself is sometimes a full 70+ character sentence, and at
+// a looser cap the "short" title ends up being almost the entire opening
+// sentence of detail, reading as a duplicate instead of a label.
+const MAX_TITLE_LEN = 42;
+export function shortTitleFromFlag(flagText) {
   // Split only on em-dash or sentence-ending punctuation — NOT a plain
   // hyphen, which shows up constantly in compound construction terms
   // ("post-footing", "slope-rear", "tie-in") and would cut mid-word.
   const clause = flagText.split(/\s*—\s*|(?<=[.:;])\s/)[0].trim();
   const base = clause.length > 4 ? clause : flagText;
-  return base.length > 60 ? base.slice(0, 57).replace(/\s+\S*$/, '') + '…' : base;
+  return base.length > MAX_TITLE_LEN ? base.slice(0, MAX_TITLE_LEN - 3).replace(/\s+\S*$/, '') + '…' : base;
 }
 
 function syncConcernTasks(project) {

@@ -5,6 +5,7 @@
 // transparent count of the high-severity findings already surfaced
 // elsewhere, not a separate hidden model.
 import { sendJson, requirePaid } from '../http-utils.js';
+import { isRateLimited } from '../rate-limit.js';
 import { getProjectStmt, getFindingsByProjectStmt } from '../db.js';
 import { getProjectProgress } from '../project-progress.js';
 
@@ -19,9 +20,10 @@ const STEPS = [
 
 // Returns true if this module handled the request (response already sent),
 // false if the caller should try the next route module.
-export async function handleOverviewRoutes(req, res) {
+export async function handleOverviewRoutes(req, res, ip) {
   const match = req.url.match(/^\/api\/projects\/([^/]+)\/overview$/);
   if (req.method !== 'GET' || !match) return false;
+  if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
 
   const project = getProjectStmt.get(match[1]);
   if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }

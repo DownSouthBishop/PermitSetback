@@ -3,7 +3,7 @@
 // columns exist precisely so we don't have to pretend to more precision than
 // a construction estimate can actually offer).
 
-import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN } from './shared.js';
+import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf } from './shared.js';
 
 function money(n) {
   return Number.isFinite(n) ? `$${Math.round(n).toLocaleString()}` : '—';
@@ -54,8 +54,8 @@ export async function render(container, project) {
 
   container.innerHTML = `
     <div class="card">
-      <h3>${ICON.doc} No cost estimate yet</h3>
-      <p style="color:var(--ink-soft);font-size:13.5px;margin:0 0 14px;">Generate a cost breakdown for this project — permit fees, engineering, construction, and contingency, all as ranges.</p>
+      <h3>${ICON.doc} What this ${esc(tradeLabel(project.trade).toLowerCase())} will actually cost</h3>
+      <p style="color:var(--ink-soft);font-size:13.5px;margin:0 0 14px;">A real breakdown for ${esc(cityOf(project.location)) || 'this project'} — permit fees, engineering, construction, and contingency, all as ranges, not a single made-up number.</p>
       <button class="btn" id="generate">Generate cost estimate</button>
       <div id="genStatus" aria-live="polite"></div>
     </div>

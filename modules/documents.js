@@ -2,7 +2,7 @@
 // checklist/summary/questions set this module generates on demand. Each is
 // copyable on its own, same interaction as the Permits module's narrative.
 
-import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN } from './shared.js';
+import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf } from './shared.js';
 
 function docCard(doc, index) {
   return `
@@ -68,8 +68,8 @@ export async function render(container, project) {
   if (documents.length <= 1) {
     container.innerHTML = `
       <div class="card">
-        <h3>${ICON.doc} Generate your document set</h3>
-        <p style="color:var(--ink-soft);font-size:13.5px;margin:0 0 14px;">A permit checklist, owner and contractor summaries, HOA and building department questions, and the likely inspection order — all specific to this project.</p>
+        <h3>${ICON.doc} Ready-to-hand-off paperwork</h3>
+        <p style="color:var(--ink-soft);font-size:13.5px;margin:0 0 14px;">A permit checklist, owner and contractor summaries, HOA and building department questions, and the likely inspection order — all specific to this ${esc(tradeLabel(project.trade).toLowerCase())} project in ${esc(cityOf(project.location)) || 'your area'}.</p>
         <button class="btn" id="generate">Generate documents</button>
       </div>
       ${docCard(documents[0], 0)}

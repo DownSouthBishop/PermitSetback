@@ -26,15 +26,23 @@ export function sendJson(res, status, obj) {
   res.end(JSON.stringify(obj));
 }
 
-// 402 if a project hasn't been paid for yet. Feasibility, risk, cost,
-// timeline, documents, the AI advisor, and tasks are all part of what the
-// paid unlock covers, same as the base roadmap content — none of it should
-// be reachable by calling these endpoints directly for an unpaid project,
-// even though the client (project.html) already blocks that path in the UI.
-// Returns true if it sent a response (caller should stop), false if the
-// caller should proceed.
+// 402 if a project hasn't been paid for at the full-workspace tier.
+// Feasibility, risk, cost, timeline breakdown, documents, the AI advisor,
+// and tasks are all Full Workspace content, not part of the $49 roadmap-only
+// tier — checking project.paid alone let a roadmap-tier buyer reach every
+// one of these endpoints directly and get the $97 content for free, since
+// paid is true for both tiers. tier is backfilled to 'full' for every
+// project paid before the tier column existed (see db.js), so this is safe
+// for legacy data too. Returns true if it sent a response (caller should
+// stop), false if the caller should proceed.
 export function requirePaid(res, project) {
-  if (project.paid) return false;
-  sendJson(res, 402, { error: "This project hasn't been unlocked yet." });
-  return true;
+  if (!project.paid) {
+    sendJson(res, 402, { error: "This project hasn't been unlocked yet." });
+    return true;
+  }
+  if (project.tier !== 'full') {
+    sendJson(res, 402, { error: 'This is part of the Full Workspace — this project was unlocked at the Roadmap tier.' });
+    return true;
+  }
+  return false;
 }

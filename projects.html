@@ -112,6 +112,24 @@
   .err{ color:var(--risk); background:var(--risk-tint); border-radius:8px; padding:11px 13px; font-size:13px; margin-top:8px; }
   .empty{ color:var(--ink-soft); font-size:14px; text-align:center; padding:24px 8px; }
   .hidden{ display:none; }
+
+  /* ---- Rollup ---- */
+  .rollup{ border-color:var(--warn); }
+  .rollup h2{ font-size:14px; font-weight:700; margin:0 0 12px; text-transform:uppercase; letter-spacing:0.04em; color:var(--warn); }
+  .rollupitem{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:9px 0; border-top:1px solid var(--line); }
+  .rollupitem:first-of-type{ border-top:none; }
+  .rollupitem a{ color:var(--ink); font-weight:600; text-decoration:none; font-size:13.5px; }
+  .rollupitem a:hover{ color:var(--accent); }
+  .rollupreason{ font-size:12.5px; color:var(--ink-soft); flex:none; white-space:nowrap; }
+  .rollupok{ color:var(--ink-soft); font-size:13.5px; }
+
+  /* ---- Modals (subscription cancel flow) ---- */
+  .modal-backdrop{ position:fixed; inset:0; background:rgba(10,15,20,.55); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50; }
+  .modal{ background:var(--paper-raised); border-radius:14px; padding:24px; max-width:380px; width:100%; }
+  .modal h3{ margin:0 0 10px; font-size:17px; }
+  .modal p{ font-size:13.5px; color:var(--ink-soft); margin:0 0 14px; }
+  .radiorow{ display:flex; align-items:flex-start; gap:10px; margin-bottom:12px; font-size:14px; }
+  .radiorow input{ width:auto; margin:3px 0 0; }
   @media (prefers-reduced-motion: reduce){ *{ animation-duration:.001ms !important; transition-duration:.001ms !important; } }
 </style>
 </head>
@@ -127,6 +145,14 @@
 
 const BACKEND_ORIGIN = window.location.origin;
 const SESSION_KEY = 'setback_session';
+
+function logEvent(name, properties){
+  fetch(`${BACKEND_ORIGIN}/api/event`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, properties })
+  }).catch(() => {});
+}
 
 const MARK_ICON = `<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9h6V4h10"/></svg>`;
 
@@ -183,14 +209,20 @@ function topbar(){
 }
 
 function renderShell(inner){
+  const sessionToken = localStorage.getItem(SESSION_KEY);
   root.innerHTML = `
     ${topbar()}
     <h2 class="hero">My Projects</h2>
     <p class="sub">Every permit roadmap you've generated, saved to your account.</p>
     <div id="content" class="fadein">${inner}</div>
-    <p class="disc"><a href="index.html">Back to Setback</a></p>
+    <p class="disc">
+      <a href="index.html">Back to Setback</a>
+      ${sessionToken ? ' &middot; <a id="manageSubLink" style="cursor:pointer;">Manage subscription</a>' : ''}
+    </p>
   `;
   document.getElementById('themetoggle').onclick = toggleTheme;
+  const manageLink = document.getElementById('manageSubLink');
+  if (manageLink) manageLink.onclick = openCancelModal;
 }
 
 function renderEmailCard(errorMsg){
@@ -238,11 +270,12 @@ async function handleRequestLink(){
   }
 }
 
-function renderProjects(projects){
+function renderProjects(projects, sessionToken){
   if (!projects || projects.length === 0){
     renderShell(`<div class="empty">No saved projects yet — <a href="index.html">generate a roadmap</a> and save it to see it here.</div>`);
     return;
   }
+  logEvent('dashboard_viewed', { projectCount: projects.length });
   const cards = projects.map(p => `
     <a class="projectcard" href="project.html?id=${encodeURIComponent(p.id)}">
       <div class="row">
@@ -252,7 +285,44 @@ function renderProjects(projects){
       <div class="meta">${esc(tradeLabel(p.trade))} &middot; ${esc(formatDate(p.createdAt))}</div>
     </a>
   `).join('');
-  renderShell(cards);
+  renderShell(`<div id="rollupSlot"></div>${cards}`);
+  loadRollup(sessionToken);
+}
+
+// "Which of my active permits need attention" — server-side now
+// (server/attention.js), one request instead of one fetch per project. Also
+// what the attention-digest loop reads to decide when to (eventually) email
+// someone, so the dashboard and the digest can never disagree about what
+// counts as attention-worthy.
+function rollupHtml(items){
+  if (!items.length){
+    return `<div class="card rollup"><h2>Needs attention</h2><p class="rollupok">Nothing needs attention right now.</p></div>`;
+  }
+  return `
+    <div class="card rollup">
+      <h2>Needs attention</h2>
+      ${items.map(it => `
+        <div class="rollupitem">
+          <a href="project.html?id=${encodeURIComponent(it.projectId)}">${esc(it.location)} &middot; ${esc(tradeLabel(it.trade))}</a>
+          <span class="rollupreason">${esc(it.reason)}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+async function loadRollup(sessionToken){
+  const slot = document.getElementById('rollupSlot');
+  try {
+    const res = await fetch(`${BACKEND_ORIGIN}/api/me/attention`, {
+      headers: { 'Authorization': `Bearer ${sessionToken}` }
+    });
+    if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+    const data = await res.json();
+    if (slot) slot.outerHTML = rollupHtml(data.items);
+  } catch (err){
+    if (slot) slot.outerHTML = '';
+  }
 }
 
 function renderError(msg){
@@ -284,9 +354,110 @@ async function loadProjects(sessionToken){
     }
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `Backend returned ${res.status}`);
-    renderProjects(data.projects);
+    renderProjects(data.projects, sessionToken);
   } catch (err){
     renderError(`Couldn't load your projects: ${err.message}. Is the backend running?`);
+  }
+}
+
+// Cancel flow: one-question exit survey -> one save offer -> confirm. The
+// backend endpoint (POST /api/subscriptions/cancel) is owned by another
+// track; this is just the modal UI in front of it.
+const CANCEL_REASONS = [
+  { value: 'too_expensive', label: 'Too expensive' },
+  { value: 'not_enough_volume', label: "Don't have enough permit volume right now" },
+  { value: 'other', label: 'Other' }
+];
+
+function openCancelModal(){
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  document.body.appendChild(modal);
+  renderSurveyStep();
+
+  function onKeydown(e){ if (e.key === 'Escape') closeModal(); }
+  document.addEventListener('keydown', onKeydown);
+  function closeModal(){
+    modal.remove();
+    document.removeEventListener('keydown', onKeydown);
+  }
+
+  function renderSurveyStep(){
+    modal.innerHTML = `
+      <div class="modal fadein" id="cancelModalBox" tabindex="-1">
+        <h3>Before you go &mdash; why are you canceling?</h3>
+        ${CANCEL_REASONS.map(r => `
+          <label class="radiorow"><input type="radio" name="cancelReason" value="${r.value}"> ${esc(r.label)}</label>
+        `).join('')}
+        <div id="surveyErr"></div>
+        <button class="btn" id="surveyContinue">Continue</button>
+        <button class="btn secondary" id="surveyCancel" style="margin-top:8px;">Never mind, keep my subscription</button>
+      </div>
+    `;
+    document.getElementById('surveyCancel').onclick = closeModal;
+    document.getElementById('surveyContinue').onclick = () => {
+      const checked = modal.querySelector('input[name="cancelReason"]:checked');
+      if (!checked){
+        document.getElementById('surveyErr').innerHTML = `<div class="err">Pick a reason so we know what to fix.</div>`;
+        return;
+      }
+      renderSaveOfferStep(checked.value);
+    };
+  }
+
+  function renderSaveOfferStep(reason){
+    modal.innerHTML = `
+      <div class="modal fadein" id="cancelModalBox" tabindex="-1">
+        <h3>Before you cancel &mdash; one thing</h3>
+        <p>Stay on Setback Pro at half price for your next 2 months ($25/mo) instead of canceling. You keep the $49 workspace rate on every project.</p>
+        <button class="btn" id="acceptOffer">Keep my subscription at $25/mo</button>
+        <button class="btn secondary" id="declineOffer" style="margin-top:8px;">No thanks, cancel my subscription</button>
+      </div>
+    `;
+    document.getElementById('acceptOffer').onclick = closeModal;
+    document.getElementById('declineOffer').onclick = () => renderConfirmStep(reason);
+  }
+
+  function renderConfirmStep(reason){
+    modal.innerHTML = `
+      <div class="modal fadein" id="cancelModalBox" tabindex="-1">
+        <h3>Cancel your subscription?</h3>
+        <p>You'll keep full-workspace access at the subscriber rate until the end of your current billing period, then drop to pay-per-project pricing.</p>
+        <div id="confirmErr"></div>
+        <button class="btn" id="confirmCancel">Confirm cancellation</button>
+        <button class="btn secondary" id="backOut" style="margin-top:8px;">Go back</button>
+      </div>
+    `;
+    document.getElementById('backOut').onclick = () => renderSaveOfferStep(reason);
+    document.getElementById('confirmCancel').onclick = async () => {
+      const btn = document.getElementById('confirmCancel');
+      btn.disabled = true;
+      btn.textContent = 'Canceling...';
+      const sessionToken = localStorage.getItem(SESSION_KEY);
+      try {
+        const res = await fetch(`${BACKEND_ORIGIN}/api/subscription/cancel`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionToken}` },
+          body: JSON.stringify({ reason })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `Backend returned ${res.status}`);
+        modal.innerHTML = `
+          <div class="modal fadein" id="cancelModalBox" tabindex="-1">
+            <h3>Subscription canceled</h3>
+            <p>You'll keep full-workspace access at the subscriber rate until the end of your current billing period.</p>
+            <button class="btn" id="cancelDone">Close</button>
+          </div>
+        `;
+        document.getElementById('cancelDone').onclick = closeModal;
+      } catch (err){
+        document.getElementById('confirmErr').innerHTML = `<div class="err">${esc(err.message || "Couldn't cancel — try again in a moment.")}</div>`;
+        btn.disabled = false;
+        btn.textContent = 'Confirm cancellation';
+      }
+    };
   }
 }
 
