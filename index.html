@@ -588,8 +588,7 @@ function swapOut(html){
   // (instant) scroll-into-view unless told not to, which cuts the smooth
   // scroll above short partway through. Without this, the page can settle
   // wherever that interruption landed instead of at the top of the new
-  // content — e.g. the "Open my Project Workspace" button rendering above
-  // the fold after an unlock, needing a manual scroll up to find it.
+  // content.
   out.focus({ preventScroll: true });
 }
 function demoBanner(){
@@ -1276,7 +1275,6 @@ function renderFull(opts){
     ${demoBanner()}
     ${saveInlineCard}
     ${referralBox}
-    ${workspaceLink}
     <div class="card">
       <div class="section"><h3>${ICON.building} Every agency you'll answer to</h3>${agencies}</div>
       <div class="section"><h3>${ICON.flag} The rules that trip up projects like yours</h3>${flags}</div>
@@ -1307,6 +1305,7 @@ function renderFull(opts){
       </div>
       <div id="thanks" aria-live="polite"></div>
     </div>
+    ${workspaceLink}
     <p class="disc">This is an informational roadmap, not a permit guarantee or legal determination — confirm current requirements with the issuing agencies before submitting.</p>
   `);
 
