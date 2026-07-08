@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Setback for Permit Expediters</title>
-<meta name="description" content="$999 for 50 permit roadmaps (~$20 each) — white-label option, 30-day refund guarantee, no subscription. Built for permit expediters and high-volume shops.">
+<meta name="description" content="Prepaid permit roadmap packs for expediting firms — $549 for 15 (~$37 each) or $1,499 for 50 (~$30 each). White-label option, 30-day refund guarantee, no subscription.">
 <link rel="stylesheet" href="shared.css">
 <style>
   .price-block{ display:flex; align-items:baseline; gap:12px; margin:18px 0 6px; }
@@ -29,26 +29,38 @@
 <body>
 <div class="wrap">
   <div class="topnav"><a class="brand" href="index.html">Setback</a><a class="back" href="index.html">For contractors &rarr;</a></div>
-  <h1>50 permit roadmaps, prepaid, for less than an expediter's fee on a single job</h1>
+  <h1>Prepaid permit roadmaps, for less than an expediter's fee on a single job</h1>
   <p>You still handle the filing, the relationship, and the follow-through — Setback does the research phase in 60 seconds instead of a morning of phone calls, so more of your fee is margin, not overhead.</p>
 
   <div class="card">
-    <div class="price-block"><span class="num">$999</span><span class="per">for 50 roadmaps (~$20 each)</span></div>
-    <p style="margin:0 0 14px;">One prepaid pack, no subscription, no per-pull billing. Use them whenever, for any trade, any US location.</p>
+    <div class="price-block"><span class="num">$549</span><span class="per">for 15 roadmaps (~$37 each)</span></div>
+    <p style="margin:0 0 14px;">The lower-commitment way in — see how the pack model fits your workflow before buying the full 50.</p>
     <ul class="check">
       <li>Same full roadmap contractors pay $49&ndash;97 for individually — agencies, jurisdiction flags, rejection risks, timeline, draft narrative</li>
       <li><strong>White-label option</strong> — no Setback branding visible to your own client, so the pack fits inside your existing service without any awkward conversation about where the research came from</li>
       <li>Commercial use and resale-in-client-work explicitly permitted in the pack's terms — the standard consumer terms don't cover this, this pack's terms do</li>
       <li><strong>Same 30-day refund guarantee as every other tier</strong> — if a pull misses an agency or permit your project clearly needed, that credit is refunded. Send the rejection notice or the jurisdiction's own code section within 30 days, per credit, same process as a single $97 purchase.</li>
     </ul>
-    <button class="cta" id="buyPackBtn">Buy 50 Credits — $999</button>
+    <button class="cta" data-size="starter" data-price="549">Buy 15 Credits — $549</button>
+  </div>
+
+  <div class="card">
+    <div class="price-block"><span class="num">$1,499</span><span class="per">for 50 roadmaps (~$30 each)</span></div>
+    <p style="margin:0 0 14px;">The lowest per-pull rate Setback offers, in exchange for paying up front. No subscription, no per-pull billing — use them whenever, for any trade, any US location.</p>
+    <ul class="check">
+      <li>Same full roadmap contractors pay $49&ndash;97 for individually — agencies, jurisdiction flags, rejection risks, timeline, draft narrative</li>
+      <li><strong>White-label option</strong> — no Setback branding visible to your own client, so the pack fits inside your existing service without any awkward conversation about where the research came from</li>
+      <li>Commercial use and resale-in-client-work explicitly permitted in the pack's terms — the standard consumer terms don't cover this, this pack's terms do</li>
+      <li><strong>Same 30-day refund guarantee as every other tier</strong> — if a pull misses an agency or permit your project clearly needed, that credit is refunded. Send the rejection notice or the jurisdiction's own code section within 30 days, per credit, same process as a single $97 purchase.</li>
+    </ul>
+    <button class="cta" data-size="bulk" data-price="1,499">Buy 50 Credits — $1,499</button>
   </div>
 
   <h2>Why this instead of doing it yourself</h2>
   <p>The research phase — which agencies apply, what the local reviewer actually kicks back, how long it realistically takes — is the same work you're already doing by phone and by memory. Setback compiles it in the time it takes to describe the job, so your time goes to the parts of the job that actually need a human: the relationship, the paperwork, the follow-up.</p>
 
   <h2>Not doing 50 jobs a year yet?</h2>
-  <p>The pack only makes sense once you're confident you'll use most of the 50 — it's the lowest per-pull rate Setback offers, in exchange for paying up front. Running a couple of jobs a month but not at that volume? <a href="index.html">Setback Pro</a> gets every full workspace at $49 instead of $97 for a $49/mo membership — no upfront commitment, cancel anytime. Just one job? The <a href="index.html">one-time $49/$97 price</a> is the right size.</p>
+  <p>The 50-credit pack only makes sense once you're confident you'll use most of it — it's the lowest per-pull rate Setback offers, in exchange for paying up front. Want to try the pack model without that commitment? The 15-credit pack above is built for that. Running a couple of jobs a month but not at pack volume? <a href="index.html">Setback Pro</a> gets every full workspace at $49 instead of $97 for a $79/mo membership — no upfront commitment, cancel anytime. Just one job? The <a href="index.html">one-time $49/$97 price</a> is the right size.</p>
 
   <h2>What's not included</h2>
   <p>Setback doesn't file anything or talk to an agency on your behalf — it's the research layer, not a replacement for what you do. The guarantee above covers completeness of the roadmap itself (a missing agency), never what you separately promise your own client.</p>
@@ -65,19 +77,21 @@ const SESSION_KEY = 'setback_session';
 
 function esc(s){ return String(s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
-async function startPackCheckout(sessionToken, box, closeModal){
+async function startPackCheckout(sessionToken, box, closeModal, size){
   box.innerHTML = `<h3>Starting checkout&hellip;</h3><p style="color:var(--ink-soft);font-size:13px;"><span class="spinner"></span>Redirecting to Stripe...</p>`;
   try {
     const res = await fetch(`${BACKEND_ORIGIN}/api/expediter-pack/create-checkout-session`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionToken}` }
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionToken}` },
+      body: JSON.stringify({ size })
     });
     const body = await res.json();
     if (!res.ok) throw new Error(body.error || `Backend returned ${res.status}`);
     // Stripe's hosted page redirects to Setback's homepage (not back here),
     // with no way to say which purchase this was — index.html's init() reads
     // this to know to call the expediter-pack confirm endpoint, not the
-    // subscription one.
+    // subscription one. Which pack size doesn't need to travel along with
+    // it — the server already knows from the Checkout Session's own metadata.
     sessionStorage.setItem('pendingCheckout', 'pack');
     window.location.href = body.url;
   } catch (err){
@@ -90,8 +104,7 @@ async function startPackCheckout(sessionToken, box, closeModal){
   }
 }
 
-function openPackModal(){
-  const triggerBtn = document.getElementById('buyPackBtn');
+function openPackModal(triggerBtn, size, priceLabel){
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.setAttribute('role', 'dialog');
@@ -110,13 +123,13 @@ function openPackModal(){
   if (sessionToken){
     modal.innerHTML = `<div class="modal fadein" id="packModalBox" tabindex="-1" style="outline:none;"></div>`;
     document.getElementById('packModalBox').focus();
-    startPackCheckout(sessionToken, document.getElementById('packModalBox'), closeModal);
+    startPackCheckout(sessionToken, document.getElementById('packModalBox'), closeModal, size);
     return;
   }
 
   modal.innerHTML = `
     <div class="modal fadein" id="packModalBox" tabindex="-1" style="outline:none;">
-      <h3>Buy the $999 pack</h3>
+      <h3>Buy the $${priceLabel} pack</h3>
       <p style="color:var(--ink-soft);font-size:13px;margin:0 0 16px;">Sign in first so the pack attaches to your account.</p>
       <input type="email" id="packEmail" placeholder="you@email.com" aria-label="Email">
       <div id="packErr"></div>
@@ -154,7 +167,9 @@ function openPackModal(){
   };
 }
 
-document.getElementById('buyPackBtn').onclick = openPackModal;
+document.querySelectorAll('.cta[data-size]').forEach(btn => {
+  btn.onclick = () => openPackModal(btn, btn.dataset.size, btn.dataset.price);
+});
 </script>
 </body>
 </html>

@@ -5,9 +5,9 @@
 import { readBody, sendJson, checkRateLimit, originFromRequest } from '../http-utils.js';
 import {
   db, insertSubscriptionStmt, getActiveSubscriptionByUserStmt, getSubscriptionByStripeIdStmt,
-  updateSubscriptionStatusStmt, insertPackCreditsStmt
+  updateSubscriptionStatusStmt, insertPackCreditsStmt, markRetentionOfferUsedStmt
 } from '../db.js';
-import { createSubscriptionCheckoutSession, createPackCheckoutSession, retrieveCheckoutSession, cancelSubscription } from '../stripe.js';
+import { createSubscriptionCheckoutSession, createPackCheckoutSession, retrieveCheckoutSession, cancelSubscription, applyRetentionDiscount, PACK_SIZES } from '../stripe.js';
 import { getSessionUser } from './auth.js';
 
 const VALID_CANCEL_REASONS = ['too_expensive', 'not_enough_volume', 'other'];
@@ -85,14 +85,52 @@ export async function handleBillingRoutes(req, res, ip) {
     return true;
   }
 
+  // Cancel-flow save offer: $55/mo for 2 months instead of the full $79/mo.
+  // One-shot per subscription (markRetentionOfferUsedStmt's WHERE guard),
+  // so re-opening the cancel flow after already accepting can't stack
+  // discounted months indefinitely.
+  if (req.method === 'POST' && req.url === '/api/subscription/apply-retention-offer') {
+    if (checkRateLimit(res, ip)) return true;
+    const user = getSessionUser(req);
+    if (!user) { sendJson(res, 401, { error: 'not authenticated' }); return true; }
+    const subscription = getActiveSubscriptionByUserStmt.get(user.id);
+    if (!subscription) { sendJson(res, 404, { error: 'no active subscription on this account' }); return true; }
+    if (subscription.retention_offer_used_at) {
+      sendJson(res, 400, { error: 'this account has already used its one-time retention offer' });
+      return true;
+    }
+    try {
+      await applyRetentionDiscount(subscription.stripe_subscription_id);
+      const now = new Date().toISOString();
+      markRetentionOfferUsedStmt.run(now, now, subscription.stripe_subscription_id);
+      sendJson(res, 200, { ok: true });
+    } catch (err) {
+      console.error('Stripe retention discount failed:', err.message);
+      sendJson(res, 502, { error: "Couldn't apply the discount — try again in a moment." });
+    }
+    return true;
+  }
+
   if (req.method === 'POST' && req.url === '/api/expediter-pack/create-checkout-session') {
     if (checkRateLimit(res, ip)) return true;
     const user = getSessionUser(req);
     if (!user) { sendJson(res, 401, { error: 'sign in to buy a pack' }); return true; }
+    let size = 'bulk';
+    try {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      if (body.size !== undefined) {
+        if (!(body.size in PACK_SIZES)) { sendJson(res, 400, { error: 'size must be "starter" or "bulk"' }); return true; }
+        size = body.size;
+      }
+    } catch (err) {
+      sendJson(res, 400, { error: 'invalid request body' });
+      return true;
+    }
     try {
       const origin = originFromRequest(req);
       const session = await createPackCheckoutSession({
         userId: user.id,
+        size,
         successUrl: `${origin}/?checkout_session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${origin}/`
       });
@@ -120,8 +158,9 @@ export async function handleBillingRoutes(req, res, ip) {
         // INSERT below. idx_pack_credits_session (db.js) is the real guard;
         // a duplicate insert throws here and is swallowed as a successful
         // no-op, since the credits already exist from whichever request won.
+        const credits = (PACK_SIZES[session.metadata?.size] || PACK_SIZES.bulk).credits;
         try {
-          insertPackCreditsStmt.run(crypto.randomUUID(), session.metadata.userId, sessionId, 50, new Date().toISOString());
+          insertPackCreditsStmt.run(crypto.randomUUID(), session.metadata.userId, sessionId, credits, new Date().toISOString());
         } catch (err) {
           if (!err.message.includes('UNIQUE')) throw err;
         }

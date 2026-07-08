@@ -10,7 +10,7 @@
 // `stripe listen` locally) — this route no-ops safely without it rather
 // than failing startup, since it isn't required for the core paywall to work.
 import { readBody, sendJson } from '../http-utils.js';
-import { verifyWebhookSignature } from '../stripe.js';
+import { verifyWebhookSignature, PACK_SIZES } from '../stripe.js';
 import {
   getProjectStmt, markProjectPaidStmt, db, getSubscriptionByStripeIdStmt,
   insertSubscriptionStmt, updateSubscriptionStatusStmt, insertPackCreditsStmt
@@ -61,15 +61,16 @@ export async function handleStripeWebhookRoutes(req, res) {
       // The SELECT is a fast-path, not the real guard — idx_pack_credits_session
       // (db.js) is; a duplicate insert throws and is swallowed as a no-op.
       if (sub.metadata?.type === 'expediter_pack' && sub.payment_status === 'paid' && !getPackByStripeSessionStmt.get(sub.id)) {
+        const credits = (PACK_SIZES[sub.metadata?.size] || PACK_SIZES.bulk).credits;
         try {
-          insertPackCreditsStmt.run(crypto.randomUUID(), sub.metadata.userId, sub.id, 50, new Date().toISOString());
+          insertPackCreditsStmt.run(crypto.randomUUID(), sub.metadata.userId, sub.id, credits, new Date().toISOString());
         } catch (err) {
           if (!err.message.includes('UNIQUE')) throw err;
         }
       }
     }
 
-    // Contractor $49/mo membership lifecycle. All three subscription events
+    // Contractor $79/mo membership lifecycle. All three subscription events
     // carry the full Subscription object as event.data.object, so no extra
     // Stripe API round-trip is needed to get status/current_period_end.
     if (event.type === 'customer.subscription.created') {

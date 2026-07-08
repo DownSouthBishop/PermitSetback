@@ -10,7 +10,7 @@ import {
   getAccessCodeStmt, incrementAccessCodeUsesStmt, insertAccessCodeRedemptionStmt,
   getActiveSubscriptionByUserStmt, getReferralCodeStmt, redeemReferralCodeStmt,
   insertReferralCodeStmt, getAvailablePackForUserStmt, incrementPackCreditsUsedStmt,
-  linkProjectToUserStmt
+  linkProjectToUserStmt, getPartnerCodeStmt, insertPartnerRedemptionStmt
 } from '../db.js';
 import { createCheckoutSession, retrieveCheckoutSession, createReferralPromotionCode } from '../stripe.js';
 import { getSessionUser } from './auth.js';
@@ -21,14 +21,27 @@ const VALID_TIERS = ['roadmap', 'full'];
 // The pricing ladder (see server/db.js's pricing-overhaul comment for the
 // tables this reads): $49 roadmap-only, $97 full workspace one-off, $49
 // full workspace for an active subscriber or a valid unredeemed referral
-// code. Pack credits (expediter $999/50) skip this entirely — they're
+// code. Pack credits (expediter Starter/Bulk packs) skip this entirely — they're
 // consumed directly via POST /redeem-pack-credit, never through Stripe
 // checkout, since they're already paid for.
-function priceCentsFor(tier, { sessionUser, referralCodeRow }) {
-  if (tier === 'roadmap') return 4900;
+function priceCentsFor(tier, { sessionUser, referralCodeRow, partnerCodeRow }) {
+  if (tier === 'roadmap') return partnerCodeRow ? partnerCodeRow.price_cents : 4900;
   if (sessionUser && getActiveSubscriptionByUserStmt.get(sessionUser.id)) return 4900;
   if (referralCodeRow && !referralCodeRow.redeemed_project_id) return 4900;
   return 9700;
+}
+
+// Upgrading a project already paid at the Roadmap tier ($49) to Full
+// Workspace only ever charges the $48 difference from the standard $97 —
+// unless the buyer's subscription or referral code already prices Full
+// Workspace at the same $49 they already paid for Roadmap, in which case
+// there's nothing left to charge (an active subscriber or valid referral
+// code holder never had a reason to buy Roadmap-only in the first place,
+// since both tiers cost them the same $49).
+function upgradePriceCentsFor({ sessionUser, referralCodeRow }) {
+  const alreadyAtFullRate = (sessionUser && getActiveSubscriptionByUserStmt.get(sessionUser.id))
+    || (referralCodeRow && !referralCodeRow.redeemed_project_id);
+  return alreadyAtFullRate ? 0 : 4800;
 }
 
 // Referral codes are shared out loud (emailed, texted to another
@@ -96,10 +109,16 @@ export async function handleCheckoutRoutes(req, res, ip) {
     const id = req.url.split('/')[3];
     const project = getProjectStmt.get(id);
     if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }
-    if (project.paid) { sendJson(res, 200, projectRowToJson(project)); return true; }
+
+    // A Roadmap-tier project is "paid" but not done — it's the one paid
+    // state that can still buy something more (the $48 upgrade to Full
+    // Workspace below). Anything else already paid has nothing left to sell.
+    const isRoadmapUpgrade = project.paid && project.tier === 'roadmap';
+    if (project.paid && !isRoadmapUpgrade) { sendJson(res, 200, projectRowToJson(project)); return true; }
 
     let tier = 'full';
     let referralCode;
+    let partnerCode;
     try {
       const body = JSON.parse((await readBody(req)) || '{}');
       if (body.tier !== undefined) {
@@ -107,8 +126,14 @@ export async function handleCheckoutRoutes(req, res, ip) {
         tier = body.tier;
       }
       referralCode = typeof body.referralCode === 'string' ? body.referralCode.trim().toUpperCase() : undefined;
+      partnerCode = typeof body.partnerCode === 'string' ? body.partnerCode.trim().toUpperCase() : undefined;
     } catch (err) {
       sendJson(res, 400, { error: 'invalid request body' });
+      return true;
+    }
+
+    if (isRoadmapUpgrade && tier !== 'full') {
+      sendJson(res, 400, { error: "This project is already unlocked at the Roadmap tier — pass tier: \"full\" to upgrade to the Full Workspace." });
       return true;
     }
 
@@ -123,18 +148,57 @@ export async function handleCheckoutRoutes(req, res, ip) {
       if (referralCodeRow.referrer_project_id === id) { sendJson(res, 400, { error: 'a referral code cannot be used on the project that generated it' }); return true; }
     }
 
+    // A partner code (e.g. HORSEPOWER) is the mirror image of a referral
+    // code — it only ever applies to the roadmap tier, at whatever flat
+    // price_cents it was minted with (see server/create-partner-code.js).
+    let partnerCodeRow;
+    if (tier === 'roadmap' && partnerCode) {
+      partnerCodeRow = getPartnerCodeStmt.get(partnerCode);
+      if (!partnerCodeRow) { sendJson(res, 400, { error: 'invalid partner code' }); return true; }
+    }
+
     const sessionUser = getSessionUser(req);
+
+    if (isRoadmapUpgrade) {
+      const upgradeCents = upgradePriceCentsFor({ sessionUser, referralCodeRow });
+      // Already paid the full-tier rate via the Roadmap purchase (an active
+      // subscriber or referral-code holder) — unlock directly, same as the
+      // access-code/pack-credit paths, no $0 Stripe session to create.
+      if (upgradeCents === 0) {
+        const now = new Date().toISOString();
+        markProjectPaidStmt.run('full', now, now, id);
+        if (referralCodeRow) redeemReferralCodeStmt.run(id, now, referralCode);
+        sendJson(res, 200, projectRowToJson(getProjectStmt.get(id)));
+        return true;
+      }
+      try {
+        const origin = originFromRequest(req);
+        const session = await createCheckoutSession({
+          projectId: id,
+          amountCents: upgradeCents,
+          label: `Setback — ${project.trade} permit workspace upgrade (Roadmap to Full)`,
+          successUrl: `${origin}/?project=${encodeURIComponent(id)}&checkout_session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${origin}/?project=${encodeURIComponent(id)}`,
+          metadata: { tier: 'full', referralCode: referralCodeRow ? referralCode : undefined }
+        });
+        sendJson(res, 200, { url: session.url });
+      } catch (err) {
+        console.error('Stripe checkout session creation failed:', err.message);
+        sendJson(res, 502, { error: "Couldn't start checkout — try again in a moment." });
+      }
+      return true;
+    }
 
     try {
       const origin = originFromRequest(req);
-      const amountCents = priceCentsFor(tier, { sessionUser, referralCodeRow });
+      const amountCents = priceCentsFor(tier, { sessionUser, referralCodeRow, partnerCodeRow });
       const session = await createCheckoutSession({
         projectId: id,
         amountCents,
         label: `Setback — ${project.trade} permit ${tier === 'roadmap' ? 'roadmap' : 'workspace'}`,
         successUrl: `${origin}/?project=${encodeURIComponent(id)}&checkout_session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${origin}/?project=${encodeURIComponent(id)}`,
-        metadata: { tier, referralCode: referralCodeRow ? referralCode : undefined }
+        metadata: { tier, referralCode: referralCodeRow ? referralCode : undefined, partnerCode: partnerCodeRow ? partnerCode : undefined }
       });
       sendJson(res, 200, { url: session.url });
     } catch (err) {
@@ -144,7 +208,7 @@ export async function handleCheckoutRoutes(req, res, ip) {
     return true;
   }
 
-  // Pack-credit unlock — an expediter who's prepaid for a $999/50-credit pack
+  // Pack-credit unlock — an expediter who's prepaid for a Starter/Bulk pack
   // skips Stripe entirely; this just spends one credit against whichever of
   // their packs is oldest (see getAvailablePackForUserStmt). Requires a
   // session (the pack belongs to an account, not a project), unlike the
@@ -189,7 +253,10 @@ export async function handleCheckoutRoutes(req, res, ip) {
     const sessionId = new URLSearchParams(confirmQs || '').get('session_id');
     const project = getProjectStmt.get(id);
     if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }
-    if (project.paid) { sendJson(res, 200, projectRowToJson(project)); return true; }
+    // A Roadmap-tier project falls through here rather than short-circuiting
+    // — it's the one paid state with a pending purchase left to confirm (the
+    // Roadmap-to-Full upgrade session created above).
+    if (project.paid && project.tier === 'full') { sendJson(res, 200, projectRowToJson(project)); return true; }
     if (!sessionId) { sendJson(res, 400, { error: 'missing session_id' }); return true; }
 
     try {
@@ -209,6 +276,13 @@ export async function handleCheckoutRoutes(req, res, ip) {
       // the same code twice.
       if (session.metadata?.referralCode) {
         redeemReferralCodeStmt.run(id, now, session.metadata.referralCode);
+      }
+
+      // Partner-code redemption (e.g. HORSEPOWER) — logged for
+      // partner-report.js to trace forward to the account and check
+      // subscription tenure against the referrer's equity KPI.
+      if (session.metadata?.partnerCode) {
+        insertPartnerRedemptionStmt.run(crypto.randomUUID(), session.metadata.partnerCode, id, now);
       }
 
       // Full price, no subscription/referral discount applied — this buyer

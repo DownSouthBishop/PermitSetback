@@ -6,7 +6,7 @@
 // Prints cost by call type, and per-project totals for any project that has
 // run more than one module (i.e. someone who explored the workspace, not
 // just the base roadmap) — that per-project number is the one that actually
-// matters against the $19/$39 price, not the cost of a single roadmap call.
+// matters against the $49/$97 price, not the cost of a single roadmap call.
 import { db, getUsageSummaryStmt } from './db.js';
 
 function money(n) {
@@ -37,8 +37,12 @@ if (byProject.length === 0) {
   console.log('No project has used more than one module yet.');
 } else {
   for (const row of byProject) {
-    const margin19 = row.cost_usd == null ? null : 19 - row.cost_usd;
-    console.log(`${row.project_id}: ${row.calls} calls (${row.call_types}) — ${money(row.cost_usd)} cost — margin at $19: ${margin19 == null ? 'n/a' : money(margin19)}`);
+    // $97 is the Full Workspace price — the tier that actually unlocks the
+    // modules driving a 2nd+ call, so it's the meaningful comparison here
+    // (not the $49 roadmap-only price, and not accounting for the $49
+    // subscriber/referral rate some of these projects may have paid instead).
+    const margin97 = row.cost_usd == null ? null : 97 - row.cost_usd;
+    console.log(`${row.project_id}: ${row.calls} calls (${row.call_types}) — ${money(row.cost_usd)} cost — margin at $97: ${margin97 == null ? 'n/a' : money(margin97)}`);
   }
 }
 

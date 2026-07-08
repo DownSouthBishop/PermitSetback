@@ -2,7 +2,7 @@
 // checklist/summary/questions set this module generates on demand. Each is
 // copyable on its own, same interaction as the Permits module's narrative.
 
-import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf } from './shared.js';
+import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf, renderUpgradeCard } from './shared.js';
 
 function docCard(doc, index) {
   return `
@@ -57,6 +57,7 @@ export async function render(container, project) {
   let documents;
   try {
     const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/documents`, {}, 8000);
+    if (res.status === 402) { renderUpgradeCard(container, project, 'Documents', ICON.doc); return; }
     if (!res.ok) throw new Error(`Backend returned ${res.status}`);
     ({ documents } = await res.json());
   } catch (err) {

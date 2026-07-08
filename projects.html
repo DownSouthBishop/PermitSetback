@@ -275,7 +275,22 @@ async function handleRequestLink(){
   }
 }
 
-function renderProjects(projects, sessionToken){
+// The subscription pitch on index.html claims Setback Pro "pays for itself
+// at your second project" — an abstract claim made to every visitor. This
+// runs that same math against the specific account looking at it: someone
+// who's already paid full price twice is sitting on proof, not a pitch.
+function proNudgeHtml(projects, subscribed){
+  if (subscribed) return '';
+  const fullPriceCount = projects.filter(p => p.paid && p.tier === 'full').length;
+  if (fullPriceCount < 2) return '';
+  return `
+    <div class="card rollup">
+      <p style="margin:0;">You've paid $97 for <b>${fullPriceCount}</b> full-workspace projects. Setback Pro is $79/mo and drops every one of those to $49 — two projects already save more than the membership costs.</p>
+    </div>
+  `;
+}
+
+function renderProjects(projects, sessionToken, subscribed){
   if (!projects || projects.length === 0){
     renderShell(`<div class="empty">No saved projects yet — <a href="index.html">generate a roadmap</a> and save it to see it here.</div>`);
     return;
@@ -290,7 +305,7 @@ function renderProjects(projects, sessionToken){
       <div class="meta">${esc(tradeLabel(p.trade))} &middot; ${esc(formatDate(p.createdAt))}</div>
     </a>
   `).join('');
-  renderShell(`<div id="rollupSlot"></div>${cards}`);
+  renderShell(`<div id="rollupSlot"></div>${proNudgeHtml(projects, subscribed)}${cards}`);
   loadRollup(sessionToken);
 }
 
@@ -341,7 +356,7 @@ async function verifyToken(token){
     if (!res.ok) throw new Error(data.error || `Backend returned ${res.status}`);
     localStorage.setItem(SESSION_KEY, data.sessionToken);
     window.history.replaceState(null, '', window.location.pathname);
-    renderProjects(data.projects);
+    renderProjects(data.projects, data.sessionToken, data.subscribed);
   } catch (err){
     renderError(`Couldn't verify that link: ${err.message}`);
   }
@@ -359,7 +374,7 @@ async function loadProjects(sessionToken){
     }
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `Backend returned ${res.status}`);
-    renderProjects(data.projects, sessionToken);
+    renderProjects(data.projects, sessionToken, data.subscribed);
   } catch (err){
     renderError(`Couldn't load your projects: ${err.message}. Is the backend running?`);
   }
@@ -413,15 +428,57 @@ function openCancelModal(){
   }
 
   function renderSaveOfferStep(reason){
+    // "Not enough volume" is a fit problem, not a price problem — a discount
+    // on a plan they said they're not using enough won't land. The
+    // Expediter Pack (prepaid per-pull, no monthly commitment) already
+    // exists and is the actual right answer for that reason.
+    if (reason === 'not_enough_volume'){
+      modal.innerHTML = `
+        <div class="modal fadein" id="cancelModalBox" tabindex="-1">
+          <h3>Before you cancel &mdash; one thing</h3>
+          <p>Sounds like a monthly plan isn't the right shape for how you're using Setback. The Expediter Pack starts at 15 project unlocks for $549 (~$37 each), no subscription &mdash; use them whenever a job actually comes up.</p>
+          <a class="btn" href="expediters.html" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box;">See the Expediter Pack &rarr;</a>
+          <button class="btn secondary" id="declineOffer" style="margin-top:8px;">No thanks, cancel my subscription</button>
+        </div>
+      `;
+      document.getElementById('declineOffer').onclick = () => renderConfirmStep(reason);
+      return;
+    }
+
     modal.innerHTML = `
       <div class="modal fadein" id="cancelModalBox" tabindex="-1">
         <h3>Before you cancel &mdash; one thing</h3>
-        <p>Stay on Setback Pro at half price for your next 2 months ($25/mo) instead of canceling. You keep the $49 workspace rate on every project.</p>
-        <button class="btn" id="acceptOffer">Keep my subscription at $25/mo</button>
+        <p>Stay on Setback Pro at a discount for your next 2 months ($55/mo instead of $79) rather than canceling. You keep the $49 workspace rate on every project.</p>
+        <button class="btn" id="acceptOffer">Keep my subscription at $55/mo</button>
         <button class="btn secondary" id="declineOffer" style="margin-top:8px;">No thanks, cancel my subscription</button>
+        <div id="offerErr"></div>
       </div>
     `;
-    document.getElementById('acceptOffer').onclick = closeModal;
+    document.getElementById('acceptOffer').onclick = async () => {
+      const btn = document.getElementById('acceptOffer');
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner"></span>Applying discount...`;
+      const sessionToken = localStorage.getItem(SESSION_KEY);
+      try {
+        const res = await fetch(`${BACKEND_ORIGIN}/api/subscription/apply-retention-offer`, {
+          method: 'POST', headers: { Authorization: `Bearer ${sessionToken}` }
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `Backend returned ${res.status}`);
+        modal.innerHTML = `
+          <div class="modal fadein" id="cancelModalBox" tabindex="-1">
+            <h3>You're all set</h3>
+            <p>Your next 2 months are $55/mo. Thanks for staying on Setback Pro.</p>
+            <button class="btn" id="offerDone">Close</button>
+          </div>
+        `;
+        document.getElementById('offerDone').onclick = closeModal;
+      } catch (err){
+        document.getElementById('offerErr').innerHTML = `<div class="err">${esc(err.message || "Couldn't apply the discount — try again in a moment.")}</div>`;
+        btn.disabled = false;
+        btn.innerHTML = 'Keep my subscription at $55/mo';
+      }
+    };
     document.getElementById('declineOffer').onclick = () => renderConfirmStep(reason);
   }
 

@@ -75,10 +75,17 @@ export async function retrieveCheckoutSession(sessionId) {
 
 // ponytail: subscription Checkout supports an inline recurring price_data,
 // same as the one-off session above — no need to pre-create and manage a
-// persistent Price object for the $49/mo plan. subscription_data.metadata
+// persistent Price object for the $79/mo plan. subscription_data.metadata
 // (not top-level metadata) is what Stripe copies onto the Subscription
 // object itself, which is what the webhook's customer.subscription.* events
 // carry — that's how it knows which user a given subscription belongs to.
+//
+// Launched at $79/mo, not $49 — this tier has never sold a single unit
+// (verified against the real subscriptions table before repricing), so
+// there's no existing subscriber to grandfather. $49 was a placeholder
+// number in copy, never a tested price; there's no reason to launch a
+// never-sold tier at a self-imposed discount off what expediters already
+// pay a human for this same research.
 export async function createSubscriptionCheckoutSession({ userId, successUrl, cancelUrl }) {
   return stripeRequest('POST', '/checkout/sessions', {
     mode: 'subscription',
@@ -87,7 +94,7 @@ export async function createSubscriptionCheckoutSession({ userId, successUrl, ca
       quantity: 1,
       price_data: {
         currency: 'usd',
-        unit_amount: 4900,
+        unit_amount: 7900,
         recurring: { interval: 'month' },
         product_data: { name: 'Setback — Contractor Membership' }
       }
@@ -98,10 +105,24 @@ export async function createSubscriptionCheckoutSession({ userId, successUrl, ca
   });
 }
 
-// $999 one-time purchase of 50 full-workspace credits. metadata.type is how
-// the webhook tells this apart from a regular project payment (which keys
-// off metadata.projectId instead).
-export async function createPackCheckoutSession({ userId, successUrl, cancelUrl }) {
+// Two prepaid pack sizes for expediters — Starter is the lower-commitment
+// entry point, Bulk is the volume rate. Both are launch prices: this tier
+// had zero real purchases (checked against pack_credits before repricing),
+// so, same reasoning as the subscription above, there's no installed base
+// to protect and no reason to under-price against a $500-2,500/job human
+// expediter fee. Bulk's per-credit price is deliberately lower than
+// Starter's (~$30 vs ~$37) — that gap is the one non-negotiable reason to
+// buy the bigger pack instead of two Starters, not just "more credits."
+export const PACK_SIZES = {
+  starter: { credits: 15, amountCents: 54900, label: 'Setback — Expediter Starter Pack (15 roadmap credits)' },
+  bulk: { credits: 50, amountCents: 149900, label: 'Setback — Expediter Pack (50 roadmap credits)' }
+};
+
+// metadata.type is how the webhook tells this apart from a regular project
+// payment (which keys off metadata.projectId instead); metadata.size is how
+// it knows how many credits this particular session bought.
+export async function createPackCheckoutSession({ userId, size, successUrl, cancelUrl }) {
+  const pack = PACK_SIZES[size] || PACK_SIZES.bulk;
   return stripeRequest('POST', '/checkout/sessions', {
     mode: 'payment',
     payment_method_types: ['card'],
@@ -109,11 +130,11 @@ export async function createPackCheckoutSession({ userId, successUrl, cancelUrl 
       quantity: 1,
       price_data: {
         currency: 'usd',
-        unit_amount: 99900,
-        product_data: { name: 'Setback — Expediter Pack (50 roadmap credits)' }
+        unit_amount: pack.amountCents,
+        product_data: { name: pack.label }
       }
     }],
-    metadata: { type: 'expediter_pack', userId: String(userId) },
+    metadata: { type: 'expediter_pack', userId: String(userId), size: size in PACK_SIZES ? size : 'bulk' },
     success_url: successUrl,
     cancel_url: cancelUrl
   });
@@ -146,6 +167,25 @@ export async function createReferralPromotionCode({ referrerProjectId }) {
 export async function cancelSubscription(stripeSubscriptionId) {
   return stripeRequest('POST', `/subscriptions/${encodeURIComponent(stripeSubscriptionId)}`, {
     cancel_at_period_end: true
+  });
+}
+
+// Cancel-flow save offer: $24 off for 2 months (brings the $79/mo plan to
+// $55/mo, ~30% off — the top of the "20-30% off, 2-3 months" sweet spot,
+// not a 50%+ discount that trains people to cancel for deals) on an
+// existing subscription. A fresh single-purpose coupon per call, same
+// coupon-then-apply shape as createReferralPromotionCode above — there's no
+// shared discount code to manage since each one only ever applies to the
+// one subscription it was created for.
+export async function applyRetentionDiscount(stripeSubscriptionId) {
+  const coupon = await stripeRequest('POST', '/coupons', {
+    amount_off: 2400,
+    currency: 'usd',
+    duration: 'repeating',
+    duration_in_months: 2
+  });
+  return stripeRequest('POST', `/subscriptions/${encodeURIComponent(stripeSubscriptionId)}`, {
+    coupon: coupon.id
   });
 }
 

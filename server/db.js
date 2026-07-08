@@ -242,7 +242,7 @@ db.exec(`
   -- server/routes/projects.js priceCentsFor() for how these combine into
   -- what a given user actually pays.
 
-  -- Recurring $49/mo contractor membership. One active row per user; history
+  -- Recurring $79/mo contractor membership. One active row per user; history
   -- of past subscriptions kept (status transitions to 'canceled'/'past_due'
   -- rather than deleting) so cancel-flow analysis has something to look at.
   CREATE TABLE IF NOT EXISTS subscriptions (
@@ -252,15 +252,17 @@ db.exec(`
     status TEXT NOT NULL,
     current_period_end TEXT,
     cancel_reason TEXT,
+    retention_offer_used_at TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
 
-  -- Expediter pack: one row per $999/50-credit purchase. credits_used is
-  -- incremented as the firm unlocks projects against this pack instead of
-  -- paying one-off; a firm can hold more than one pack over time (buys a
-  -- second pack once the first is spent), hence a table of purchases rather
-  -- than a single counter on the user row.
+  -- Expediter pack: one row per prepaid-pack purchase, Starter ($549/15) or
+  -- Bulk ($1,499/50) — see server/stripe.js's PACK_SIZES for current pricing.
+  -- credits_used is incremented as the firm unlocks projects against this
+  -- pack instead of paying one-off; a firm can hold more than one pack over
+  -- time (buys a second pack once the first is spent, or a different size),
+  -- hence a table of purchases rather than a single counter on the user row.
   CREATE TABLE IF NOT EXISTS pack_credits (
     id TEXT PRIMARY KEY,
     user_id INTEGER NOT NULL,
@@ -281,6 +283,27 @@ db.exec(`
     redeemed_project_id TEXT,
     created_at TEXT NOT NULL,
     redeemed_at TEXT
+  );
+
+  -- Partner codes: a standing discount code (e.g. HORSEPOWER) tied to an
+  -- equity/affiliate arrangement, unlike referral_codes above which are
+  -- single-use and minted per-purchase. price_cents is what tier costs when
+  -- this code is applied at checkout. Reusable by design — partner_redemptions
+  -- below is what lets us count how many people actually came through it.
+  CREATE TABLE IF NOT EXISTS partner_codes (
+    code TEXT PRIMARY KEY,
+    label TEXT NOT NULL,
+    tier TEXT NOT NULL,
+    price_cents INTEGER NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  -- One row per redemption, so partner-report.js can trace each one forward
+  -- to the account and check subscription tenure against the KPI.
+  CREATE TABLE IF NOT EXISTS partner_redemptions (
+    id TEXT PRIMARY KEY,
+    code TEXT NOT NULL,
+    project_id TEXT NOT NULL,
+    redeemed_at TEXT NOT NULL
   );
 
   -- One row per user, tracking the last "needs attention" digest computed
@@ -324,7 +347,12 @@ for (const stmt of [
   // paid = 1. Projects paid before this column existed are backfilled as
   // 'full' below, since the all-or-nothing paywall only ever unlocked
   // everything.
-  "ALTER TABLE projects ADD COLUMN tier TEXT"
+  "ALTER TABLE projects ADD COLUMN tier TEXT",
+  // Guards the cancel-flow save offer (routes/billing.js) against being
+  // granted more than once per subscription — without this, repeatedly
+  // opening the cancel flow and accepting the offer each time would stack
+  // discounted months indefinitely.
+  "ALTER TABLE subscriptions ADD COLUMN retention_offer_used_at TEXT"
 ]) {
   try { db.exec(stmt); } catch (err) { /* column already exists — fine */ }
 }
@@ -339,7 +367,7 @@ db.exec("UPDATE projects SET tier = 'full' WHERE paid = 1 AND tier IS NULL");
 // credit the same expediter-pack purchase (defense-in-depth against a
 // closed tab — see routes/billing.js), each guarding with a plain SELECT
 // first. Two near-simultaneous requests can both pass that SELECT before
-// either INSERTs, granting 100 credits for one $999 charge. This index
+// either INSERTs, granting double credits for one pack charge. This index
 // turns the second INSERT into a rejected constraint violation instead.
 // Wrapped like the ALTER TABLEs above rather than in the main schema
 // block: if a duplicate stripe_session_id somehow already existed, CREATE
@@ -405,7 +433,7 @@ export const insertAccessCodeRedemptionStmt = db.prepare(`
 `);
 export const listAccessCodesStmt = db.prepare('SELECT * FROM access_codes ORDER BY created_at DESC');
 export const getProjectsByUserStmt = db.prepare(`
-  SELECT id, location, description, trade, outcome_status, created_at
+  SELECT id, location, description, trade, outcome_status, created_at, paid, tier
   FROM projects WHERE user_id = ? ORDER BY created_at DESC
 `);
 
@@ -495,7 +523,7 @@ export const getUsageSummaryStmt = db.prepare(`
   FROM api_usage_log GROUP BY call_type ORDER BY cost_usd DESC
 `);
 
-// --- Subscriptions (contractor $49/mo plan) --------------------------------
+// --- Subscriptions (contractor $79/mo plan) --------------------------------
 export const insertSubscriptionStmt = db.prepare(`
   INSERT INTO subscriptions (id, user_id, stripe_subscription_id, status, current_period_end, created_at, updated_at)
   VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -506,6 +534,12 @@ export const getActiveSubscriptionByUserStmt = db.prepare(
 export const getSubscriptionByStripeIdStmt = db.prepare('SELECT * FROM subscriptions WHERE stripe_subscription_id = ?');
 export const updateSubscriptionStatusStmt = db.prepare(
   'UPDATE subscriptions SET status = ?, current_period_end = ?, cancel_reason = ?, updated_at = ? WHERE stripe_subscription_id = ?'
+);
+// The WHERE guard makes this the one statement that decides whether the
+// retention offer can still be granted — same reasoning as
+// incrementAccessCodeUsesStmt above. .changes === 0 means it was already used.
+export const markRetentionOfferUsedStmt = db.prepare(
+  "UPDATE subscriptions SET retention_offer_used_at = ?, updated_at = ? WHERE stripe_subscription_id = ? AND retention_offer_used_at IS NULL"
 );
 
 // --- Expediter pack credits -------------------------------------------------
@@ -538,6 +572,26 @@ export const getReferralCodeStmt = db.prepare('SELECT * FROM referral_codes WHER
 // inserts one per project), so "the" code for a project is unambiguous.
 export const getReferralCodeByReferrerStmt = db.prepare(
   'SELECT * FROM referral_codes WHERE referrer_project_id = ? ORDER BY created_at DESC LIMIT 1'
+);
+
+// --- Partner codes -----------------------------------------------------------
+export const getPartnerCodeStmt = db.prepare('SELECT * FROM partner_codes WHERE code = ?');
+export const insertPartnerCodeStmt = db.prepare(`
+  INSERT INTO partner_codes (code, label, tier, price_cents, created_at)
+  VALUES (?, ?, ?, ?, ?)
+`);
+export const listPartnerCodesStmt = db.prepare('SELECT * FROM partner_codes ORDER BY created_at DESC');
+export const insertPartnerRedemptionStmt = db.prepare(`
+  INSERT INTO partner_redemptions (id, code, project_id, redeemed_at)
+  VALUES (?, ?, ?, ?)
+`);
+export const listPartnerRedemptionsStmt = db.prepare(`
+  SELECT r.project_id, r.redeemed_at, p.user_id
+  FROM partner_redemptions r JOIN projects p ON p.id = r.project_id
+  WHERE r.code = ? ORDER BY r.redeemed_at ASC
+`);
+export const getSubscriptionsByUserStmt = db.prepare(
+  'SELECT * FROM subscriptions WHERE user_id = ? ORDER BY created_at ASC'
 );
 
 // --- Attention digest (needs-attention loop) --------------------------------

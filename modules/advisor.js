@@ -3,7 +3,7 @@
 // is what actually remembers and avoids regenerating the roadmap from
 // scratch on every question.
 
-import { esc, fetchWithTimeout, BACKEND_ORIGIN } from './shared.js';
+import { esc, fetchWithTimeout, BACKEND_ORIGIN, renderUpgradeCard } from './shared.js';
 
 function bubble(role, content) {
   const mine = role === 'user';
@@ -19,6 +19,19 @@ function micSupported() {
 }
 
 export async function render(container, project) {
+  container.innerHTML = `<div class="card"><p style="color:var(--ink-soft);font-size:13px;">Loading the AI Advisor...</p></div>`;
+
+  let initialMessages = [];
+  let loadError = false;
+  try {
+    const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/conversation`, {}, 8000);
+    if (res.status === 402) { renderUpgradeCard(container, project, 'AI Advisor'); return; }
+    if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+    ({ messages: initialMessages } = await res.json());
+  } catch (err) {
+    loadError = true;
+  }
+
   container.innerHTML = `
     <div class="card">
       <h3>Ask about this project</h3>
@@ -90,14 +103,8 @@ export async function render(container, project) {
     log.scrollTop = log.scrollHeight;
   }
 
-  let messages = [];
-  try {
-    const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/conversation`, {}, 8000);
-    if (!res.ok) throw new Error(`Backend returned ${res.status}`);
-    ({ messages } = await res.json());
-  } catch (err) {
-    errBox.innerHTML = `<div class="err">Couldn't load the conversation — is the backend running?</div>`;
-  }
+  let messages = initialMessages;
+  if (loadError) errBox.innerHTML = `<div class="err">Couldn't load the conversation — is the backend running?</div>`;
   renderLog(messages);
 
   async function send() {

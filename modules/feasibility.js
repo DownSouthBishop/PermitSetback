@@ -3,7 +3,7 @@
 // restrictions, utilities, environmental and zoning concerns. Findings are
 // generated on demand and persisted, so a later visit just lists them.
 
-import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf } from './shared.js';
+import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf, renderUpgradeCard } from './shared.js';
 
 function findingsUrl(project) {
   return `${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/feasibility`;
@@ -49,6 +49,7 @@ export async function render(container, project) {
   let findings;
   try {
     const res = await fetchWithTimeout(findingsUrl(project), {}, 8000);
+    if (res.status === 402) { renderUpgradeCard(container, project, 'Feasibility Intelligence', ICON.alert); return; }
     if (!res.ok) throw new Error(`Backend returned ${res.status}`);
     ({ findings } = await res.json());
   } catch (err) {

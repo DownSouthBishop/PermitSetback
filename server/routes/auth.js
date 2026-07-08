@@ -3,7 +3,8 @@
 import { readBody, sendJson, checkRateLimit } from '../http-utils.js';
 import {
   getOrCreateUser, insertMagicLinkStmt, getMagicLinkStmt, markMagicLinkUsedStmt,
-  insertSessionStmt, linkProjectToUserStmt, getProjectsByUserStmt, getSessionUserStmt
+  insertSessionStmt, linkProjectToUserStmt, getProjectsByUserStmt, getSessionUserStmt,
+  getActiveSubscriptionByUserStmt
 } from '../db.js';
 import { computeAttentionItems } from '../attention.js';
 
@@ -24,7 +25,10 @@ export function getSessionUser(req) {
 }
 
 function projectSummary(p) {
-  return { id: p.id, location: p.location, description: p.description, trade: p.trade, outcomeStatus: p.outcome_status, createdAt: p.created_at };
+  return {
+    id: p.id, location: p.location, description: p.description, trade: p.trade,
+    outcomeStatus: p.outcome_status, createdAt: p.created_at, paid: !!p.paid, tier: p.tier
+  };
 }
 
 // Returns true if this module handled the request (response already sent),
@@ -76,7 +80,7 @@ export async function handleAuthRoutes(req, res, ip) {
     insertSessionStmt.run(sessionToken, user.id, now.toISOString(), expires.toISOString());
 
     const projects = getProjectsByUserStmt.all(user.id).map(projectSummary);
-    sendJson(res, 200, { sessionToken, projects });
+    sendJson(res, 200, { sessionToken, projects, subscribed: !!getActiveSubscriptionByUserStmt.get(user.id) });
     return true;
   }
 
@@ -84,7 +88,7 @@ export async function handleAuthRoutes(req, res, ip) {
     const user = getSessionUser(req);
     if (!user) { sendJson(res, 401, { error: 'not authenticated' }); return true; }
     const projects = getProjectsByUserStmt.all(user.id).map(projectSummary);
-    sendJson(res, 200, { projects });
+    sendJson(res, 200, { projects, subscribed: !!getActiveSubscriptionByUserStmt.get(user.id) });
     return true;
   }
 

@@ -3,7 +3,7 @@
 // be checked off; step tasks ("run this module") link straight to the tab
 // that clears them, via the goTo callback project.html passes in.
 
-import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN } from './shared.js';
+import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, renderUpgradeCard } from './shared.js';
 
 const LINK_LABELS = { feasibility: 'Feasibility', cost: 'Cost', timeline: 'Timeline', risk: 'Risk', documents: 'Documents' };
 
@@ -30,6 +30,7 @@ export async function render(container, project, goTo) {
   let tasks;
   try {
     const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/tasks`, {}, 8000);
+    if (res.status === 402) { renderUpgradeCard(container, project, 'Task Center', ICON.loop); return; }
     if (!res.ok) throw new Error(`Backend returned ${res.status}`);
     ({ tasks } = await res.json());
   } catch (err) {

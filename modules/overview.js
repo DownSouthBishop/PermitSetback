@@ -2,7 +2,7 @@
 // (not permanently-fake "Not yet scored" placeholders) and one clear next
 // action, via server/routes/overview.js.
 
-import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, deriveProjectName } from './shared.js';
+import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, deriveProjectName, renderUpgradeCard } from './shared.js';
 
 const LINK_LABELS = { feasibility: 'Feasibility', permits: 'Permits', cost: 'Cost', timeline: 'Timeline', risk: 'Risk', documents: 'Documents' };
 
@@ -22,6 +22,7 @@ export async function render(container, project, goTo) {
   let overview;
   try {
     const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/overview`, {}, 8000);
+    if (res.status === 402) { renderUpgradeCard(container, project, 'Project Overview'); return; }
     if (!res.ok) throw new Error(`Backend returned ${res.status}`);
     overview = await res.json();
   } catch (err) {

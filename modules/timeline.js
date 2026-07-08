@@ -5,7 +5,7 @@
 // strings on the project — those stay put for the Permits module, this is
 // the richer replacement other modules can adopt later.
 
-import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf } from './shared.js';
+import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf, renderUpgradeCard } from './shared.js';
 
 function phaseCard(phase) {
   const cls = phase.isBottleneck ? 'risk' : 'agency';
@@ -16,13 +16,6 @@ function phaseCard(phase) {
       ${phase.note ? `<p style="color:var(--ink-soft);font-size:13px;margin:4px 0 0;">${esc(phase.note)}</p>` : ''}
     </div>
   `;
-}
-
-async function loadPhases(project) {
-  const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/timeline`, {}, 8000);
-  if (!res.ok) throw new Error(`Backend returned ${res.status}`);
-  const data = await res.json();
-  return data.phases;
 }
 
 function renderEmpty(container, project) {
@@ -73,7 +66,10 @@ function renderPhases(container, project, phases) {
 export async function render(container, project) {
   container.innerHTML = `<p style="color:var(--ink-soft);font-size:13.5px;">Loading timeline...</p>`;
   try {
-    const phases = await loadPhases(project);
+    const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/timeline`, {}, 8000);
+    if (res.status === 402) { renderUpgradeCard(container, project, 'Timeline Intelligence', ICON.clock); return; }
+    if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+    const { phases } = await res.json();
     if (phases.length > 0) {
       renderPhases(container, project, phases);
     } else {

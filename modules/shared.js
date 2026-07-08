@@ -58,6 +58,44 @@ export function cityOf(location) {
   return (location || '').split(',')[0].trim();
 }
 
+// Every Full-Workspace-gated module (Feasibility, Cost, Risk, Documents,
+// Advisor, Timeline, Overview, Tasks) 402s the same way for a Roadmap-tier
+// project — this renders that as an upgrade offer instead of each module
+// independently reporting it as an outage ("is the backend running?"),
+// which is what a paying customer clicking a paid-only tab used to see.
+export function renderUpgradeCard(container, project, moduleLabel, icon) {
+  container.innerHTML = `
+    <div class="card">
+      <h3>${icon || ''} ${esc(moduleLabel)}</h3>
+      <p style="color:var(--ink-soft);font-size:13px;">${esc(moduleLabel)} is part of the Full Workspace — this project was unlocked at the Roadmap tier ($49). Upgrade for the $48 difference to unlock it, along with Cost, Risk, Tasks, Documents, and the AI Advisor.</p>
+      <button class="btn" id="upgradeBtn" style="margin-top:4px;">Upgrade to Full Workspace — $48</button>
+      <div id="upgradeErr"></div>
+    </div>
+  `;
+  container.querySelector('#upgradeBtn').onclick = async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span>Redirecting to Stripe...`;
+    try {
+      const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/create-checkout-session`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier: 'full' })
+      }, 15000);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Backend returned ${res.status}`);
+      if (data.url) { window.location.href = data.url; return; }
+      // No url means the upgrade was free (active subscription or unredeemed
+      // referral code already priced Full Workspace at what was already
+      // paid) and the project is unlocked already — nothing left to redirect to.
+      window.location.reload();
+    } catch (err) {
+      btn.disabled = false;
+      btn.innerHTML = 'Upgrade to Full Workspace — $48';
+      container.querySelector('#upgradeErr').innerHTML = `<div class="err">${esc(err.message || "Couldn't start checkout — try again in a moment.")}</div>`;
+    }
+  };
+}
+
 export const ICON = {
   building: `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M15 9h.01M9 13h.01M15 13h.01M9 17h.01M15 17h.01"/></svg>`,
   flag: `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4m0 0h13l-2 4 2 4H4"/></svg>`,

@@ -25,11 +25,11 @@ const { verifyWebhookSignature } = await import('../stripe.js');
 const { server } = await import('../index.js');
 const { insertProject, markProjectPaidStmt } = await import('../db.js');
 
-function makeProject({ paid = false } = {}) {
+function makeProject({ paid = false, tier = 'full' } = {}) {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   insertProject.run(id, 'Denver, Colorado', 'Test project', 'fence', 'anthropic', '[]', '[]', '[]', '4-8 weeks', 'test', 'narrative text', null, now, now);
-  if (paid) markProjectPaidStmt.run('full', now, now, id);
+  if (paid) markProjectPaidStmt.run(tier, now, now, id);
   return id;
 }
 

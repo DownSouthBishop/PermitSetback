@@ -76,6 +76,15 @@ test('expediter-pack create-checkout-session fails gracefully with no Stripe key
   assert.equal(res.status, 502);
 });
 
+test('expediter-pack create-checkout-session rejects a size that is not "starter" or "bulk"', async () => {
+  const { sessionToken } = await makeUser('expediter-badsize@example.com');
+  const res = await fetch(`${BASE}/api/expediter-pack/create-checkout-session`, {
+    method: 'POST', headers: { authorization: `Bearer ${sessionToken}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ size: 'jumbo' })
+  });
+  assert.equal(res.status, 400);
+});
+
 test('subscription confirm-checkout with no session_id is rejected', async () => {
   const res = await fetch(`${BASE}/api/subscription/confirm-checkout`);
   assert.equal(res.status, 400);
@@ -186,5 +195,21 @@ test('checkout.session.completed webhook credits an expediter pack once, not twi
   assert.equal(res2.status, 200);
 
   const pack = getAvailablePackForUserStmt.get(userId);
+  // No size in metadata — defaults to the Bulk pack (50 credits), same as
+  // every pack sold before the Starter size existed.
   assert.equal(pack.credits_total, 50);
+});
+
+test('checkout.session.completed webhook credits a Starter pack at 15 credits, not the Bulk default', async () => {
+  const { userId } = await makeUser('webhook-pack-starter@example.com');
+  const stripeSessionId = `cs_${crypto.randomUUID()}`;
+  const { body, headers } = signedWebhookHeaders({
+    type: 'checkout.session.completed',
+    data: { object: { id: stripeSessionId, payment_status: 'paid', metadata: { type: 'expediter_pack', userId: String(userId), size: 'starter' } } }
+  });
+  const res = await fetch(`${BASE}/api/stripe/webhook`, { method: 'POST', headers, body });
+  assert.equal(res.status, 200);
+
+  const pack = getAvailablePackForUserStmt.get(userId);
+  assert.equal(pack.credits_total, 15);
 });

@@ -355,6 +355,11 @@
       <span>of permit delays trace back to a process failure on the applicant's side — not a slow permit office</span>
       <cite>ServiceTitan, 2025</cite>
     </div>
+    <div class="proofstat" id="liveStat" style="display:none;">
+      <b id="liveStatNum">&mdash;</b>
+      <span id="liveStatLabel"></span>
+      <cite>Live from Setback's own data, updated continuously</cite>
+    </div>
   </div>
 </section>
 
@@ -391,13 +396,13 @@
     <h2 id="subscribeHead">Running more than one job at a time?</h2>
     <p class="sectionsub">Setback Pro drops every full workspace to the $49 rate, for as many projects as you run. It pays for itself at your second project of the month — every one after that is pure savings.</p>
     <div class="subscribecard">
-      <div class="tierprice">$49<span>/month</span></div>
+      <div class="tierprice">$79<span>/month</span></div>
       <ul>
-        <li>Every full workspace at $49 instead of $97 — the $48 saved on your 2nd project already covers the membership</li>
+        <li>Every full workspace at $49 instead of $97 — two projects a month already save more than the membership costs</li>
         <li>Feasibility, cost estimate, timeline, risk assessment, task list, hand-off documents, AI Advisor — on every project, not just your first</li>
         <li>Cancel anytime, no contract</li>
       </ul>
-      <button class="btn" id="subscribeBtn">Start Setback Pro — $49/mo</button>
+      <button class="btn" id="subscribeBtn">Start Setback Pro — $79/mo</button>
     </div>
   </div>
 </section>
@@ -405,16 +410,16 @@
 <section class="expediterpitch" aria-labelledby="expediterHead">
   <div class="wrap-wide">
     <h2 id="expediterHead">Running 20+ jobs a year, not one at a time?</h2>
-    <p class="sectionsub">A prepaid pack for permit expediters and high-volume shops — the lowest per-pull rate Setback offers, built for firms who already know they'll use every credit.</p>
+    <p class="sectionsub">Prepaid packs for permit expediters and high-volume shops — starting at $549, down to the lowest per-pull rate Setback offers for firms who already know they'll use every credit.</p>
     <div class="subscribecard">
-      <div class="tierprice">$999<span>for 50 pulls</span></div>
+      <div class="tierprice">$1,499<span>for 50 pulls</span></div>
       <ul>
-        <li>~$20 per roadmap — less than half the subscriber rate, reserved for real volume</li>
+        <li>~$30 per roadmap — well under the subscriber rate, reserved for real volume</li>
         <li>White-label option — no Setback branding visible to your own client</li>
         <li>One prepaid pack, no subscription, no per-pull billing — use them whenever, any trade, any US location</li>
         <li>Same 30-day refund guarantee as every other tier</li>
       </ul>
-      <a class="btn" href="expediters.html" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box;">See the full expediter pack &rarr;</a>
+      <a class="btn" href="expediters.html" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box;">See both pack sizes &rarr;</a>
     </div>
   </div>
 </section>
@@ -764,7 +769,7 @@ function openSubscribeModal(){
   function renderEmailStep(){
     modal.innerHTML = `
       <div class="modal fadein" id="subModalBox" tabindex="-1" style="outline:none;">
-        <h3 id="subModalTitle">Start Setback Pro — $49/mo</h3>
+        <h3 id="subModalTitle">Start Setback Pro — $79/mo</h3>
         <p style="color:var(--ink-soft);font-size:13px;margin:0 0 16px;">Sign in first so the subscription attaches to your account.</p>
         <input type="email" id="subEmail" placeholder="you@email.com" aria-label="Email">
         <div id="subErr"></div>
@@ -1033,6 +1038,11 @@ function renderTeaser(){
         <input id="referralInput" placeholder="e.g. AB3DEFGH" value="${esc(state.referralCode || '')}">
       </div>
 
+      <div class="referralRow${state.selectedTier === 'roadmap' ? '' : ' hidden'}" id="partnerRow">
+        <label for="partnerInput">Promo code?</label>
+        <input id="partnerInput" placeholder="e.g. HORSEPOWER" value="${esc(state.partnerCode || '')}">
+      </div>
+
       <div class="guarantee">Our promise: if we miss an agency your project clearly needed, that pull is refunded. Send the rejection notice, or the jurisdiction's own code section, within 30 days — that's all it takes.</div>
 
       <label class="checkline"><input type="checkbox" id="disc-check"> I understand this is an informational roadmap, not a permit guarantee or legal determination.</label>
@@ -1053,6 +1063,7 @@ function renderTeaser(){
       state.selectedTier = card.getAttribute('data-tier');
       document.querySelectorAll('.tiercard').forEach(c => c.classList.toggle('selected', c === card));
       document.getElementById('referralRow').classList.toggle('hidden', state.selectedTier !== 'full');
+      document.getElementById('partnerRow').classList.toggle('hidden', state.selectedTier !== 'roadmap');
       document.getElementById('unlock').textContent = `Continue — $${TIER_PRICE[state.selectedTier]}`;
     };
   });
@@ -1061,6 +1072,7 @@ function renderTeaser(){
   };
   document.getElementById('unlock').onclick = () => {
     state.referralCode = document.getElementById('referralInput').value.trim();
+    state.partnerCode = document.getElementById('partnerInput').value.trim();
     openCheckout();
   };
 }
@@ -1077,7 +1089,7 @@ function openCheckout(){
   modal.innerHTML = `
     <div class="modal fadein" id="modalBox" tabindex="-1" style="outline:none;">
       <h3 id="modalTitle">Unlock your ${tier === 'full' ? 'workspace' : 'roadmap'}</h3>
-      <p style="color:var(--ink-soft);font-size:13px;margin:0 0 16px;">Setback — ${esc(TIER_LABEL[tier])} ($${TIER_PRICE[tier]}${tier === 'full' ? ', or $49 with a valid referral code or active subscription' : ''})</p>
+      <p style="color:var(--ink-soft);font-size:13px;margin:0 0 16px;">Setback — ${esc(TIER_LABEL[tier])} ($${TIER_PRICE[tier]}${tier === 'full' ? ', or $49 with a valid referral code or active subscription' : ', or $19.99 with a valid promo code'})</p>
       <div style="display:flex;gap:8px;">
         <input id="accessCodeInput" placeholder="Access code" aria-label="Access code" style="flex:1;margin-bottom:0;">
         <button class="btn" id="redeemCode" style="width:auto;">Unlock</button>
@@ -1122,7 +1134,7 @@ function openCheckout(){
       const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(state.project.id)}/create-checkout-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier, referralCode: state.referralCode || undefined })
+        body: JSON.stringify({ tier, referralCode: state.referralCode || undefined, partnerCode: state.partnerCode || undefined })
       }, 15000);
       const body = await res.json();
       if (!res.ok) throw new Error(body.error || `Backend returned ${res.status}`);
@@ -1575,7 +1587,32 @@ async function init(){
   render();
 }
 
+// Real counts from Setback's own database (GET /api/stats, routes/legacy.js)
+// alongside the three third-party industry citations above — in a category
+// where the whole pitch is "trust this lookup," a live first-party number is
+// worth more than a fourth external citation. Hidden until it loads (and
+// left hidden on a fresh install with nothing generated yet) rather than
+// flashing a "0 roadmaps" placeholder that would undercut the pitch it's
+// meant to support.
+async function loadLiveStats(){
+  try {
+    const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/stats`, {}, 8000);
+    if (!res.ok) return;
+    const stats = await res.json();
+    if (!stats.roadmapsGenerated) return;
+    const approvedPct = stats.outcomesReported > 0 ? Math.round((stats.approvedAsDrafted / stats.outcomesReported) * 100) : null;
+    document.getElementById('liveStatNum').textContent = stats.roadmapsGenerated.toLocaleString();
+    document.getElementById('liveStatLabel').textContent = approvedPct === null
+      ? 'permit roadmaps generated by Setback so far'
+      : `permit roadmaps generated so far — ${approvedPct}% of reported outcomes approved as drafted`;
+    document.getElementById('liveStat').style.display = '';
+  } catch (err) {
+    // Not worth surfacing — the other three proof-bar stats stand on their own.
+  }
+}
+
 init();
+loadLiveStats();
 </script>
 </body>
 </html>

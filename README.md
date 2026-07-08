@@ -65,5 +65,3 @@ zero-config; split hosting works but costs you that one manual edit.
 - **Email.** Magic-link login returns the link directly in the API
   response instead of emailing it (`devLink` in `server/routes/auth.js`).
   No email provider is wired up.
-- **Task Center and Documents** modules aren't built (see the git history
-  of the source `WAKE` repo's `TASK.md` — queued for a later round).

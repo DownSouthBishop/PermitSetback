@@ -3,7 +3,7 @@
 // columns exist precisely so we don't have to pretend to more precision than
 // a construction estimate can actually offer).
 
-import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf } from './shared.js';
+import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf, renderUpgradeCard } from './shared.js';
 
 function money(n) {
   return Number.isFinite(n) ? `$${Math.round(n).toLocaleString()}` : '—';
@@ -43,6 +43,7 @@ export async function render(container, project) {
   let costs = [];
   try {
     const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/cost`, {}, 8000);
+    if (res.status === 402) { renderUpgradeCard(container, project, 'Cost Intelligence', ICON.doc); return; }
     if (!res.ok) throw new Error(`Backend returned ${res.status}`);
     ({ costs } = await res.json());
   } catch (err) {
