@@ -181,6 +181,30 @@ export async function handleProjectsRoutes(req, res, ip) {
     return true;
   }
 
+  // ponytail: same no-SSH problem as the access-codes route above, for the
+  // same reason — cleaning up test/seed data created directly against a
+  // live deployment (e.g. via curl, the way this route itself was exercised)
+  // with no filesystem access to the host to do it by hand. Deletes the
+  // project, every child row keyed by project_id, and the matching
+  // roadmaps-table funnel row (which has no project_id — it's a separate
+  // funnel-tracking table — so it's matched by location+description+trade
+  // instead) so /api/stats reflects the cleanup too.
+  if (req.method === 'DELETE' && /^\/api\/admin\/projects\/[^/]+$/.test(req.url)) {
+    const secret = process.env.ADMIN_SECRET;
+    if (!secret || req.headers['x-admin-secret'] !== secret) { sendJson(res, 404, { error: 'not found' }); return true; }
+    const id = req.url.split('/')[4];
+    const project = getProjectStmt.get(id);
+    if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }
+
+    for (const table of ['project_findings', 'project_costs', 'project_timeline_phases', 'project_tasks', 'project_documents', 'project_conversations', 'refund_claims', 'access_code_redemptions']) {
+      db.prepare(`DELETE FROM ${table} WHERE project_id = ?`).run(id);
+    }
+    db.prepare('DELETE FROM roadmaps WHERE location = ? AND description = ? AND trade = ?').run(project.location, project.description, project.trade);
+    db.prepare('DELETE FROM projects WHERE id = ?').run(id);
+    sendJson(res, 200, { deleted: id });
+    return true;
+  }
+
   // Real Stripe Checkout — creates a session for this project at whatever
   // the current server-decided price is, and returns the hosted Stripe URL
   // for the frontend to redirect to. Nothing here marks a project paid;
