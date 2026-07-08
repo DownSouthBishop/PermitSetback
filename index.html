@@ -537,12 +537,12 @@ async function fetchWithTimeout(url, options, ms){
 const BACKEND_ORIGIN = window.location.origin;
 const SESSION_KEY = 'setback_session';
 
-// ponytail: a real dev project (paid=1, populated across every module —
-// feasibility, cost, timeline, tasks, documents, and an AI Advisor thread)
-// pinned as the public "see a real example" link next to the $97 tier.
-// Points at server/data.db's dev seed data; swap for a curated demo project
-// once one exists in production.
-const SAMPLE_PROJECT_ID = 'aa1b1d2e-1d3d-4ff8-9979-0f76703395e6';
+// Was a real dev project's database ID — worked in whichever environment
+// happened to have that row, broke everywhere else (exactly what happened
+// against production, which has its own separate, empty database). A
+// fully static page has no database dependency at all, so it can't break
+// this way again in any environment, including ones that don't exist yet.
+const SAMPLE_WORKSPACE_URL = 'sample-workspace.html';
 
 // Fire-and-forget analytics — never blocks the UI, never surfaces an error
 // to the user if the backend is unreachable. Real events now, not vapor.
@@ -1023,7 +1023,7 @@ function renderTeaser(){
           <span class="tiername">Full Workspace</span>
           <span class="tierprice">$97</span>
           <span class="tierdesc">Everything in Roadmap, plus feasibility screening, a cost estimate, a task list, hand-off documents, and an AI Advisor.</span>
-          <a class="samplelink" href="project.html?id=${encodeURIComponent(SAMPLE_PROJECT_ID)}" target="_blank" rel="noopener">See a real example workspace &rarr;</a>
+          <a class="samplelink" href="${SAMPLE_WORKSPACE_URL}" target="_blank" rel="noopener">See a real example workspace &rarr;</a>
         </label>
       </div>
 

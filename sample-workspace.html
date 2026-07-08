@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sample Workspace — Setback</title>
+<meta name="description" content="A real Setback Full Workspace example — permits, feasibility, cost, timeline, risk, tasks, and documents for a Portland screened-porch addition.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231D6FE0'/%3E%3Cpath d='M5 19V10h6V5h9' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F5F7F8">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#10151A">
+<style>
+  :root{
+    --paper: #F5F7F8; --paper-raised: #FFFFFF; --ink: #14181C; --ink-soft: #55606B;
+    --line: #C5CDD5; --accent: #1D6FE0; --accent-deep: #14509E; --accent-tint: #D7E6FD;
+    --risk: #B3261E; --risk-tint: #F8D3D0; --good: #1E7F4C; --good-tint: #D2EDDC;
+    --warn: #92600A; --warn-tint: #F5E1AF;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --radius: 10px;
+    --shadow-sm: 0 1px 2px rgba(20,24,28,.06), 0 1px 1px rgba(20,24,28,.04);
+    --dur: 180ms; --ease-out: cubic-bezier(.16,1,.3,1);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper: #10151A; --paper-raised: #1A2129; --ink: #E7ECF0; --ink-soft: #9FACB8;
+      --line: #2B3540; --accent: #5B9BF2; --accent-deep: #8AB8F5; --accent-tint: #16273D;
+      --risk: #E5867E; --risk-tint: #341C1A; --good: #6FCB94; --good-tint: #142C20;
+      --warn: #D9A94A; --warn-tint: #332809;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper: #10151A; --paper-raised: #1A2129; --ink: #E7ECF0; --ink-soft: #9FACB8;
+    --line: #2B3540; --accent: #5B9BF2; --accent-deep: #8AB8F5; --accent-tint: #16273D;
+    --risk: #E5867E; --risk-tint: #341C1A; --good: #6FCB94; --good-tint: #142C20;
+    --warn: #D9A94A; --warn-tint: #332809;
+  }
+  :root[data-theme="light"]{
+    --paper: #F5F7F8; --paper-raised: #FFFFFF; --ink: #14181C; --ink-soft: #55606B;
+    --line: #C5CDD5; --accent: #1D6FE0; --accent-deep: #14509E; --accent-tint: #D7E6FD;
+    --risk: #B3261E; --risk-tint: #F8D3D0; --good: #1E7F4C; --good-tint: #D2EDDC;
+    --warn: #92600A; --warn-tint: #F5E1AF;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background: var(--paper); color: var(--ink); font-family: var(--font-sans); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  #app{ max-width: 720px; margin: 0 auto; padding: 24px 18px 72px; }
+  @media (min-width: 1024px){ #app{ max-width: 980px; } }
+
+  .banner{ background:var(--accent-tint); border:1px solid var(--accent); border-radius:var(--radius); padding:14px 18px; margin-bottom:18px; font-size:13.5px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .banner b{ color:var(--accent-deep); }
+  .banner a{ color:var(--accent-deep); font-weight:700; text-decoration:none; white-space:nowrap; }
+  .banner a:hover{ text-decoration:underline; }
+
+  .projecttitle{ margin-bottom:18px; }
+  .projecttitle h2{ font-size:22px; font-weight:800; letter-spacing:-0.02em; margin:0 0 3px; }
+  .projecttitle p{ color:var(--ink-soft); font-size:13.5px; margin:0; }
+
+  .workspacelayout{ display:block; }
+  @media (min-width: 1024px){
+    .workspacelayout{ display:grid; grid-template-columns:200px 1fr; gap:28px; align-items:start; }
+  }
+  button{ touch-action: manipulation; }
+  a:focus-visible, button:focus-visible{ outline: 2.5px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom: 18px; }
+  .brandrow{ display:flex; align-items:center; gap:10px; }
+  .mark{ width:32px; height:32px; border-radius:8px; background: linear-gradient(135deg, var(--accent), var(--accent-deep)); display:flex; align-items:center; justify-content:center; flex:none; }
+  h1.word{ font-size:19px; font-weight:800; letter-spacing:-0.02em; margin:0; }
+  .backlink{ display:block; font-size:13px; color:var(--ink-soft); text-decoration:none; margin-bottom:14px; }
+  .backlink:hover{ color:var(--accent); }
+
+  .tabs{ display:flex; gap:4px; overflow-x:auto; margin-bottom:18px; border-bottom:1px solid var(--line); padding-bottom:0; }
+  .tab{ background:none; border:none; color:var(--ink-soft); font-size:13px; font-weight:600; padding:10px 12px; cursor:pointer; white-space:nowrap; border-bottom:2px solid transparent; margin-bottom:-1px; text-align:left; font-family:inherit; }
+  .tab:hover{ color:var(--ink); }
+  .tab.active{ color:var(--accent); border-bottom-color:var(--accent); }
+  @media (min-width: 1024px){
+    .tabs{ flex-direction:column; gap:1px; overflow-x:visible; border-bottom:none; margin-bottom:0; position:sticky; top:24px; }
+    .tab{ border-bottom:none; border-left:2px solid transparent; border-radius:0 6px 6px 0; margin-bottom:0; padding:10px 14px; }
+    .tab.active{ border-left-color:var(--accent); background:var(--accent-tint); }
+  }
+
+  .card{ background: var(--paper-raised); border:1px solid var(--line); box-shadow: var(--shadow-sm); border-radius: var(--radius); padding:20px; margin-bottom:16px; }
+  .card h3{ display:flex; align-items:center; gap:8px; font-size:14px; font-weight:700; margin:0 0 12px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft); }
+  .pane{ display:none; }
+  .pane.active{ display:block; }
+
+  .counts{ display:flex; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
+  .countbox{ flex:1; min-width:90px; background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:12px; text-align:center; }
+  .countbox b{ display:block; font-size:18px; font-family:var(--font-mono); color:var(--accent-deep); }
+  .countbox span{ font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.03em; }
+
+  .agency{ background:var(--paper); border-left:3px solid var(--accent); border-radius:6px; padding:12px 14px; margin-bottom:9px; }
+  .agency b{ font-size:14px; }
+  .agency p{ color:var(--ink-soft); font-size:13px; margin:4px 0 0; }
+  .flag{ background:var(--warn-tint); border-left:3px solid var(--warn); border-radius:6px; padding:11px 14px; margin-bottom:8px; font-size:13px; }
+  .risk{ background:var(--risk-tint); border-left:3px solid var(--risk); border-radius:6px; padding:11px 14px; margin-bottom:8px; font-size:13px; }
+  .risk .meta{ display:block; margin-top:6px; font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--risk); font-weight:700; }
+  .mitigation{ display:block; margin-top:6px; color:var(--ink-soft); font-style:italic; }
+  .timeline b{ font-size:22px; font-family:var(--font-mono); color:var(--good); }
+  .narrative{ background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:15px; font-size:13.5px; white-space:pre-wrap; }
+  .phase{ background:var(--paper); border-radius:6px; padding:12px 14px; margin-bottom:9px; }
+  .phase.bottleneck{ background:var(--risk-tint); border-left:3px solid var(--risk); }
+  .phase b{ font-size:14px; }
+  .phase .dur{ font-family:var(--font-mono); font-size:13px; margin:4px 0 0; display:block; }
+  .phase p{ color:var(--ink-soft); font-size:13px; margin:4px 0 0; }
+  .bottleneck-tag{ color:var(--risk); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
+  .doccard{ background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:14px; margin-bottom:10px; }
+  .doccard b{ font-size:13.5px; display:block; margin-bottom:6px; }
+  .doccard p{ color:var(--ink-soft); font-size:12.5px; margin:0; white-space:pre-wrap; }
+  .task{ display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-top:1px solid var(--line); }
+  .task:first-child{ border-top:none; }
+  .task .box{ width:16px; height:16px; border:1.5px solid var(--line); border-radius:4px; flex:none; margin-top:2px; }
+  .task .box.done{ background:var(--good); border-color:var(--good); }
+  .task .txt{ flex:1; }
+  .task .txt b{ font-size:13.5px; }
+  .task.done .txt b{ text-decoration:line-through; color:var(--ink-soft); }
+  .task .txt p{ color:var(--ink-soft); font-size:12.5px; margin:3px 0 0; }
+  .disc{ color:var(--ink-soft); font-size:11.5px; line-height:1.6; text-align:center; margin-top:26px; padding:0 8px; }
+  a{ color:var(--accent-deep); }
+  .themebtn{ background:var(--paper-raised); border:1px solid var(--line); color:var(--ink-soft); border-radius:8px; padding:7px 11px; font-size:12px; cursor:pointer; font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <div class="brandrow"><div class="mark"></div><h1 class="word">Setback</h1></div>
+    <button class="themebtn" id="themetoggle">Dark</button>
+  </div>
+  <a class="backlink" href="index.html">&larr; Back to Setback</a>
+
+  <div class="banner"><span><b>Sample workspace</b> — a real Full Workspace example, not your data.</span><a href="index.html#tool">Show me my permits &rarr;</a></div>
+
+  <div class="projecttitle">
+    <h2>Screened Porch Addition — Portland</h2>
+    <p>Portland, Oregon</p>
+  </div>
+
+  <div class="workspacelayout">
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="feasibility">Feasibility</button>
+      <button class="tab" data-tab="permits">Permits</button>
+      <button class="tab" data-tab="cost">Cost</button>
+      <button class="tab" data-tab="timeline">Timeline</button>
+      <button class="tab" data-tab="risk">Risk</button>
+      <button class="tab" data-tab="tasks">Tasks</button>
+      <button class="tab" data-tab="documents">Documents</button>
+    </div>
+
+    <div id="panes">
+
+      <div class="pane active" data-pane="overview">
+        <div class="card">
+          <h3>Project</h3>
+          <p style="font-size:17px;font-weight:700;margin:0 0 4px;">Screened Porch Addition — Portland</p>
+          <p style="color:var(--ink-soft);font-size:13.5px;margin:0 0 14px;">Portland, Oregon</p>
+          <p style="font-size:13.5px;margin:0;">Adding a new 200 sq ft screened porch to an existing single family home, new construction.</p>
+        </div>
+        <div class="card">
+          <h3>Status</h3>
+          <div class="counts">
+            <div class="countbox"><b>Fully scoped</b><span>Status</span></div>
+            <div class="countbox"><b>100/100</b><span>Confidence</span></div>
+            <div class="countbox"><b>100/100</b><span>Risk</span></div>
+          </div>
+          <p style="color:var(--ink-soft);font-size:11.5px;margin:10px 0 0;">Confidence is 6 of 6 intelligence steps run. Risk score is based on 9 high-priority risks, 3 high-impact feasibility concerns.</p>
+        </div>
+        <div class="card">
+          <h3>At a glance</h3>
+          <div class="counts">
+            <div class="countbox"><b>5</b><span>Agencies</span></div>
+            <div class="countbox"><b>6</b><span>Jurisdiction flags</span></div>
+            <div class="countbox"><b>5</b><span>Rejection risks</span></div>
+          </div>
+          <p style="color:var(--ink-soft);font-size:13px;margin-top:10px;">Estimated timeline: <b>6&ndash;12 weeks before construction start</b></p>
+        </div>
+      </div>
+
+      <div class="pane" data-pane="feasibility">
+        <div class="card">
+          <h3>Before you get to permits</h3>
+          <div class="flag"><b>Zoning Setback Requirements</b> — high impact<br>Portland's residential zones (R1&ndash;R20) have specific rear and side yard setbacks that vary by zone. A new 200 sq ft footprint could encroach depending on existing lot coverage and proximity to property lines.</div>
+          <div class="flag"><b>Lot Coverage Limits</b> — high impact<br>Portland zones impose maximum lot coverage ratios. Adding 200 sq ft of covered structure could push total coverage over the allowed percentage on smaller urban lots.</div>
+          <div class="flag"><b>Historic District or Conservation Overlay</b> — high impact<br>Portland has numerous historic districts (Irvington, Ladd's Addition, Eastmoreland). If the property is in one, Historic Landmarks Commission approval may be required before any exterior addition.</div>
+          <div class="flag"><b>Title 11 Tree Protections</b> — medium impact<br>Portland's Urban Forestry regulations protect significant trees (12"+ DBH). Construction could require a tree permit or protection plan if regulated trees are near the build zone.</div>
+          <div class="flag"><b>Stormwater / Impervious Surface</b> — medium impact<br>A roofed screened porch adds impervious coverage and could require on-site stormwater management measures under Bureau of Environmental Services rules.</div>
+        </div>
+      </div>
+
+      <div class="pane" data-pane="permits">
+        <div class="card">
+          <h3>Every agency you'll answer to</h3>
+          <div class="agency"><b>Portland Bureau of Development Services (BDS) — Building Permit</b><p>Primary permit authority for all residential structural additions. Required for any new covered structure attached to a home; plans must show framing, foundation/footing details, egress, and electrical if applicable.</p></div>
+          <div class="agency"><b>Portland BDS — Zoning / Land Use Review</b><p>Verifies the porch complies with setbacks, lot coverage maximums, and height limits for the applicable residential zone. Screened porches count toward lot coverage.</p></div>
+          <div class="agency"><b>Portland Fire Bureau — Life Safety Review</b><p>Fire separation and egress path from the addition checked as part of BDS routing, not a separate application in most cases.</p></div>
+          <div class="agency"><b>Portland Bureau of Environmental Services (BES) — Stormwater</b><p>A screened porch with a solid roof adds impervious area; BES review or a stormwater management plan may be required.</p></div>
+          <div class="agency"><b>Oregon Residential Specialty Code (ORSC) — Structural Compliance</b><p>Plans must meet ORSC requirements for footings, framing, connections, and seismic bracing — reviewed by BDS plan examiners.</p></div>
+        </div>
+        <div class="card">
+          <h3>The rules that trip up projects like this</h3>
+          <div class="flag">Portland residential zones impose lot coverage limits (commonly 50% in R2/R5 zones) — screened porches with solid roofs typically count fully toward lot coverage.</div>
+          <div class="flag">Rear setbacks are commonly 15&ndash;20 ft and side setbacks 5 ft in Portland R zones, but your specific zone controls — verify before finalizing porch placement.</div>
+          <div class="flag">Oregon is in a high seismic zone. The ORSC requires prescriptive lateral bracing and positive connections at footing-to-post and post-to-beam for any new structure.</div>
+        </div>
+        <div class="card">
+          <h3>How long this will actually take</h3>
+          <div class="timeline"><b>6&ndash;12 weeks before construction start</b></div>
+          <p style="color:var(--ink-soft);font-size:13px;margin-top:6px;">Standard BDS over-the-counter or online plan review for a straightforward 200 sq ft addition typically runs 4&ndash;8 weeks, but a historic overlay review, stormwater plan requirement, or plan correction cycle can push the total past 10&ndash;12 weeks.</p>
+        </div>
+      </div>
+
+      <div class="pane" data-pane="cost">
+        <div class="card">
+          <h3>Estimated total</h3>
+          <div class="counts">
+            <div class="countbox"><b>$10,100</b><span>Low end</span></div>
+            <div class="countbox"><b>$24,400</b><span>High end</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Cost breakdown</h3>
+          <div class="agency"><b>Permit Fees</b><p style="font-family:var(--font-mono);color:var(--ink);">$400 &ndash; $900</p><p>Portland BDS residential permit fees are based on project valuation.</p></div>
+          <div class="agency"><b>Engineering/Design</b><p style="font-family:var(--font-mono);color:var(--ink);">$800 &ndash; $2,500</p><p>Simple porch additions may need stamped drawings for structural elements.</p></div>
+          <div class="agency"><b>Footings &amp; Foundation</b><p style="font-family:var(--font-mono);color:var(--ink);">$1,200 &ndash; $3,000</p><p>Concrete piers or continuous footings required by Oregon code.</p></div>
+          <div class="agency"><b>Framing &amp; Structure</b><p style="font-family:var(--font-mono);color:var(--ink);">$3,500 &ndash; $7,000</p><p>Lumber, posts, beams, decking/floor system, and roof framing for 200 sq ft.</p></div>
+          <div class="agency"><b>Screening System</b><p style="font-family:var(--font-mono);color:var(--ink);">$1,500 &ndash; $4,000</p><p>Aluminum or wood screen framing with fiberglass or aluminum mesh.</p></div>
+          <div class="agency"><b>Roofing</b><p style="font-family:var(--font-mono);color:var(--ink);">$1,200 &ndash; $3,000</p><p>Matching existing roofing material and flashing the new porch into the existing structure.</p></div>
+          <div class="agency"><b>Electrical</b><p style="font-family:var(--font-mono);color:var(--ink);">$600 &ndash; $1,800</p><p>Outlet circuits and lighting are common additions to a porch.</p></div>
+          <div class="agency"><b>Contingency</b><p style="font-family:var(--font-mono);color:var(--ink);">$900 &ndash; $2,200</p><p>10&ndash;15% of total project cost to cover unforeseen conditions.</p></div>
+        </div>
+        <p class="disc">These are planning-stage ranges, not quotes — get firm numbers from your contractor and the issuing agencies before budgeting.</p>
+      </div>
+
+      <div class="pane" data-pane="timeline">
+        <div class="card">
+          <h3>Phase-by-phase schedule</h3>
+          <div class="phase"><b>Feasibility &amp; Planning</b><span class="dur">1&ndash;2 weeks</span><p>Confirm zoning setbacks, lot coverage limits, and regulations with Portland BDS.</p></div>
+          <div class="phase"><b>Design &amp; Drafting</b><span class="dur">3&ndash;5 weeks</span><p>Architect or designer produces site plan, floor plan, elevations, and construction details.</p></div>
+          <div class="phase"><b>Structural Engineering</b><span class="dur">2&ndash;3 weeks</span><p>Engineer stamps foundation, beam, post, and ledger connection details.</p></div>
+          <div class="phase bottleneck"><b>Permit Application &amp; BDS Review</b> <span class="bottleneck-tag">Bottleneck risk</span><span class="dur">6&ndash;14 weeks</span><p>Portland BDS residential plan review queues have run 2&ndash;4 months in recent years; this is the single most likely schedule bottleneck.</p></div>
+          <div class="phase"><b>Revision Cycles</b><span class="dur">2&ndash;4 weeks</span><p>BDS reviewers commonly issue correction notices requiring designer/engineer response and re-review.</p></div>
+          <div class="phase"><b>Construction</b><span class="dur">4&ndash;6 weeks</span><p>Contractor installs footings/foundation, framing, ledger connection, roofing, and screening system.</p></div>
+          <div class="phase"><b>Inspections</b><span class="dur">1&ndash;2 weeks</span><p>BDS inspectors typically require footing, framing, and final inspections.</p></div>
+          <div class="phase"><b>Final Approval &amp; Closeout</b><span class="dur">1 week</span><p>BDS issues final sign-off after passing all inspections.</p></div>
+        </div>
+      </div>
+
+      <div class="pane" data-pane="risk">
+        <div class="card">
+          <h3>Risks to plan around</h3>
+          <div class="risk"><b>Zoning &amp; Setback Compliance</b><span class="meta">High priority</span>Portland's R zones have strict setback requirements and lot coverage maximums that could require a variance or adjustment.<span class="mitigation">Mitigation: Pull the property's zoning summary from PortlandMaps.com before design finalization.</span></div>
+          <div class="risk"><b>Permitting Delays at BDS</b><span class="meta">High priority</span>Even straightforward residential additions can take weeks to months for permit issuance.<span class="mitigation">Mitigation: Submit applications as early and completely as possible to reduce correction cycles.</span></div>
+          <div class="risk"><b>Historic District or Overlay Restrictions</b><span class="meta">High priority</span>If the property falls within a historic or conservation district, design review may be required, adding time and constraints.<span class="mitigation">Mitigation: Check PortlandMaps.com for overlay zones before design work begins.</span></div>
+          <div class="risk"><b>Rainy Season Construction Window</b><span class="meta">High priority</span>Portland's rainy season (Oct&ndash;May) can delay excavation, concrete pours, and framing.<span class="mitigation">Mitigation: Schedule footing and concrete work for the dry season (June&ndash;September).</span></div>
+          <div class="risk"><b>Structural Attachment &amp; Engineering Requirements</b><span class="meta">Medium priority</span>Portland BDS may require stamped engineering drawings for the ledger connection, roof framing, and footing design.<span class="mitigation">Mitigation: Budget for a structural engineer's involvement upfront.</span></div>
+        </div>
+      </div>
+
+      <div class="pane" data-pane="tasks">
+        <div class="card">
+          <h3>What's next</h3>
+          <div class="task done"><div class="box done"></div><div class="txt"><b>Confirm existing lot coverage before assuming the addition fits</b><p>Screened porches with solid roofs typically count fully toward lot coverage.</p></div></div>
+          <div class="task done"><div class="box done"></div><div class="txt"><b>Verify setback requirements for this zone</b><p>Rear setbacks are commonly 15&ndash;20 ft and side setbacks 5 ft, but the specific zone controls.</p></div></div>
+          <div class="task"><div class="box"></div><div class="txt"><b>Check for historic or conservation district overlay</b><p>A Type II Historic Resource Review may be required, adding significant time and design constraints.</p></div></div>
+          <div class="task"><div class="box"></div><div class="txt"><b>Confirm seismic detailing is in the structural plans</b><p>Oregon requires prescriptive lateral bracing and positive connections for any new structure.</p></div></div>
+          <div class="task"><div class="box"></div><div class="txt"><b>Resolve: Zoning Setback Requirements</b><p>A new 200 sq ft footprint could encroach depending on existing lot coverage and proximity to property lines.</p></div></div>
+          <div class="task"><div class="box"></div><div class="txt"><b>Mitigate: Permitting Delays at BDS</b><p>Submit permit applications as early and completely as possible; consider a permit expediter.</p></div></div>
+        </div>
+      </div>
+
+      <div class="pane" data-pane="documents">
+        <div class="card">
+          <h3>Your permit application, already written</h3>
+          <div class="doccard"><b>Permit Checklist</b><p>PERMIT CHECKLIST — 200 SQ FT SCREENED PORCH ADDITION
+Portland, Oregon | Portland Bureau of Development Services (BDS)
+
+BEFORE YOU SUBMIT
+- Pull your zoning summary from PortlandMaps.com — confirm your setbacks and lot coverage&hellip;</p></div>
+          <div class="doccard"><b>Owner Summary</b><p>OWNER SUMMARY — SCREENED PORCH ADDITION
+Plain-English Overview
+
+You are adding a 200 square foot screened porch to your home. Even though this feels like a simple project, Portland requires a building permit&hellip;</p></div>
+          <div class="doccard"><b>Contractor Summary</b><p>CONTRACTOR SUMMARY — 200 SQ FT SCREENED PORCH ADDITION
+Portland, Oregon
+
+SCOPE
+New attached screened porch, 200 sq ft, new construction. Permit through Portland BDS. Oregon Residential Specialty Code applies&hellip;</p></div>
+          <div class="doccard"><b>Inspection Checklist</b><p>INSPECTION CHECKLIST — SCREENED PORCH ADDITION
+Typical sequence for Portland BDS residential permit
+
+1. FOOTING INSPECTION
+   Requested after excavation is complete, before any concrete is poured&hellip;</p></div>
+          <div class="doccard"><b>Questions for the Building Department</b><p>QUESTIONS FOR PORTLAND BDS — SCREENED PORCH ADDITION
+
+Ask these before or at the time of submittal:
+
+1. Given our property's current lot coverage, does the 200 sq ft porch roof count fully toward lot&hellip;</p></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <p class="disc">This is a real Setback output for a real address — the only thing mocked is that it isn't tied to your project. <a href="index.html#tool">Generate your own &rarr;</a></p>
+</div>
+
+<script>
+(function(){
+  var theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  var btn = document.getElementById('themetoggle');
+  function apply(){
+    document.documentElement.setAttribute('data-theme', theme);
+    btn.textContent = theme === 'dark' ? 'Light' : 'Dark';
+  }
+  btn.onclick = function(){ theme = theme === 'dark' ? 'light' : 'dark'; apply(); };
+  apply();
+
+  var tabs = document.querySelectorAll('.tab');
+  var panes = document.querySelectorAll('.pane');
+  tabs.forEach(function(tab){
+    tab.onclick = function(){
+      tabs.forEach(function(t){ t.classList.remove('active'); });
+      panes.forEach(function(p){ p.classList.remove('active'); });
+      tab.classList.add('active');
+      document.querySelector('.pane[data-pane="' + tab.dataset.tab + '"]').classList.add('active');
+    };
+  });
+})();
+</script>
+</body>
+</html>
