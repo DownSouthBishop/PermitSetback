@@ -4,7 +4,7 @@ import { readBody, sendJson, checkRateLimit } from '../http-utils.js';
 import {
   getOrCreateUser, insertMagicLinkStmt, getMagicLinkStmt, markMagicLinkUsedStmt,
   insertSessionStmt, linkProjectToUserStmt, getProjectsByUserStmt, getSessionUserStmt,
-  getActiveSubscriptionByUserStmt
+  getActiveSubscriptionByUserStmt, getPackCreditsByUserStmt
 } from '../db.js';
 import { computeAttentionItems } from '../attention.js';
 
@@ -96,6 +96,19 @@ export async function handleAuthRoutes(req, res, ip) {
     const user = getSessionUser(req);
     if (!user) { sendJson(res, 401, { error: 'not authenticated' }); return true; }
     sendJson(res, 200, { items: computeAttentionItems(user.id) });
+    return true;
+  }
+
+  // Expediter pack usage — every pack the account has ever bought, so
+  // someone burning through a prepaid pack can see how many pulls are left
+  // instead of finding out only when redeem-pack-credit starts failing.
+  if (req.method === 'GET' && req.url === '/api/me/packs') {
+    const user = getSessionUser(req);
+    if (!user) { sendJson(res, 401, { error: 'not authenticated' }); return true; }
+    const packs = getPackCreditsByUserStmt.all(user.id).map(p => ({
+      creditsTotal: p.credits_total, creditsUsed: p.credits_used, createdAt: p.created_at
+    }));
+    sendJson(res, 200, { packs });
     return true;
   }
 

@@ -99,6 +99,19 @@
   .projectcard .row{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; }
   .projectcard .loc{ font-size:15.5px; font-weight:700; }
   .projectcard .meta{ color:var(--ink-soft); font-size:13px; }
+  .projectcard .jurisdiction{ color:var(--ink-soft); font-size:12.5px; margin-top:6px; padding-top:6px; border-top:1px solid var(--line); }
+  .projectcard .jurisdiction b{ color:var(--ink); font-weight:600; }
+
+  /* ---- Status strip: the glanceable HUD header, numbers not prose --
+     scannable in the two seconds someone has between jobs, before any card
+     needs to be read. */
+  .statstrip{ display:flex; gap:0; margin-bottom:16px; border:1px solid var(--line); border-radius: var(--radius); overflow:hidden; background:var(--paper-raised); box-shadow: var(--shadow-sm); }
+  .statitem{ flex:1; text-align:center; padding:14px 6px; border-left:1px solid var(--line); }
+  .statitem:first-child{ border-left:none; }
+  .statitem .num{ display:block; font-size:22px; font-weight:800; line-height:1.1; font-family:var(--font-mono); }
+  .statitem .num.risk{ color:var(--risk); }
+  .statitem .num.warn{ color:var(--warn); }
+  .statitem .lbl{ display:block; font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; margin-top:2px; }
 
   .badge{ display:inline-block; border-radius:999px; padding:3px 10px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; flex:none; }
   .badge.good{ background:var(--good-tint); color:var(--good); }
@@ -127,6 +140,17 @@
   .rollupitem a:hover{ color:var(--accent); }
   .rollupreason{ font-size:12.5px; color:var(--ink-soft); flex:none; white-space:nowrap; }
   .rollupok{ color:var(--ink-soft); font-size:13.5px; }
+
+  /* ---- Expediter pack usage ---- */
+  .packcard h2{ font-size:14px; font-weight:700; margin:0 0 12px; text-transform:uppercase; letter-spacing:0.04em; color:var(--accent-deep); }
+  .packrow{ padding:9px 0; border-top:1px solid var(--line); }
+  .packrow:first-of-type{ border-top:none; }
+  .packrow .packmeta{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; font-size:13.5px; margin-bottom:6px; }
+  .packrow .packmeta b{ color:var(--ink); }
+  .packrow .packmeta span{ color:var(--ink-soft); }
+  .packbar{ height:6px; border-radius:999px; background:var(--line); overflow:hidden; }
+  .packbar > div{ height:100%; background:var(--accent); border-radius:999px; }
+  .packrow.exhausted .packbar > div{ background:var(--warn); }
 
   /* ---- Modals (subscription cancel flow) ---- */
   .modal-backdrop{ position:fixed; inset:0; background:rgba(10,15,20,.55); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50; }
@@ -195,6 +219,64 @@ function statusBadge(status){
   if (status === 'comments') return `<span class="badge warn">Approved w/ comments</span>`;
   if (status === 'rejected') return `<span class="badge risk">Rejected</span>`;
   return '';
+}
+
+// Same case-insensitive-trim matching as db.js's getInsightStmt — real users
+// type "Broward County, Florida" and "broward county, florida" for the same
+// place, and jurisdiction history is worthless if near-duplicates don't merge.
+function normalizeLoc(s){
+  return String(s || '').trim().toLowerCase();
+}
+
+// One pass over the account's own projects (already fetched for the list
+// below — no extra request) grouped by jurisdiction, so a repeat contractor
+// sees their own track record in a county instead of starting from zero
+// every time. This is the thing a competitor can't hand them on day one.
+function jurisdictionStatsFor(projects){
+  const byLoc = new Map();
+  for (const p of projects){
+    const key = normalizeLoc(p.location);
+    if (!byLoc.has(key)) byLoc.set(key, { count: 0, approved: 0, comments: 0, rejected: 0 });
+    const s = byLoc.get(key);
+    s.count++;
+    if (p.outcomeStatus === 'approved') s.approved++;
+    else if (p.outcomeStatus === 'comments') s.comments++;
+    else if (p.outcomeStatus === 'rejected') s.rejected++;
+  }
+  return byLoc;
+}
+
+function jurisdictionNoteHtml(project, statsByLoc){
+  const s = statsByLoc.get(normalizeLoc(project.location));
+  if (!s || s.count < 2) return '';
+  const decided = s.approved + s.comments + s.rejected;
+  const outcomePart = decided === 0
+    ? 'no outcomes reported yet'
+    : [
+        s.approved ? `${s.approved} approved` : null,
+        s.comments ? `${s.comments} w/ comments` : null,
+        s.rejected ? `${s.rejected} rejected` : null
+      ].filter(Boolean).join(', ');
+  return `<div class="jurisdiction"><b>${s.count} projects</b> here so far &middot; ${esc(outcomePart)}</div>`;
+}
+
+// The glanceable strip at the top of the dashboard — three numbers, not
+// prose, because the read window here is the few seconds between jobs, not
+// a sit-down session. "Needs attention" starts as a dash and is patched in
+// by loadRollup() once that request resolves (it needs risks/flags data this
+// summary payload doesn't carry), everything else renders instantly from
+// data already on hand.
+function statStripHtml(projects){
+  const inFlight = projects.filter(p => p.paid && !p.outcomeStatus).length;
+  const rejected = projects.filter(p => p.outcomeStatus === 'rejected').length;
+  return `
+    <div class="statstrip">
+      <div class="statitem"><span class="num">${projects.length}</span><span class="lbl">Projects</span></div>
+      <div class="statitem"><span class="num">${inFlight}</span><span class="lbl">In flight</span></div>
+      <div class="statitem"><span class="num ${rejected ? 'risk' : ''}">${rejected}</span><span class="lbl">Rejected</span></div>
+      <div class="statitem"><span class="num" id="statAttn">&mdash;</span><span class="lbl">Need attention</span></div>
+    </div>
+  `;
 }
 
 function formatDate(iso){
@@ -296,6 +378,7 @@ function renderProjects(projects, sessionToken, subscribed){
     return;
   }
   logEvent('dashboard_viewed', { projectCount: projects.length });
+  const jurisdictionStats = jurisdictionStatsFor(projects);
   const cards = projects.map(p => `
     <a class="projectcard" href="project.html?id=${encodeURIComponent(p.id)}">
       <div class="row">
@@ -303,10 +386,51 @@ function renderProjects(projects, sessionToken, subscribed){
         ${statusBadge(p.outcomeStatus)}
       </div>
       <div class="meta">${esc(tradeLabel(p.trade))} &middot; ${esc(formatDate(p.createdAt))}</div>
+      ${jurisdictionNoteHtml(p, jurisdictionStats)}
     </a>
   `).join('');
-  renderShell(`<div id="rollupSlot"></div>${proNudgeHtml(projects, subscribed)}${cards}`);
+  renderShell(`${statStripHtml(projects)}<div id="rollupSlot"></div><div id="packsSlot"></div>${proNudgeHtml(projects, subscribed)}${cards}`);
   loadRollup(sessionToken);
+  loadPacks(sessionToken);
+}
+
+// Expediter pack balance — silent (no card at all) for the vast majority of
+// accounts that never bought one; only expediters who prepaid for a batch of
+// unlocks have any reason to care how many pulls are left.
+function packsHtml(packs){
+  if (!packs.length) return '';
+  return `
+    <div class="card packcard">
+      <h2>Expediter credits</h2>
+      ${packs.map(p => {
+        const remaining = p.creditsTotal - p.creditsUsed;
+        const pct = Math.min(100, Math.round((p.creditsUsed / p.creditsTotal) * 100));
+        return `
+          <div class="packrow${remaining === 0 ? ' exhausted' : ''}">
+            <div class="packmeta">
+              <b>${p.creditsUsed} of ${p.creditsTotal} used</b>
+              <span>${remaining === 0 ? 'none left' : `${remaining} left`}</span>
+            </div>
+            <div class="packbar"><div style="width:${pct}%"></div></div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+async function loadPacks(sessionToken){
+  const slot = document.getElementById('packsSlot');
+  try {
+    const res = await fetch(`${BACKEND_ORIGIN}/api/me/packs`, {
+      headers: { 'Authorization': `Bearer ${sessionToken}` }
+    });
+    if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+    const data = await res.json();
+    if (slot) slot.outerHTML = packsHtml(data.packs);
+  } catch (err){
+    if (slot) slot.outerHTML = '';
+  }
 }
 
 // "Which of my active permits need attention" — server-side now
@@ -340,6 +464,11 @@ async function loadRollup(sessionToken){
     if (!res.ok) throw new Error(`Backend returned ${res.status}`);
     const data = await res.json();
     if (slot) slot.outerHTML = rollupHtml(data.items);
+    const attnStat = document.getElementById('statAttn');
+    if (attnStat){
+      attnStat.textContent = data.items.length;
+      if (data.items.length > 0) attnStat.classList.add('warn');
+    }
   } catch (err){
     if (slot) slot.outerHTML = '';
   }

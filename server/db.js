@@ -554,6 +554,12 @@ export const insertPackCreditsStmt = db.prepare(`
 export const getAvailablePackForUserStmt = db.prepare(
   'SELECT * FROM pack_credits WHERE user_id = ? AND credits_used < credits_total ORDER BY created_at ASC LIMIT 1'
 );
+// Every pack a user has ever bought, not just the one currently being drawn
+// from — an expediter checking usage wants to see all of them, including
+// ones already exhausted.
+export const getPackCreditsByUserStmt = db.prepare(
+  'SELECT * FROM pack_credits WHERE user_id = ? ORDER BY created_at ASC'
+);
 // Same atomic-guard reasoning as incrementAccessCodeUsesStmt above — without
 // the credits_used < credits_total guard here, two concurrent unlocks
 // against someone's last remaining credit could both pass a separate
