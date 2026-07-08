@@ -2,7 +2,7 @@
 // (not permanently-fake "Not yet scored" placeholders) and one clear next
 // action, via server/routes/overview.js.
 
-import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN } from './shared.js';
+import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, deriveProjectName } from './shared.js';
 
 const LINK_LABELS = { feasibility: 'Feasibility', permits: 'Permits', cost: 'Cost', timeline: 'Timeline', risk: 'Risk', documents: 'Documents' };
 
@@ -29,7 +29,7 @@ export async function render(container, project, goTo) {
     return;
   }
 
-  const title = project.name || `${project.trade} project`;
+  const title = deriveProjectName(project);
   const riskText = overview.riskScore === null ? 'Not yet scored' : `${overview.riskScore}/100`;
 
   container.innerHTML = `

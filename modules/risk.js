@@ -3,7 +3,7 @@
 // Findings are generated on demand and persisted, so a later visit just
 // lists them.
 
-import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN } from './shared.js';
+import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf } from './shared.js';
 
 function riskUrl(project) {
   return `${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/risk`;
@@ -62,8 +62,8 @@ export async function render(container, project) {
   if (findings.length === 0) {
     container.innerHTML = `
       <div class="card">
-        <h3>${ICON.alert} Risk Intelligence</h3>
-        <p style="color:var(--ink-soft);font-size:13px;">Assess permitting, cost, schedule, and compliance risk before they turn into delays or overruns.</p>
+        <h3>${ICON.alert} What could go wrong on this job</h3>
+        <p style="color:var(--ink-soft);font-size:13px;">Permitting, cost, schedule, and compliance risk for this ${esc(tradeLabel(project.trade).toLowerCase())} project in ${esc(cityOf(project.location)) || 'your area'} — before any of it turns into a delay or an overrun.</p>
         <button class="btn" id="run" style="margin-top:4px;">Run risk assessment</button>
       </div>
     `;

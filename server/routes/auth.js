@@ -6,12 +6,15 @@ import {
   getOrCreateUser, insertMagicLinkStmt, getMagicLinkStmt, markMagicLinkUsedStmt,
   insertSessionStmt, linkProjectToUserStmt, getProjectsByUserStmt, getSessionUserStmt
 } from '../db.js';
+import { computeAttentionItems } from '../attention.js';
 
 const PORT = process.env.PORT || 8787;
 
 // Reads the bearer session token off the request and resolves it to a user,
-// or null if missing/expired/unknown — callers just check for null.
-function getSessionUser(req) {
+// or null if missing/expired/unknown — callers just check for null. Exported
+// so routes/projects.js can identify a subscriber/pack-holder when deciding
+// price, without duplicating this lookup.
+export function getSessionUser(req) {
   const header = req.headers['authorization'] || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) return null;
@@ -83,6 +86,13 @@ export async function handleAuthRoutes(req, res, ip) {
     if (!user) { sendJson(res, 401, { error: 'not authenticated' }); return true; }
     const projects = getProjectsByUserStmt.all(user.id).map(projectSummary);
     sendJson(res, 200, { projects });
+    return true;
+  }
+
+  if (req.method === 'GET' && req.url === '/api/me/attention') {
+    const user = getSessionUser(req);
+    if (!user) { sendJson(res, 401, { error: 'not authenticated' }); return true; }
+    sendJson(res, 200, { items: computeAttentionItems(user.id) });
     return true;
   }
 

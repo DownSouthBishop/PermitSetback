@@ -14,6 +14,16 @@
   ul.check{ list-style:none; padding:0; }
   ul.check li{ padding-left:24px; position:relative; margin-bottom:10px; }
   ul.check li:before{ content:'✓'; position:absolute; left:0; color:var(--accent-deep); font-weight:700; }
+  .cta{ cursor:pointer; border:none; font-size:15px; font-family:inherit; }
+  .modal-backdrop{ position:fixed; inset:0; background:rgba(10,15,20,.55); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50; }
+  .modal{ background:var(--paper-raised); border:1px solid var(--line); border-radius:14px; padding:24px; max-width:380px; width:100%; }
+  .modal h3{ margin:0 0 4px; font-size:17px; }
+  .modal input{ width:100%; background:var(--paper); border:1.5px solid var(--line); color:var(--ink); border-radius:8px; padding:11px 12px; font-size:16px; font-family:inherit; margin-bottom:10px; box-sizing:border-box; }
+  .modal .btn{ display:block; width:100%; background:var(--accent); color:#fff; border:none; border-radius:9px; padding:13px 18px; font-size:15px; font-weight:700; cursor:pointer; text-align:center; box-sizing:border-box; }
+  .modal .btn.secondary{ background:transparent; color:var(--accent-deep); border:1px solid var(--line); margin-top:8px; }
+  .modalErr{ color:#B3261E; font-size:13px; margin:-4px 0 10px; }
+  .spinner{ display:inline-block; width:13px; height:13px; border:2px solid #ffffff66; border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; margin-right:6px; vertical-align:middle; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -26,11 +36,11 @@
     <div class="price-block"><span class="num">$999</span><span class="per">for 50 roadmaps (~$20 each)</span></div>
     <p style="margin:0 0 14px;">One prepaid pack, no subscription, no per-pull billing. Use them whenever, for any trade, any US location.</p>
     <ul class="check">
-      <li>Same full roadmap contractors pay $19&ndash;39 for individually — agencies, jurisdiction flags, rejection risks, timeline, draft narrative</li>
+      <li>Same full roadmap contractors pay $49&ndash;97 for individually — agencies, jurisdiction flags, rejection risks, timeline, draft narrative</li>
       <li><strong>White-label option</strong> — no Setback branding visible to your own client, so the pack fits inside your existing service without any awkward conversation about where the research came from</li>
       <li>Commercial use and resale-in-client-work explicitly permitted in the pack's terms — the standard consumer terms don't cover this, this pack's terms do</li>
     </ul>
-    <a class="cta" href="mailto:hello@setback.example?subject=Expediter%20pack">Get started &rarr;</a>
+    <button class="cta" id="buyPackBtn">Get started &rarr;</button>
   </div>
 
   <h2>Why this instead of doing it yourself</h2>
@@ -41,5 +51,95 @@
 
   <p style="margin-top:32px;"><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a> · <a href="disclaimer.html">Disclaimer</a></p>
 </div>
+
+<script>
+// Pack purchases belong to an account (pack_credits.user_id), so this reuses
+// the same passwordless magic-link session index.html/projects.html already
+// establish (same localStorage key) rather than inventing a second login.
+const BACKEND_ORIGIN = window.location.origin;
+const SESSION_KEY = 'setback_session';
+
+function esc(s){ return String(s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+async function startPackCheckout(sessionToken, box){
+  box.innerHTML = `<h3>Starting checkout&hellip;</h3><p style="color:var(--ink-soft);font-size:13px;"><span class="spinner"></span>Redirecting to Stripe...</p>`;
+  try {
+    const res = await fetch(`${BACKEND_ORIGIN}/api/expediter-pack/create-checkout-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionToken}` }
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || `Backend returned ${res.status}`);
+    // Stripe's hosted page redirects to Setback's homepage (not back here),
+    // with no way to say which purchase this was — index.html's init() reads
+    // this to know to call the expediter-pack confirm endpoint, not the
+    // subscription one.
+    sessionStorage.setItem('pendingCheckout', 'pack');
+    window.location.href = body.url;
+  } catch (err){
+    box.innerHTML = `
+      <h3>Couldn't start checkout</h3>
+      <p class="modalErr">${esc(err.message || 'Something went wrong — try again in a moment.')}</p>
+      <button class="btn secondary" id="packClose">Close</button>
+    `;
+    document.getElementById('packClose').onclick = () => document.querySelector('.modal-backdrop').remove();
+  }
+}
+
+function openPackModal(){
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  document.body.appendChild(modal);
+  const sessionToken = localStorage.getItem(SESSION_KEY);
+
+  if (sessionToken){
+    modal.innerHTML = `<div class="modal fadein" id="packModalBox"></div>`;
+    startPackCheckout(sessionToken, document.getElementById('packModalBox'));
+    return;
+  }
+
+  modal.innerHTML = `
+    <div class="modal fadein" id="packModalBox">
+      <h3>Buy the $999 pack</h3>
+      <p style="color:var(--ink-soft);font-size:13px;margin:0 0 16px;">Sign in first so the pack attaches to your account.</p>
+      <input type="email" id="packEmail" placeholder="you@email.com" aria-label="Email">
+      <div id="packErr"></div>
+      <button class="btn" id="packSendLink">Email me a sign-in link</button>
+      <button class="btn secondary" id="packCancel">Cancel</button>
+    </div>
+  `;
+  document.getElementById('packCancel').onclick = () => modal.remove();
+  document.getElementById('packSendLink').onclick = async () => {
+    const email = document.getElementById('packEmail').value.trim();
+    const errBox = document.getElementById('packErr');
+    if (!email || !email.includes('@')){ errBox.innerHTML = `<p class="modalErr">Enter a valid email address.</p>`; return; }
+    const btn = document.getElementById('packSendLink');
+    btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>Sending...`;
+    try {
+      const res = await fetch(`${BACKEND_ORIGIN}/api/auth/request-link`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Backend returned ${res.status}`);
+      const verifyToken = new URL(data.devLink).searchParams.get('token');
+      const ownLink = `${location.origin}/projects.html?verify=${encodeURIComponent(verifyToken)}`;
+      document.getElementById('packModalBox').innerHTML = `
+        <h3>Check your link</h3>
+        <p style="color:var(--ink-soft);font-size:13px;margin:0 0 14px;">There's no real email delivery yet, so here's your sign-in link directly. Open it, then come back and click "Get started" again.</p>
+        <p style="margin:0 0 16px;"><a href="${esc(ownLink)}" style="color:var(--accent-deep);font-weight:600;">Your sign-in link</a></p>
+        <button class="btn secondary" id="packClose">Close</button>
+      `;
+      document.getElementById('packClose').onclick = () => modal.remove();
+    } catch (err){
+      errBox.innerHTML = `<p class="modalErr">Couldn't send that — is the backend running?</p>`;
+      btn.disabled = false; btn.textContent = 'Email me a sign-in link';
+    }
+  };
+}
+
+document.getElementById('buyPackBtn').onclick = openPackModal;
+</script>
 </body>
 </html>

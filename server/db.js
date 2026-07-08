@@ -228,6 +228,62 @@ db.exec(`
     cost_usd REAL,
     created_at TEXT NOT NULL
   );
+
+  -- Pricing overhaul (SETBACK VISION 1.0 pricing ladder): one-off tier,
+  -- contractor subscription, expediter pack, referral codes. See
+  -- server/routes/projects.js priceCentsFor() for how these combine into
+  -- what a given user actually pays.
+
+  -- Recurring $49/mo contractor membership. One active row per user; history
+  -- of past subscriptions kept (status transitions to 'canceled'/'past_due'
+  -- rather than deleting) so cancel-flow analysis has something to look at.
+  CREATE TABLE IF NOT EXISTS subscriptions (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    stripe_subscription_id TEXT NOT NULL,
+    status TEXT NOT NULL,
+    current_period_end TEXT,
+    cancel_reason TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  -- Expediter pack: one row per $999/50-credit purchase. credits_used is
+  -- incremented as the firm unlocks projects against this pack instead of
+  -- paying one-off; a firm can hold more than one pack over time (buys a
+  -- second pack once the first is spent), hence a table of purchases rather
+  -- than a single counter on the user row.
+  CREATE TABLE IF NOT EXISTS pack_credits (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    stripe_session_id TEXT NOT NULL,
+    credits_total INTEGER NOT NULL,
+    credits_used INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+  );
+
+  -- Referral codes: minted after a $97 full-tier purchase, redeemable once
+  -- by a different project for the full tier at $49. redeemed_project_id
+  -- stays NULL until used.
+  CREATE TABLE IF NOT EXISTS referral_codes (
+    code TEXT PRIMARY KEY,
+    referrer_project_id TEXT NOT NULL,
+    stripe_promotion_code_id TEXT,
+    redeemed_project_id TEXT,
+    created_at TEXT NOT NULL,
+    redeemed_at TEXT
+  );
+
+  -- One row per user, tracking the last "needs attention" digest computed
+  -- for them (attention-digest.js). items_hash is a cheap fingerprint of
+  -- the last-seen attention items — the digest pass only logs (eventually:
+  -- emails) again when this changes, so an unresolved issue doesn't
+  -- re-notify on every scheduled tick.
+  CREATE TABLE IF NOT EXISTS attention_digests (
+    user_id INTEGER PRIMARY KEY,
+    items_hash TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
 `);
 
 // Schema evolves via additive, idempotent statements rather than a migration
@@ -253,10 +309,22 @@ for (const stmt of [
   "ALTER TABLE projects ADD COLUMN paid INTEGER NOT NULL DEFAULT 0",
   "ALTER TABLE projects ADD COLUMN paid_at TEXT",
   // Task Center dedup key — see project_tasks CREATE TABLE comment above.
-  "ALTER TABLE project_tasks ADD COLUMN source_id TEXT"
+  "ALTER TABLE project_tasks ADD COLUMN source_id TEXT",
+  // Which paywall level this project unlocked at — 'roadmap' ($49) or
+  // 'full' ($97, or $49 via subscription/referral/pack credit). NULL until
+  // paid = 1. Projects paid before this column existed are backfilled as
+  // 'full' below, since the all-or-nothing paywall only ever unlocked
+  // everything.
+  "ALTER TABLE projects ADD COLUMN tier TEXT"
 ]) {
   try { db.exec(stmt); } catch (err) { /* column already exists — fine */ }
 }
+
+// One-time backfill, safe to run on every boot: any project paid before the
+// tier column existed was paid under the old all-or-nothing paywall, which
+// only ever unlocked the full workspace — so it's unambiguously 'full', not
+// a guess.
+db.exec("UPDATE projects SET tier = 'full' WHERE paid = 1 AND tier IS NULL");
 
 export const insertRoadmap = db.prepare(
   'INSERT INTO roadmaps (created_at, location, description, trade, provider, unrecognized) VALUES (?, ?, ?, ?, ?, ?)'
@@ -285,10 +353,12 @@ export const updateProjectOutcomeStmt = db.prepare('UPDATE projects SET outcome_
 // (user_id IS NULL) — see routes/auth.js. Guards against a known project id
 // being used to reassign an already-claimed project to a different account.
 export const linkProjectToUserStmt = db.prepare('UPDATE projects SET user_id = ?, updated_at = ? WHERE id = ? AND user_id IS NULL');
-// Dev-stub payment gate — flips paid on a project so GET /api/projects/:id
-// starts returning full content. Stands in for a real payment confirmation
-// (e.g. a Stripe webhook) until that's wired up; see routes/projects.js.
-export const markProjectPaidStmt = db.prepare(`UPDATE projects SET paid = 1, paid_at = ?, updated_at = ? WHERE id = ?`);
+// Flips paid on a project and records which paywall tier it was paid at
+// ('roadmap' or 'full') — see routes/projects.js priceCentsFor() for how
+// tier is decided, and the pricing-ladder comment in db.js's CREATE TABLE
+// block for the tables this interacts with (subscriptions, pack_credits,
+// referral_codes).
+export const markProjectPaidStmt = db.prepare(`UPDATE projects SET paid = 1, tier = ?, paid_at = ?, updated_at = ? WHERE id = ?`);
 
 // --- access codes ---------------------------------------------------------
 export const getAccessCodeStmt = db.prepare('SELECT * FROM access_codes WHERE code = ?');
@@ -393,3 +463,55 @@ export const getUsageSummaryStmt = db.prepare(`
   SELECT call_type, COUNT(*) AS calls, SUM(input_tokens) AS input_tokens, SUM(output_tokens) AS output_tokens, SUM(cost_usd) AS cost_usd
   FROM api_usage_log GROUP BY call_type ORDER BY cost_usd DESC
 `);
+
+// --- Subscriptions (contractor $49/mo plan) --------------------------------
+export const insertSubscriptionStmt = db.prepare(`
+  INSERT INTO subscriptions (id, user_id, stripe_subscription_id, status, current_period_end, created_at, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?)
+`);
+export const getActiveSubscriptionByUserStmt = db.prepare(
+  "SELECT * FROM subscriptions WHERE user_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 1"
+);
+export const getSubscriptionByStripeIdStmt = db.prepare('SELECT * FROM subscriptions WHERE stripe_subscription_id = ?');
+export const updateSubscriptionStatusStmt = db.prepare(
+  'UPDATE subscriptions SET status = ?, current_period_end = ?, cancel_reason = ?, updated_at = ? WHERE stripe_subscription_id = ?'
+);
+
+// --- Expediter pack credits -------------------------------------------------
+export const insertPackCreditsStmt = db.prepare(`
+  INSERT INTO pack_credits (id, user_id, stripe_session_id, credits_total, credits_used, created_at)
+  VALUES (?, ?, ?, ?, 0, ?)
+`);
+// Packs are consumed oldest-first so a firm's earlier purchase runs out
+// before a newer one, rather than leaving old packs stranded with unused
+// credits — ORDER BY created_at ASC picks the oldest pack that still has
+// room.
+export const getAvailablePackForUserStmt = db.prepare(
+  'SELECT * FROM pack_credits WHERE user_id = ? AND credits_used < credits_total ORDER BY created_at ASC LIMIT 1'
+);
+export const incrementPackCreditsUsedStmt = db.prepare('UPDATE pack_credits SET credits_used = credits_used + 1 WHERE id = ?');
+
+// --- Referral codes ----------------------------------------------------------
+export const insertReferralCodeStmt = db.prepare(`
+  INSERT INTO referral_codes (code, referrer_project_id, stripe_promotion_code_id, created_at)
+  VALUES (?, ?, ?, ?)
+`);
+export const getReferralCodeStmt = db.prepare('SELECT * FROM referral_codes WHERE code = ?');
+// A project can only ever mint one referral code (confirm-checkout only
+// inserts one per project), so "the" code for a project is unambiguous.
+export const getReferralCodeByReferrerStmt = db.prepare(
+  'SELECT * FROM referral_codes WHERE referrer_project_id = ? ORDER BY created_at DESC LIMIT 1'
+);
+
+// --- Attention digest (needs-attention loop) --------------------------------
+export const getAllUserIdsWithProjectsStmt = db.prepare(
+  'SELECT DISTINCT user_id AS id FROM projects WHERE user_id IS NOT NULL'
+);
+export const getAttentionDigestStmt = db.prepare('SELECT * FROM attention_digests WHERE user_id = ?');
+export const upsertAttentionDigestStmt = db.prepare(`
+  INSERT INTO attention_digests (user_id, items_hash, updated_at) VALUES (?, ?, ?)
+  ON CONFLICT(user_id) DO UPDATE SET items_hash = excluded.items_hash, updated_at = excluded.updated_at
+`);
+export const redeemReferralCodeStmt = db.prepare(
+  'UPDATE referral_codes SET redeemed_project_id = ?, redeemed_at = ? WHERE code = ? AND redeemed_project_id IS NULL'
+);

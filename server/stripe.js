@@ -51,7 +51,7 @@ async function stripeRequest(method, path, body) {
 // client-supplied price) — see routes/projects.js for the intro-vs-regular
 // pricing check this wraps. metadata.projectId is what the confirm step and
 // the webhook use to tie a completed session back to the right project.
-export async function createCheckoutSession({ projectId, amountCents, label, successUrl, cancelUrl }) {
+export async function createCheckoutSession({ projectId, amountCents, label, successUrl, cancelUrl, metadata }) {
   return stripeRequest('POST', '/checkout/sessions', {
     mode: 'payment',
     payment_method_types: ['card'],
@@ -63,7 +63,7 @@ export async function createCheckoutSession({ projectId, amountCents, label, suc
         product_data: { name: label }
       }
     }],
-    metadata: { projectId },
+    metadata: { projectId, ...metadata },
     success_url: successUrl,
     cancel_url: cancelUrl
   });
@@ -71,6 +71,82 @@ export async function createCheckoutSession({ projectId, amountCents, label, suc
 
 export async function retrieveCheckoutSession(sessionId) {
   return stripeRequest('GET', `/checkout/sessions/${encodeURIComponent(sessionId)}`);
+}
+
+// ponytail: subscription Checkout supports an inline recurring price_data,
+// same as the one-off session above — no need to pre-create and manage a
+// persistent Price object for the $49/mo plan. subscription_data.metadata
+// (not top-level metadata) is what Stripe copies onto the Subscription
+// object itself, which is what the webhook's customer.subscription.* events
+// carry — that's how it knows which user a given subscription belongs to.
+export async function createSubscriptionCheckoutSession({ userId, successUrl, cancelUrl }) {
+  return stripeRequest('POST', '/checkout/sessions', {
+    mode: 'subscription',
+    payment_method_types: ['card'],
+    line_items: [{
+      quantity: 1,
+      price_data: {
+        currency: 'usd',
+        unit_amount: 4900,
+        recurring: { interval: 'month' },
+        product_data: { name: 'Setback — Contractor Membership' }
+      }
+    }],
+    subscription_data: { metadata: { userId: String(userId) } },
+    success_url: successUrl,
+    cancel_url: cancelUrl
+  });
+}
+
+// $999 one-time purchase of 50 full-workspace credits. metadata.type is how
+// the webhook tells this apart from a regular project payment (which keys
+// off metadata.projectId instead).
+export async function createPackCheckoutSession({ userId, successUrl, cancelUrl }) {
+  return stripeRequest('POST', '/checkout/sessions', {
+    mode: 'payment',
+    payment_method_types: ['card'],
+    line_items: [{
+      quantity: 1,
+      price_data: {
+        currency: 'usd',
+        unit_amount: 99900,
+        product_data: { name: 'Setback — Expediter Pack (50 roadmap credits)' }
+      }
+    }],
+    metadata: { type: 'expediter_pack', userId: String(userId) },
+    success_url: successUrl,
+    cancel_url: cancelUrl
+  });
+}
+
+// A real Stripe Promotion Code for dashboard visibility/audit alongside the
+// referral_codes row — the actual $49 price is still enforced server-side
+// (routes/projects.js priceCentsFor reads referral_codes directly), so this
+// is never applied at Checkout; it only needs to exist and be single-use.
+export async function createReferralPromotionCode({ referrerProjectId }) {
+  const coupon = await stripeRequest('POST', '/coupons', {
+    amount_off: 4800,
+    currency: 'usd',
+    duration: 'once',
+    max_redemptions: 1,
+    metadata: { referrerProjectId }
+  });
+  return stripeRequest('POST', '/promotion_codes', {
+    coupon: coupon.id,
+    max_redemptions: 1,
+    metadata: { referrerProjectId }
+  });
+}
+
+// ponytail: cancel_at_period_end (grace-period cancel) rather than an
+// immediate DELETE — a contractor who paid for the month keeps the $49 rate
+// until it actually ends, which is what current_period_end on the
+// subscriptions row is for. Swap to DELETE /subscriptions/:id if the product
+// call is to cut access off immediately instead.
+export async function cancelSubscription(stripeSubscriptionId) {
+  return stripeRequest('POST', `/subscriptions/${encodeURIComponent(stripeSubscriptionId)}`, {
+    cancel_at_period_end: true
+  });
 }
 
 // Manual webhook signature check per Stripe's documented scheme: the

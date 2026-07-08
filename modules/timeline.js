@@ -5,7 +5,7 @@
 // strings on the project — those stay put for the Permits module, this is
 // the richer replacement other modules can adopt later.
 
-import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN } from './shared.js';
+import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf } from './shared.js';
 
 function phaseCard(phase) {
   const cls = phase.isBottleneck ? 'risk' : 'agency';
@@ -27,8 +27,8 @@ async function loadPhases(project) {
 function renderEmpty(container, project) {
   container.innerHTML = `
     <div class="card">
-      <h3>${ICON.clock} Phase-by-phase schedule</h3>
-      <p style="color:var(--ink-soft);font-size:13.5px;margin:0 0 14px;">Break this project down into its real phases — feasibility, design, permitting, construction, and beyond — with the phase most likely to slip flagged up front.</p>
+      <h3>${ICON.clock} How long ${esc(cityOf(project.location)) || 'this'} actually takes</h3>
+      <p style="color:var(--ink-soft);font-size:13.5px;margin:0 0 14px;">Break this ${esc(tradeLabel(project.trade).toLowerCase())} project down into its real phases — feasibility, design, permitting, construction, and beyond — with the phase most likely to slip flagged up front.</p>
       <button class="btn" id="genBtn">Generate timeline</button>
       <div id="genStatus" aria-live="polite"></div>
     </div>

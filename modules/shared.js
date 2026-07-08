@@ -30,6 +30,34 @@ export function logEvent(name, properties) {
   }).catch(() => {});
 }
 
+// Same trade labels projects.html uses for its dashboard cards — kept in
+// sync by hand since that file is a plain script, not a module, and can't
+// import this. If they ever drift, that's the tell to actually share them.
+const TRADE_LABELS = {
+  pool: 'Pool', deck: 'Deck', roof: 'Roof', solar: 'Solar', fence: 'Fence',
+  addition: 'Addition', 'garage/adu': 'Garage/ADU', other: 'Project'
+};
+
+// A project's name is null until someone explicitly names it — every
+// project today falls into that bucket. "${trade} project" (e.g. "garage/adu
+// project") reads like a database enum, not something a contractor would
+// call their own job. Built from the same data, but from what they actually
+// told us (trade + city) rather than a raw category slug.
+export function deriveProjectName(project) {
+  if (project.name) return project.name;
+  const label = TRADE_LABELS[project.trade] || 'Project';
+  const city = (project.location || '').split(',')[0].trim();
+  return city ? `${label} — ${city}` : label;
+}
+
+export function tradeLabel(trade) {
+  return TRADE_LABELS[trade] || 'project';
+}
+
+export function cityOf(location) {
+  return (location || '').split(',')[0].trim();
+}
+
 export const ICON = {
   building: `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M15 9h.01M9 13h.01M15 13h.01M9 17h.01M15 17h.01"/></svg>`,
   flag: `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4m0 0h13l-2 4 2 4H4"/></svg>`,

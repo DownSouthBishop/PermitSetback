@@ -30,7 +30,10 @@
       "serviceType": "Construction permit research",
       "provider": { "@type": "Organization", "name": "Setback" },
       "areaServed": "US",
-      "offers": { "@type": "Offer", "price": "19.00", "priceCurrency": "USD", "description": "Introductory rate for the first 100 roadmaps; $39 standard price thereafter." }
+      "offers": [
+        { "@type": "Offer", "name": "Roadmap", "price": "49.00", "priceCurrency": "USD", "description": "Every agency, jurisdiction flag, rejection risk, timeline, and a ready-to-paste permit narrative." },
+        { "@type": "Offer", "name": "Full Workspace", "price": "97.00", "priceCurrency": "USD", "description": "Everything in Roadmap, plus feasibility screening, a cost estimate, a task list, documents, and an AI Advisor." }
+      ]
     },
     {
       "@type": "FAQPage",
@@ -159,6 +162,15 @@
   .comparecard.highlight .figure{ color:var(--accent-deep); font-size:26px; }
   .comparecard.highlight h3{ color:var(--accent-deep); }
 
+  /* ---- Contractor subscription ---- */
+  .subscribe{ padding:40px 0 52px; }
+  .subscribecard{ max-width:460px; margin:0 auto; background:var(--paper-raised); border:1.5px solid var(--accent); border-radius:var(--radius); padding:26px 24px; text-align:center; }
+  .subscribecard .tierprice{ font-size:34px; }
+  .subscribecard .tierprice span{ font-family:var(--font-sans); font-size:14px; font-weight:600; color:var(--ink-soft); }
+  .subscribecard ul{ list-style:none; margin:14px 0 20px; padding:0; text-align:left; }
+  .subscribecard li{ font-size:13.5px; color:var(--ink-soft); padding-left:22px; position:relative; margin-bottom:8px; }
+  .subscribecard li:before{ content:'✓'; position:absolute; left:0; color:var(--accent-deep); font-weight:700; }
+
   /* ---- How it works ---- */
   .how{ padding:8px 0 56px; }
   .steps{ list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:24px; counter-reset:step; }
@@ -244,11 +256,25 @@
   .anchor{ display:flex; align-items:baseline; justify-content:space-between; background:var(--good-tint);
     border-radius:8px; padding:12px 15px; margin: 4px 0 16px; font-size:13.5px; }
   .anchor b{ color:var(--good); font-family:var(--font-mono); font-size:15px; }
-  .price{ font-family:var(--font-mono); font-size:30px; font-weight:800; }
-  .pricewrap{ display:flex; align-items:baseline; gap:10px; margin-bottom:6px; }
-  .pricewrap span{ color:var(--ink-soft); font-size:13px; }
-  .was-price{ font-family:var(--font-mono); font-size:17px; color:var(--ink-soft); text-decoration:line-through; }
-  .introline{ font-size:12px; color:var(--ink-soft); margin:-2px 0 14px; }
+
+  /* ---- Tier picker (roadmap $49 / full workspace $97) ---- */
+  .tiergrid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+  @media (max-width:480px){ .tiergrid{ grid-template-columns:1fr; } }
+  .tiercard{ position:relative; display:flex; flex-direction:column; gap:4px; text-align:left; cursor:pointer;
+    background:var(--paper); border:1.5px solid var(--line); border-radius:9px; padding:14px 14px 16px; }
+  .tiercard input{ position:absolute; top:12px; right:12px; width:auto; margin:0; }
+  .tiercard.selected{ border-color:var(--accent); background:var(--accent-tint); }
+  .tierbadge{ position:absolute; top:-9px; left:12px; background:var(--accent); color:#fff; font-size:10.5px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.03em; padding:2px 8px; border-radius:999px; }
+  .tiername{ font-size:13px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.03em; }
+  .tierprice{ font-family:var(--font-mono); font-size:24px; font-weight:800; }
+  .tierdesc{ font-size:12.5px; color:var(--ink-soft); line-height:1.5; }
+  .samplelink{ font-size:12px; font-weight:600; margin-top:4px; }
+  .referralRow{ display:flex; align-items:center; gap:10px; margin:-4px 0 14px; }
+  .referralRow label{ margin:0; white-space:nowrap; }
+  .referralRow input{ margin-bottom:0; }
+  .referralbox{ background:var(--good-tint); border-radius:8px; padding:14px 15px; margin-bottom:16px; }
+  .referralbox b.code{ display:block; font-family:var(--font-mono); font-size:20px; letter-spacing:.06em; color:var(--good); margin:6px 0; }
 
   .guarantee{ background:var(--paper); border:1px dashed var(--line); border-radius:8px; padding:12px 14px; font-size:13px; color:var(--ink-soft); margin-bottom:16px; }
   .checkline{ display:flex; align-items:flex-start; gap:10px; margin-bottom:16px; font-size:13px; color:var(--ink-soft); }
@@ -307,7 +333,7 @@
     <p class="sub-big">The median contractor loses $52,000 a year to permit delays — and most of it is avoidable. The rule that gets your project kicked back is public information; you just don't find out about it until after you've submitted. Setback finds it first. Describe the job, tell us where it is, and get every agency involved, the local rejection risks, a realistic timeline, and a permit narrative ready to paste onto the application. Any trade. Any US location. No account required.</p>
     <div class="heroCtaRow">
       <a class="heroCta" href="#tool">Show me my permits &darr;</a>
-      <span class="heroCtaNote">$19 one time. No subscription. Refunded if we miss something.</span>
+      <span class="heroCtaNote">$49 for the roadmap, $97 for the full workspace. One time. Refunded if we miss something.</span>
     </div>
   </div>
 </section>
@@ -352,10 +378,26 @@
         <p>They know the answer because they've done it before — that's exactly what you're paying for. Worth it on a complex job. Expensive for a fence.</p>
       </div>
       <div class="comparecard highlight">
-        <span class="figure">$19</span>
+        <span class="figure">$49</span>
         <h3>Setback</h3>
-        <p>The same lookup, in 60 seconds, for the price of the gas to drive to the permit office and back.</p>
+        <p>The same lookup, in 60 seconds, for a fraction of an expediter's fee. $97 gets the full project workspace instead of just the roadmap.</p>
       </div>
+    </div>
+  </div>
+</section>
+
+<section class="subscribe" aria-labelledby="subscribeHead">
+  <div class="wrap-wide">
+    <h2 id="subscribeHead">Running more than one job at a time?</h2>
+    <p class="sectionsub">Setback Pro drops every full workspace to the $49 rate, for as many projects as you run — no per-project math.</p>
+    <div class="subscribecard">
+      <div class="tierprice">$49<span>/month</span></div>
+      <ul>
+        <li>Every full workspace at $49 instead of $97</li>
+        <li>Feasibility, cost, timeline, risk, tasks, documents, AI Advisor — on every project</li>
+        <li>Cancel anytime, no contract</li>
+      </ul>
+      <button class="btn" id="subscribeBtn">Start Setback Pro — $49/mo</button>
     </div>
   </div>
 </section>
@@ -419,7 +461,7 @@
 <section class="finalcta">
   <div class="wrap-wide">
     <h2>Find out before you submit, not after you're rejected.</h2>
-    <p>Sixty seconds. Nineteen dollars. No account, no subscription, no phone hold music.</p>
+    <p>Sixty seconds. $49 for the roadmap, $97 for the full workspace. No phone hold music.</p>
     <a class="heroCta" href="#tool">Show me my permits</a>
   </div>
 </section>
@@ -476,6 +518,14 @@ async function fetchWithTimeout(url, options, ms){
 // frontend itself (see server/static.js), so there is nothing to configure
 // after deploy.
 const BACKEND_ORIGIN = window.location.origin;
+const SESSION_KEY = 'setback_session';
+
+// ponytail: a real dev project (paid=1, populated across every module —
+// feasibility, cost, timeline, tasks, documents, and an AI Advisor thread)
+// pinned as the public "see a real example" link next to the $97 tier.
+// Points at server/data.db's dev seed data; swap for a curated demo project
+// once one exists in production.
+const SAMPLE_PROJECT_ID = 'aa1b1d2e-1d3d-4ff8-9979-0f76703395e6';
 
 // Fire-and-forget analytics — never blocks the UI, never surfaces an error
 // to the user if the backend is unreachable. Real events now, not vapor.
@@ -512,7 +562,13 @@ function swapOut(html){
   out.innerHTML = html;
   out.classList.remove('fadein'); void out.offsetWidth; out.classList.add('fadein');
   out.scrollIntoView({ behavior:'smooth', block:'start' });
-  out.focus();
+  // preventScroll: true — focus() on an element triggers the browser's own
+  // (instant) scroll-into-view unless told not to, which cuts the smooth
+  // scroll above short partway through. Without this, the page can settle
+  // wherever that interruption landed instead of at the top of the new
+  // content — e.g. the "Open my Project Workspace" button rendering above
+  // the fold after an unlock, needing a manual scroll up to find it.
+  out.focus({ preventScroll: true });
 }
 function demoBanner(){
   return state.isMock ? `<div class="demoflag" style="margin-bottom:10px;">Demo data — not a real answer to what you typed</div>` : '';
@@ -579,7 +635,7 @@ const root = document.getElementById('app');
 // not a conversion one. Hidden only during renderFull(), restored on any
 // fresh render() (a new visitor, or "add more detail" from the teaser).
 function setMarketingVisible(visible){
-  document.querySelectorAll('.compare, .how, .who, .faq, .finalcta').forEach(el => {
+  document.querySelectorAll('.compare, .subscribe, .how, .who, .faq, .finalcta').forEach(el => {
     el.style.display = visible ? '' : 'none';
   });
 }
@@ -633,18 +689,6 @@ function render(opts){
     window._pageViewLogged = true;
     logEvent('page_view');
   }
-  loadStats();
-}
-
-async function loadStats(){
-  try {
-    const res = await fetch(`${BACKEND_ORIGIN}/api/stats`);
-    if (!res.ok) return;
-    const stats = await res.json();
-    if (typeof stats.introRoadmapsPaid === 'number' && stats.introRoadmapsPaid < 100){
-      state.introRoadmapsPaid = stats.introRoadmapsPaid;
-    }
-  } catch (err) { /* stats are a nice-to-have, never block on them */ }
 }
 
 function toggleTheme(){
@@ -655,6 +699,96 @@ function toggleTheme(){
 }
 document.getElementById('themetoggle').onclick = toggleTheme;
 document.getElementById('themetoggle').textContent = state.theme === 'dark' ? 'Light' : 'Dark';
+
+// Subscriptions belong to an account, not a project — reuses the same
+// passwordless magic-link session projects.html already establishes
+// (same localStorage key), rather than inventing a second auth path.
+function openSubscribeModal(){
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'subModalTitle');
+  const sessionToken = localStorage.getItem(SESSION_KEY);
+
+  async function startSubscriptionCheckout(){
+    const box = modal.querySelector('#subModalBox');
+    box.innerHTML = `<h3 id="subModalTitle">Starting checkout&hellip;</h3><p style="color:var(--ink-soft);font-size:13px;">${'<span class="spinner"></span>'}Redirecting to Stripe...</p>`;
+    try {
+      const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/subscription/create-checkout-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionToken}` }
+      }, 15000);
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || `Backend returned ${res.status}`);
+      // Stripe's hosted page redirects back to "/" with no way to say which
+      // kind of purchase this was — remembered here so init() knows to call
+      // the subscription confirm endpoint (not the expediter-pack one) on return.
+      sessionStorage.setItem('pendingCheckout', 'subscription');
+      window.location.href = body.url;
+    } catch (err){
+      box.innerHTML = `
+        <h3 id="subModalTitle">Couldn't start checkout</h3>
+        <p class="err">${esc(err.message || 'Something went wrong — try again in a moment.')}</p>
+        <button class="btn secondary" id="subCancel">Close</button>
+      `;
+      document.getElementById('subCancel').onclick = () => modal.remove();
+    }
+  }
+
+  function renderEmailStep(){
+    modal.innerHTML = `
+      <div class="modal fadein" id="subModalBox" tabindex="-1" style="outline:none;">
+        <h3 id="subModalTitle">Start Setback Pro — $49/mo</h3>
+        <p style="color:var(--ink-soft);font-size:13px;margin:0 0 16px;">Sign in first so the subscription attaches to your account.</p>
+        <input type="email" id="subEmail" placeholder="you@email.com" aria-label="Email">
+        <div id="subErr"></div>
+        <button class="btn" id="subSendLink">Email me a sign-in link</button>
+        <button class="btn secondary" id="subCancel" style="margin-top:8px;">Cancel</button>
+      </div>
+    `;
+    document.getElementById('subCancel').onclick = () => modal.remove();
+    document.getElementById('subSendLink').onclick = async () => {
+      const email = document.getElementById('subEmail').value.trim();
+      const errBox = document.getElementById('subErr');
+      if (!email || !email.includes('@')){ errBox.innerHTML = `<div class="err">Enter a valid email address.</div>`; return; }
+      const btn = document.getElementById('subSendLink');
+      btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>Sending...`;
+      try {
+        const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/auth/request-link`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email })
+        }, 8000);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `Backend returned ${res.status}`);
+        const verifyToken = new URL(data.devLink).searchParams.get('token');
+        const ownLink = `${location.origin}${location.pathname}?verify=${encodeURIComponent(verifyToken)}`;
+        document.getElementById('subModalBox').innerHTML = `
+          <h3 id="subModalTitle">Check your link</h3>
+          <p style="color:var(--ink-soft);font-size:13px;margin:0 0 14px;">There's no real email delivery yet, so here's your sign-in link directly. Open it, then come back and click "Start Setback Pro" again.</p>
+          <p style="margin:0 0 16px;"><a href="${esc(ownLink)}" style="color:var(--accent-deep);font-weight:600;">Your sign-in link</a></p>
+          <button class="btn secondary" id="subCancel">Close</button>
+        `;
+        document.getElementById('subCancel').onclick = () => modal.remove();
+      } catch (err){
+        errBox.innerHTML = `<div class="err">Couldn't send that — is the backend running?</div>`;
+        btn.disabled = false; btn.textContent = 'Email me a sign-in link';
+      }
+    };
+  }
+
+  if (sessionToken){
+    modal.innerHTML = `<div class="modal fadein" id="subModalBox" tabindex="-1" style="outline:none;"></div>`;
+    document.body.appendChild(modal);
+    startSubscriptionCheckout();
+  } else {
+    renderEmailStep();
+    document.body.appendChild(modal);
+  }
+
+  function onKeydown(e){ if (e.key === 'Escape') modal.remove(); }
+  document.addEventListener('keydown', onKeydown, { once: true });
+}
+document.getElementById('subscribeBtn').onclick = openSubscribeModal;
 
 function needsClarifying(desc){
   const d = desc.toLowerCase();
@@ -824,8 +958,12 @@ function mockResult(){
 
 function esc(s){ return String(s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
+const TIER_LABEL = { roadmap: 'Roadmap', full: 'Full Workspace' };
+const TIER_PRICE = { roadmap: 49, full: 97 };
+
 function renderTeaser(){
   const c = state.counts;
+  state.selectedTier = state.selectedTier || 'roadmap';
   logEvent('teaser_viewed', { location: state.project.location, agencies: c.agencies });
   swapOut(`
     ${demoBanner()}
@@ -840,14 +978,33 @@ function renderTeaser(){
 
       <div class="anchor"><span>A permit expediter typically charges <b>$500 to $3,000</b> for exactly this research</span></div>
 
-      <div class="pricewrap"><span class="price">$19</span><span class="was-price">$39</span><span>one-time, no subscription</span></div>
-      <div class="introline">${typeof state.introRoadmapsPaid === 'number' ? `Introductory rate — ${state.introRoadmapsPaid} of our first 100 roadmaps used, $39 after that.` : 'Introductory rate for our first 100 roadmaps — $39 after that.'}</div>
+      <div class="tiergrid" role="radiogroup" aria-label="Choose what to unlock">
+        <label class="tiercard${state.selectedTier === 'roadmap' ? ' selected' : ''}" data-tier="roadmap">
+          <input type="radio" name="tier" value="roadmap" ${state.selectedTier === 'roadmap' ? 'checked' : ''}>
+          <span class="tiername">Roadmap</span>
+          <span class="tierprice">$49</span>
+          <span class="tierdesc">Every agency, jurisdiction flags, rejection risks, timeline, and a ready-to-paste permit narrative.</span>
+        </label>
+        <label class="tiercard${state.selectedTier === 'full' ? ' selected' : ''}" data-tier="full">
+          <span class="tierbadge">Most complete</span>
+          <input type="radio" name="tier" value="full" ${state.selectedTier === 'full' ? 'checked' : ''}>
+          <span class="tiername">Full Workspace</span>
+          <span class="tierprice">$97</span>
+          <span class="tierdesc">Everything in Roadmap, plus feasibility screening, a cost estimate, a task list, hand-off documents, and an AI Advisor.</span>
+          <a class="samplelink" href="project.html?id=${encodeURIComponent(SAMPLE_PROJECT_ID)}" target="_blank" rel="noopener">See a real example workspace &rarr;</a>
+        </label>
+      </div>
+
+      <div class="referralRow${state.selectedTier === 'full' ? '' : ' hidden'}" id="referralRow">
+        <label for="referralInput">Referral code?</label>
+        <input id="referralInput" placeholder="e.g. AB3DEFGH" value="${esc(state.referralCode || '')}">
+      </div>
 
       <div class="guarantee">Our promise: if we miss an agency your project clearly needed, that pull is refunded. Send the rejection notice, or the jurisdiction's own code section, within 30 days — that's all it takes.</div>
 
       <label class="checkline"><input type="checkbox" id="disc-check"> I understand this is an informational roadmap, not a permit guarantee or legal determination.</label>
 
-      <button class="btn" id="unlock" disabled>See my full roadmap — $19</button>
+      <button class="btn" id="unlock" disabled>Continue — $${TIER_PRICE[state.selectedTier]}</button>
     </div>
   `);
   document.getElementById('editdesc').onclick = () => {
@@ -858,14 +1015,26 @@ function renderTeaser(){
       document.getElementById('f-desc').value = savedProject.description;
     }
   };
+  document.querySelectorAll('.tiercard').forEach(card => {
+    card.querySelector('input').onchange = () => {
+      state.selectedTier = card.getAttribute('data-tier');
+      document.querySelectorAll('.tiercard').forEach(c => c.classList.toggle('selected', c === card));
+      document.getElementById('referralRow').classList.toggle('hidden', state.selectedTier !== 'full');
+      document.getElementById('unlock').textContent = `Continue — $${TIER_PRICE[state.selectedTier]}`;
+    };
+  });
   document.getElementById('disc-check').onchange = (e) => {
     document.getElementById('unlock').disabled = !e.target.checked;
   };
-  document.getElementById('unlock').onclick = openCheckout;
+  document.getElementById('unlock').onclick = () => {
+    state.referralCode = document.getElementById('referralInput').value.trim();
+    openCheckout();
+  };
 }
 
 function openCheckout(){
-  logEvent('checkout_started', { location: state.project.location });
+  const tier = state.selectedTier || 'roadmap';
+  logEvent('checkout_started', { location: state.project.location, tier });
   const triggerBtn = document.getElementById('unlock');
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
@@ -874,8 +1043,8 @@ function openCheckout(){
   modal.setAttribute('aria-labelledby', 'modalTitle');
   modal.innerHTML = `
     <div class="modal fadein" id="modalBox" tabindex="-1" style="outline:none;">
-      <h3 id="modalTitle">Unlock your roadmap</h3>
-      <p style="color:var(--ink-soft);font-size:13px;margin:0 0 16px;">Setback — full permit roadmap (introductory rate, $19)</p>
+      <h3 id="modalTitle">Unlock your ${tier === 'full' ? 'workspace' : 'roadmap'}</h3>
+      <p style="color:var(--ink-soft);font-size:13px;margin:0 0 16px;">Setback — ${esc(TIER_LABEL[tier])} ($${TIER_PRICE[tier]}${tier === 'full' ? ', or $49 with a valid referral code or active subscription' : ''})</p>
       <div style="display:flex;gap:8px;">
         <input id="accessCodeInput" placeholder="Access code" aria-label="Access code" style="flex:1;margin-bottom:0;">
         <button class="btn" id="redeemCode" style="width:auto;">Unlock</button>
@@ -911,13 +1080,17 @@ function openCheckout(){
     // was no server to create one against), so there's nothing to charge —
     // the demo content is already all there is.
     if (state.isMock){
-      logEvent('checkout_completed', { location: state.project.location, price: 19 });
+      logEvent('checkout_completed', { location: state.project.location, price: TIER_PRICE[tier] });
       showEmailCapture(modal);
       return;
     }
 
     try {
-      const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(state.project.id)}/create-checkout-session`, { method: 'POST' }, 15000);
+      const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(state.project.id)}/create-checkout-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier, referralCode: state.referralCode || undefined })
+      }, 15000);
       const body = await res.json();
       if (!res.ok) throw new Error(body.error || `Backend returned ${res.status}`);
       window.location.href = body.url;
@@ -1021,6 +1194,15 @@ function renderFull(opts){
   const flags = (r.flags||[]).map(f => `<div class="flag">${esc(f)}</div>`).join('');
   const risks = (r.risks||[]).map(x => `<div class="risk">${esc(x)}</div>`).join('');
 
+  const referralBox = r.referralCode ? `
+    <div class="referralbox">
+      <b>Send this to another contractor</b>
+      <p style="margin:0 0 4px;font-size:13px;">They get the full $97 workspace for $49. One-time use.</p>
+      <b class="code" id="referralCodeText">${esc(r.referralCode)}</b>
+      <button class="copybtn" id="copyReferral">Copy code</button>
+    </div>
+  ` : '';
+
   const workspaceLink = (state.project && state.project.id) ? `
     <div class="card" style="background:var(--accent-tint,#eef4ff);">
       <h3>${ICON.doc} This is only the roadmap</h3>
@@ -1048,6 +1230,7 @@ function renderFull(opts){
   swapOut(`
     ${demoBanner()}
     ${saveInlineCard}
+    ${referralBox}
     ${workspaceLink}
     <div class="card">
       <div class="section"><h3>${ICON.building} Every agency you'll answer to</h3>${agencies}</div>
@@ -1118,6 +1301,18 @@ function renderFull(opts){
     };
   }
 
+  if (r.referralCode){
+    document.getElementById('copyReferral').onclick = async () => {
+      const btn = document.getElementById('copyReferral');
+      try {
+        await navigator.clipboard.writeText(r.referralCode);
+        btn.textContent = 'Copied';
+      } catch (err){
+        btn.textContent = 'Select the code above to copy';
+      }
+      setTimeout(() => { const b = document.getElementById('copyReferral'); if (b) b.textContent = 'Copy code'; }, 2000);
+    };
+  }
   document.getElementById('copy').onclick = async () => {
     const copyBtn = document.getElementById('copy');
     const text = document.getElementById('narr').innerText;
@@ -1239,6 +1434,42 @@ async function handleVerifyReturn(token){
   }
 }
 
+// Subscription and expediter-pack checkout both return to "/" with just
+// ?checkout_session_id — no project to key off, unlike the per-project
+// checkout flow below. sessionStorage (set right before the Stripe redirect)
+// is what tells the two apart on return.
+async function handleAccountCheckoutReturn(checkoutSessionId){
+  const pending = sessionStorage.getItem('pendingCheckout');
+  sessionStorage.removeItem('pendingCheckout');
+  window.history.replaceState(null, '', location.pathname);
+
+  if (pending === 'subscription'){
+    try {
+      const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/subscription/confirm-checkout?session_id=${encodeURIComponent(checkoutSessionId)}`, {}, 15000);
+      if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+      render();
+      document.getElementById('errbox').innerHTML = `<div class="guarantee">You're on Setback Pro — every full workspace is now $49. <a href="projects.html">Manage your subscription</a></div>`;
+    } catch (err){
+      render();
+      document.getElementById('errbox').innerHTML = `<div class="err">Payment went through, but we couldn't confirm it here — check <a href="projects.html">My Projects</a> in a moment.</div>`;
+    }
+    return true;
+  }
+  if (pending === 'pack'){
+    try {
+      const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/expediter-pack/confirm-checkout?session_id=${encodeURIComponent(checkoutSessionId)}`, {}, 15000);
+      if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+      render();
+      document.getElementById('errbox').innerHTML = `<div class="guarantee">Pack confirmed — 50 roadmap credits are on your account. <a href="expediters.html">Back to expediter pricing</a></div>`;
+    } catch (err){
+      render();
+      document.getElementById('errbox').innerHTML = `<div class="err">Payment went through, but we couldn't confirm it here — check <a href="projects.html">My Projects</a> in a moment.</div>`;
+    }
+    return true;
+  }
+  return false;
+}
+
 async function init(){
   const params = new URLSearchParams(location.search);
   const verifyToken = params.get('verify');
@@ -1248,6 +1479,12 @@ async function init(){
   }
 
   const projectId = params.get('project');
+  const bareCheckoutSessionId = !projectId && params.get('checkout_session_id');
+  if (bareCheckoutSessionId){
+    const handled = await handleAccountCheckoutReturn(bareCheckoutSessionId);
+    if (handled) return;
+  }
+
   if (projectId){
     // Returning from Stripe's hosted Checkout page — confirm the session
     // directly against Stripe's API before treating this project as paid.
@@ -1270,7 +1507,10 @@ async function init(){
         if (project.paid){
           state.result = {
             agencies: project.agencies, flags: project.flags, risks: project.risks,
-            timeline: project.timeline, timelineNote: project.timelineNote, narrative: project.narrative
+            timeline: project.timeline, timelineNote: project.timelineNote, narrative: project.narrative,
+            // ponytail: only present once the backend adds a referralCode field
+            // to a full-tier project's JSON — undefined otherwise, box stays hidden.
+            referralCode: project.referralCode
           };
           render({ hideIntake: true });
           // A real Stripe payment involves a full page redirect away and

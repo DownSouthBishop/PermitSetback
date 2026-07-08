@@ -3,7 +3,7 @@
 // restrictions, utilities, environmental and zoning concerns. Findings are
 // generated on demand and persisted, so a later visit just lists them.
 
-import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN } from './shared.js';
+import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf } from './shared.js';
 
 function findingsUrl(project) {
   return `${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/feasibility`;
@@ -59,8 +59,8 @@ export async function render(container, project) {
   if (findings.length === 0) {
     container.innerHTML = `
       <div class="card">
-        <h3>${ICON.alert} Feasibility Intelligence</h3>
-        <p style="color:var(--ink-soft);font-size:13px;">Check for flood zones, wetlands, HOA rules, historic districts, lot restrictions, utilities, and other concerns before you get to permits.</p>
+        <h3>${ICON.alert} Before you get to permits</h3>
+        <p style="color:var(--ink-soft);font-size:13px;">Flood zones, wetlands, HOA rules, historic districts, lot restrictions, utilities, and other concerns specific to this ${esc(tradeLabel(project.trade).toLowerCase())} project in ${esc(cityOf(project.location)) || 'your area'}.</p>
         <button class="btn" id="run" style="margin-top:4px;">Run feasibility check</button>
       </div>
     `;

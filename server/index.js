@@ -13,6 +13,7 @@ import { sendJson } from './http-utils.js';
 import { handleLegacyRoutes } from './routes/legacy.js';
 import { handleProjectsRoutes } from './routes/projects.js';
 import { handleAuthRoutes } from './routes/auth.js';
+import { handleBillingRoutes } from './routes/billing.js';
 import { handleAdvisorRoutes } from './routes/advisor.js';
 import { handleFeasibilityRoutes } from './routes/feasibility.js';
 import { handleRiskRoutes } from './routes/risk.js';
@@ -23,8 +24,10 @@ import { handleDocumentsRoutes } from './routes/documents.js';
 import { handleOverviewRoutes } from './routes/overview.js';
 import { handleGeocodeRoutes } from './routes/geocode.js';
 import { handleStripeWebhookRoutes } from './routes/stripe-webhook.js';
-import { handleStaticRoutes } from './static.js';
+import { handleStaticRoutes, SECURITY_HEADERS, isHttpsRequest } from './static.js';
 import { runLearningPass } from './learn.js';
+import { runAttentionDigestPass } from './attention-digest.js';
+import { db } from './db.js';
 
 const PORT = process.env.PORT || 8787;
 
@@ -41,7 +44,26 @@ export const server = createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
+  // Applied here — the one place every request passes through — rather than
+  // only on static-file responses (the original split). Payment and session
+  // data flow through /api/* too; those responses were getting none of this
+  // before. HSTS is conditional on the hop actually being HTTPS, same reason
+  // static.js originally guarded it: sending it over plain HTTP is actively
+  // harmful in local dev (see static.js's isHttpsRequest comment).
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) res.setHeader(name, value);
+  if (isHttpsRequest(req)) res.setHeader('strict-transport-security', 'max-age=63072000; includeSubDomains');
+
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+
+  if (req.method === 'GET' && req.url === '/api/health') {
+    try {
+      db.prepare('SELECT 1').get();
+      sendJson(res, 200, { status: 'ok' });
+    } catch (err) {
+      sendJson(res, 503, { status: 'error', error: 'database unavailable' });
+    }
+    return;
+  }
 
   // Railway (and most PaaS/CDN fronts) terminate the connection at an edge
   // proxy, so req.socket.remoteAddress is the proxy's address, not the
@@ -55,6 +77,7 @@ export const server = createServer(async (req, res) => {
   if (await handleLegacyRoutes(req, res, ip)) return;
   if (await handleProjectsRoutes(req, res, ip)) return;
   if (await handleAuthRoutes(req, res, ip)) return;
+  if (await handleBillingRoutes(req, res, ip)) return;
   if (await handleAdvisorRoutes(req, res, ip)) return;
   if (await handleFeasibilityRoutes(req, res, ip)) return;
   if (await handleRiskRoutes(req, res, ip)) return;
@@ -62,7 +85,7 @@ export const server = createServer(async (req, res) => {
   if (await handleCostRoutes(req, res, ip)) return;
   if (await handleTasksRoutes(req, res, ip)) return;
   if (await handleDocumentsRoutes(req, res, ip)) return;
-  if (await handleOverviewRoutes(req, res)) return;
+  if (await handleOverviewRoutes(req, res, ip)) return;
   if (await handleGeocodeRoutes(req, res, ip)) return;
   if (await handleStripeWebhookRoutes(req, res)) return;
   if (await handleStaticRoutes(req, res)) return;
@@ -87,7 +110,12 @@ server.listen(PORT, () => {
 // alive (it would otherwise stop `node --test` from exiting, since every
 // test file imports this module) — the HTTP server's own listening socket
 // is what keeps a real deployment alive, same as before this existed.
+// ponytail: the attention-digest loop rides the same 6-hour timer as the
+// learning pass rather than getting its own interval — a rejected permit or
+// an unresolved risk doesn't change fast enough to need finer-grained
+// checking. Split into its own interval if these ever need to diverge.
 setTimeout(() => {
   runLearningPass();
-  setInterval(runLearningPass, 6 * 60 * 60 * 1000).unref();
+  runAttentionDigestPass();
+  setInterval(() => { runLearningPass(); runAttentionDigestPass(); }, 6 * 60 * 60 * 1000).unref();
 }, 30_000).unref();
