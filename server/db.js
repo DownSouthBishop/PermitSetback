@@ -3,12 +3,20 @@
 import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { mkdirSync } from 'node:fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Overridable so tests (and any future parallel worker) can point at a throwaway
-// file instead of the real dev/production data.db.
+// file instead of the real dev/production data.db, and so a real deployment
+// can point it at a mounted volume (e.g. Railway) instead of the app's own
+// source directory, which doesn't persist across deploys.
 const DB_PATH = process.env.SETBACK_DB_PATH || join(__dirname, 'data.db');
+// SQLite creates the database *file* itself if missing, but not the
+// directory it lives in — on a freshly attached, never-before-written
+// volume that directory may not exist yet, which surfaced as a bare
+// "unable to open database file" with no indication why.
+mkdirSync(dirname(DB_PATH), { recursive: true });
 export const db = new DatabaseSync(DB_PATH);
 
 db.exec(`
