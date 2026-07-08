@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Setback for Permit Expediters</title>
-<meta name="description" content="A bulk pack of Setback permit roadmaps for expediting firms — 50 pulls, white-label option, built for the research phase of your own client work.">
+<meta name="description" content="$999 for 50 permit roadmaps (~$20 each) — white-label option, 30-day refund guarantee, no subscription. Built for permit expediters and high-volume shops.">
 <link rel="stylesheet" href="shared.css">
 <style>
   .price-block{ display:flex; align-items:baseline; gap:12px; margin:18px 0 6px; }
@@ -29,8 +29,8 @@
 <body>
 <div class="wrap">
   <div class="topnav"><a class="brand" href="index.html">Setback</a><a class="back" href="index.html">For contractors &rarr;</a></div>
-  <h1>Setback for permit expediters</h1>
-  <p>You still handle the filing, the relationship, and the follow-through — Setback just does the research phase in 60 seconds instead of a morning of phone calls, so more of your fee is margin.</p>
+  <h1>50 permit roadmaps, prepaid, for less than an expediter's fee on a single job</h1>
+  <p>You still handle the filing, the relationship, and the follow-through — Setback does the research phase in 60 seconds instead of a morning of phone calls, so more of your fee is margin, not overhead.</p>
 
   <div class="card">
     <div class="price-block"><span class="num">$999</span><span class="per">for 50 roadmaps (~$20 each)</span></div>
@@ -39,15 +39,19 @@
       <li>Same full roadmap contractors pay $49&ndash;97 for individually — agencies, jurisdiction flags, rejection risks, timeline, draft narrative</li>
       <li><strong>White-label option</strong> — no Setback branding visible to your own client, so the pack fits inside your existing service without any awkward conversation about where the research came from</li>
       <li>Commercial use and resale-in-client-work explicitly permitted in the pack's terms — the standard consumer terms don't cover this, this pack's terms do</li>
+      <li><strong>Same 30-day refund guarantee as every other tier</strong> — if a pull misses an agency or permit your project clearly needed, that credit is refunded. Send the rejection notice or the jurisdiction's own code section within 30 days, per credit, same process as a single $97 purchase.</li>
     </ul>
-    <button class="cta" id="buyPackBtn">Get started &rarr;</button>
+    <button class="cta" id="buyPackBtn">Buy 50 Credits — $999</button>
   </div>
 
   <h2>Why this instead of doing it yourself</h2>
   <p>The research phase — which agencies apply, what the local reviewer actually kicks back, how long it realistically takes — is the same work you're already doing by phone and by memory. Setback compiles it in the time it takes to describe the job, so your time goes to the parts of the job that actually need a human: the relationship, the paperwork, the follow-up.</p>
 
+  <h2>Not doing 50 jobs a year yet?</h2>
+  <p>The pack only makes sense once you're confident you'll use most of the 50 — it's the lowest per-pull rate Setback offers, in exchange for paying up front. Running a couple of jobs a month but not at that volume? <a href="index.html">Setback Pro</a> gets every full workspace at $49 instead of $97 for a $49/mo membership — no upfront commitment, cancel anytime. Just one job? The <a href="index.html">one-time $49/$97 price</a> is the right size.</p>
+
   <h2>What's not included</h2>
-  <p>Setback doesn't file anything or talk to an agency on your behalf — it's the research layer, not a replacement for what you do. And per the pack's guarantee, it covers completeness of the roadmap itself (a missing agency), never what you separately promise your own client.</p>
+  <p>Setback doesn't file anything or talk to an agency on your behalf — it's the research layer, not a replacement for what you do. The guarantee above covers completeness of the roadmap itself (a missing agency), never what you separately promise your own client.</p>
 
   <p style="margin-top:32px;"><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a> · <a href="disclaimer.html">Disclaimer</a></p>
 </div>
@@ -61,7 +65,7 @@ const SESSION_KEY = 'setback_session';
 
 function esc(s){ return String(s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
-async function startPackCheckout(sessionToken, box){
+async function startPackCheckout(sessionToken, box, closeModal){
   box.innerHTML = `<h3>Starting checkout&hellip;</h3><p style="color:var(--ink-soft);font-size:13px;"><span class="spinner"></span>Redirecting to Stripe...</p>`;
   try {
     const res = await fetch(`${BACKEND_ORIGIN}/api/expediter-pack/create-checkout-session`, {
@@ -82,11 +86,12 @@ async function startPackCheckout(sessionToken, box){
       <p class="modalErr">${esc(err.message || 'Something went wrong — try again in a moment.')}</p>
       <button class="btn secondary" id="packClose">Close</button>
     `;
-    document.getElementById('packClose').onclick = () => document.querySelector('.modal-backdrop').remove();
+    document.getElementById('packClose').onclick = closeModal;
   }
 }
 
 function openPackModal(){
+  const triggerBtn = document.getElementById('buyPackBtn');
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.setAttribute('role', 'dialog');
@@ -94,14 +99,23 @@ function openPackModal(){
   document.body.appendChild(modal);
   const sessionToken = localStorage.getItem(SESSION_KEY);
 
+  function onKeydown(e){ if (e.key === 'Escape') closeModal(); }
+  function closeModal(){
+    modal.remove();
+    document.removeEventListener('keydown', onKeydown);
+    if (triggerBtn) triggerBtn.focus();
+  }
+  document.addEventListener('keydown', onKeydown);
+
   if (sessionToken){
-    modal.innerHTML = `<div class="modal fadein" id="packModalBox"></div>`;
-    startPackCheckout(sessionToken, document.getElementById('packModalBox'));
+    modal.innerHTML = `<div class="modal fadein" id="packModalBox" tabindex="-1" style="outline:none;"></div>`;
+    document.getElementById('packModalBox').focus();
+    startPackCheckout(sessionToken, document.getElementById('packModalBox'), closeModal);
     return;
   }
 
   modal.innerHTML = `
-    <div class="modal fadein" id="packModalBox">
+    <div class="modal fadein" id="packModalBox" tabindex="-1" style="outline:none;">
       <h3>Buy the $999 pack</h3>
       <p style="color:var(--ink-soft);font-size:13px;margin:0 0 16px;">Sign in first so the pack attaches to your account.</p>
       <input type="email" id="packEmail" placeholder="you@email.com" aria-label="Email">
@@ -110,7 +124,8 @@ function openPackModal(){
       <button class="btn secondary" id="packCancel">Cancel</button>
     </div>
   `;
-  document.getElementById('packCancel').onclick = () => modal.remove();
+  document.getElementById('packModalBox').focus();
+  document.getElementById('packCancel').onclick = closeModal;
   document.getElementById('packSendLink').onclick = async () => {
     const email = document.getElementById('packEmail').value.trim();
     const errBox = document.getElementById('packErr');
@@ -131,7 +146,7 @@ function openPackModal(){
         <p style="margin:0 0 16px;"><a href="${esc(ownLink)}" style="color:var(--accent-deep);font-weight:600;">Your sign-in link</a></p>
         <button class="btn secondary" id="packClose">Close</button>
       `;
-      document.getElementById('packClose').onclick = () => modal.remove();
+      document.getElementById('packClose').onclick = closeModal;
     } catch (err){
       errBox.innerHTML = `<p class="modalErr">Couldn't send that — is the backend running?</p>`;
       btn.disabled = false; btn.textContent = 'Email me a sign-in link';

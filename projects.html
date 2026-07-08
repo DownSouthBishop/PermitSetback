@@ -109,6 +109,11 @@
   .linkbox a{ color:var(--accent-deep); font-weight:600; }
 
   .disc{ color:var(--ink-soft); font-size:11.5px; line-height:1.6; text-align:center; margin-top:26px; padding:0 8px; }
+  /* index.html has this same rule; projects.html never got it, which is
+     why a real href (unlike #manageSubLink, which has none and so gets no
+     browser link styling at all) fell back to the browser's default
+     blue/underline instead of the theme's accent color. */
+  a{ color:var(--accent-deep); }
   .err{ color:var(--risk); background:var(--risk-tint); border-radius:8px; padding:11px 13px; font-size:13px; margin-top:8px; }
   .empty{ color:var(--ink-soft); font-size:14px; text-align:center; padding:24px 8px; }
   .hidden{ display:none; }
