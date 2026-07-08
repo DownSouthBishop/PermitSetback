@@ -269,6 +269,7 @@ db.exec(`
     credits_used INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL
   );
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_pack_credits_session ON pack_credits(stripe_session_id);
 
   -- Referral codes: minted after a $97 full-tier purchase, redeemable once
   -- by a different project for the full tier at $49. redeemed_project_id
@@ -334,6 +335,21 @@ for (const stmt of [
 // a guess.
 db.exec("UPDATE projects SET tier = 'full' WHERE paid = 1 AND tier IS NULL");
 
+// Both the redirect-confirm path and the webhook independently try to
+// credit the same expediter-pack purchase (defense-in-depth against a
+// closed tab — see routes/billing.js), each guarding with a plain SELECT
+// first. Two near-simultaneous requests can both pass that SELECT before
+// either INSERTs, granting 100 credits for one $999 charge. This index
+// turns the second INSERT into a rejected constraint violation instead.
+// Wrapped like the ALTER TABLEs above rather than in the main schema
+// block: if a duplicate stripe_session_id somehow already existed, CREATE
+// UNIQUE INDEX would fail every boot and take the whole app down with it.
+try {
+  db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_pack_credits_session ON pack_credits(stripe_session_id)');
+} catch (err) {
+  console.error('[db] Could not create idx_pack_credits_session — check pack_credits for duplicate stripe_session_id values:', err.message);
+}
+
 export const insertRoadmap = db.prepare(
   'INSERT INTO roadmaps (created_at, location, description, trade, provider, unrecognized) VALUES (?, ?, ?, ?, ?, ?)'
 );
@@ -374,7 +390,15 @@ export const insertAccessCodeStmt = db.prepare(`
   INSERT INTO access_codes (code, label, max_uses, expires_at, created_at)
   VALUES (?, ?, ?, ?, ?)
 `);
-export const incrementAccessCodeUsesStmt = db.prepare('UPDATE access_codes SET uses_count = uses_count + 1 WHERE code = ?');
+// The WHERE guard makes this the one statement that decides whether a
+// redemption is allowed, not a separate read-then-write — two concurrent
+// redemptions of a max_uses:1 code can otherwise both pass an earlier
+// SELECT-based check before either writes. Callers check .changes to know
+// whether their redemption actually won (0 means the code was already
+// exhausted, possibly by a request that arrived a moment earlier).
+export const incrementAccessCodeUsesStmt = db.prepare(
+  'UPDATE access_codes SET uses_count = uses_count + 1 WHERE code = ? AND (max_uses IS NULL OR uses_count < max_uses)'
+);
 export const insertAccessCodeRedemptionStmt = db.prepare(`
   INSERT INTO access_code_redemptions (id, code, project_id, redeemed_at)
   VALUES (?, ?, ?, ?)
@@ -466,7 +490,6 @@ export const insertApiUsageStmt = db.prepare(`
   INSERT INTO api_usage_log (id, project_id, call_type, provider, model, input_tokens, output_tokens, cost_usd, created_at)
   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
-export const getUsageByProjectStmt = db.prepare('SELECT * FROM api_usage_log WHERE project_id = ? ORDER BY created_at ASC');
 export const getUsageSummaryStmt = db.prepare(`
   SELECT call_type, COUNT(*) AS calls, SUM(input_tokens) AS input_tokens, SUM(output_tokens) AS output_tokens, SUM(cost_usd) AS cost_usd
   FROM api_usage_log GROUP BY call_type ORDER BY cost_usd DESC
@@ -497,7 +520,13 @@ export const insertPackCreditsStmt = db.prepare(`
 export const getAvailablePackForUserStmt = db.prepare(
   'SELECT * FROM pack_credits WHERE user_id = ? AND credits_used < credits_total ORDER BY created_at ASC LIMIT 1'
 );
-export const incrementPackCreditsUsedStmt = db.prepare('UPDATE pack_credits SET credits_used = credits_used + 1 WHERE id = ?');
+// Same atomic-guard reasoning as incrementAccessCodeUsesStmt above — without
+// the credits_used < credits_total guard here, two concurrent unlocks
+// against someone's last remaining credit could both pass a separate
+// SELECT-based check before either writes, spending one credit twice.
+export const incrementPackCreditsUsedStmt = db.prepare(
+  'UPDATE pack_credits SET credits_used = credits_used + 1 WHERE id = ? AND credits_used < credits_total'
+);
 
 // --- Referral codes ----------------------------------------------------------
 export const insertReferralCodeStmt = db.prepare(`

@@ -2,8 +2,7 @@
 // each, and cancel-subscription. Project-scoped one-off checkout (and the
 // referral mechanic) stays in routes/projects.js — these two live here
 // because they're account-scoped (a user, not a project).
-import { readBody, sendJson } from '../http-utils.js';
-import { isRateLimited } from '../rate-limit.js';
+import { readBody, sendJson, checkRateLimit, originFromRequest } from '../http-utils.js';
 import {
   db, insertSubscriptionStmt, getActiveSubscriptionByUserStmt, getSubscriptionByStripeIdStmt,
   updateSubscriptionStatusStmt, insertPackCreditsStmt
@@ -18,14 +17,9 @@ const VALID_CANCEL_REASONS = ['too_expensive', 'not_enough_volume', 'other'];
 // confirm on the same Checkout Session; this is what does that instead.
 const getPackByStripeSessionStmt = db.prepare('SELECT id FROM pack_credits WHERE stripe_session_id = ?');
 
-function originFromRequest(req) {
-  const proto = req.socket.encrypted || (req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'https' ? 'https' : 'http';
-  return `${proto}://${req.headers.host}`;
-}
-
 export async function handleBillingRoutes(req, res, ip) {
   if (req.method === 'POST' && req.url === '/api/subscription/create-checkout-session') {
-    if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
+    if (checkRateLimit(res, ip)) return true;
     const user = getSessionUser(req);
     if (!user) { sendJson(res, 401, { error: 'sign in to subscribe' }); return true; }
     try {
@@ -69,7 +63,7 @@ export async function handleBillingRoutes(req, res, ip) {
   }
 
   if (req.method === 'POST' && req.url === '/api/subscription/cancel') {
-    if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
+    if (checkRateLimit(res, ip)) return true;
     const user = getSessionUser(req);
     if (!user) { sendJson(res, 401, { error: 'not authenticated' }); return true; }
     const subscription = getActiveSubscriptionByUserStmt.get(user.id);
@@ -92,7 +86,7 @@ export async function handleBillingRoutes(req, res, ip) {
   }
 
   if (req.method === 'POST' && req.url === '/api/expediter-pack/create-checkout-session') {
-    if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
+    if (checkRateLimit(res, ip)) return true;
     const user = getSessionUser(req);
     if (!user) { sendJson(res, 401, { error: 'sign in to buy a pack' }); return true; }
     try {
@@ -121,7 +115,16 @@ export async function handleBillingRoutes(req, res, ip) {
         return true;
       }
       if (!getPackByStripeSessionStmt.get(sessionId)) {
-        insertPackCreditsStmt.run(crypto.randomUUID(), session.metadata.userId, sessionId, 50, new Date().toISOString());
+        // The SELECT above is a fast-path, not the real guard — the webhook
+        // can insert for this same sessionId between this check and the
+        // INSERT below. idx_pack_credits_session (db.js) is the real guard;
+        // a duplicate insert throws here and is swallowed as a successful
+        // no-op, since the credits already exist from whichever request won.
+        try {
+          insertPackCreditsStmt.run(crypto.randomUUID(), session.metadata.userId, sessionId, 50, new Date().toISOString());
+        } catch (err) {
+          if (!err.message.includes('UNIQUE')) throw err;
+        }
       }
       sendJson(res, 200, { ok: true });
     } catch (err) {

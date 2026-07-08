@@ -192,3 +192,40 @@ test('redeem-pack-credit consumes a credit and unlocks the project at full tier'
   // credit was actually decremented rather than the pack being consumed whole.
   assert.equal(pack.stripe_session_id, 'cs_test_pack');
 });
+
+test('two concurrent redeem-pack-credit calls on the last credit cannot both succeed', async () => {
+  const { getOrCreateUser, insertSessionStmt, insertPackCreditsStmt, db } = await import('../db.js');
+  const user = getOrCreateUser('pack-test-race@example.com');
+  const token = crypto.randomUUID();
+  const now = new Date();
+  insertSessionStmt.run(token, user.id, now.toISOString(), new Date(now.getTime() + 60_000).toISOString());
+  const packId = crypto.randomUUID();
+  // credits_total: 1 — exactly one credit available, so two concurrent
+  // spends against it can't both legitimately win.
+  db.prepare('INSERT INTO pack_credits (id, user_id, stripe_session_id, credits_total, credits_used, created_at) VALUES (?, ?, ?, 1, 0, ?)')
+    .run(packId, user.id, 'cs_test_race_pack', now.toISOString());
+
+  const p1 = makeProject({ paid: 0 });
+  const p2 = makeProject({ paid: 0 });
+  const [r1, r2] = await Promise.all([
+    fetch(`${BASE}/api/projects/${p1}/redeem-pack-credit`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } }),
+    fetch(`${BASE}/api/projects/${p2}/redeem-pack-credit`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
+  ]);
+  const statuses = [r1.status, r2.status].sort();
+  assert.deepEqual(statuses, [200, 400], `expected exactly one 200 and one 400, got ${statuses}`);
+
+  const finalPack = db.prepare('SELECT credits_used FROM pack_credits WHERE id = ?').get(packId);
+  assert.equal(finalPack.credits_used, 1, 'credits_used must reflect exactly one spend, not two');
+});
+
+test('pack_credits rejects a second insert for the same stripe_session_id', async () => {
+  const { insertPackCreditsStmt, getOrCreateUser } = await import('../db.js');
+  const user = getOrCreateUser('pack-test-dupe-session@example.com');
+  const now = new Date().toISOString();
+  insertPackCreditsStmt.run(crypto.randomUUID(), user.id, 'cs_test_dupe_session', 50, now);
+  assert.throws(
+    () => insertPackCreditsStmt.run(crypto.randomUUID(), user.id, 'cs_test_dupe_session', 50, now),
+    /UNIQUE/,
+    'a second pack_credits row for the same Stripe session must be rejected — this is the guard against the webhook and the redirect-confirm both crediting one $999 charge'
+  );
+});

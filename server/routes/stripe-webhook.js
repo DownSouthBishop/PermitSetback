@@ -58,8 +58,14 @@ export async function handleStripeWebhookRoutes(req, res) {
       // pack belongs to an account, not a project. See
       // routes/billing.js's confirm-checkout for the redirect-path twin of
       // this (same dedupe-by-session-id guard, for whichever gets there first).
+      // The SELECT is a fast-path, not the real guard — idx_pack_credits_session
+      // (db.js) is; a duplicate insert throws and is swallowed as a no-op.
       if (sub.metadata?.type === 'expediter_pack' && sub.payment_status === 'paid' && !getPackByStripeSessionStmt.get(sub.id)) {
-        insertPackCreditsStmt.run(crypto.randomUUID(), sub.metadata.userId, sub.id, 50, new Date().toISOString());
+        try {
+          insertPackCreditsStmt.run(crypto.randomUUID(), sub.metadata.userId, sub.id, 50, new Date().toISOString());
+        } catch (err) {
+          if (!err.message.includes('UNIQUE')) throw err;
+        }
       }
     }
 

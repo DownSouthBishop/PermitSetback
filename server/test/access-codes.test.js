@@ -76,6 +76,21 @@ test('an expired code is rejected', async () => {
   assert.equal(res.status, 400);
 });
 
+test('two concurrent redemptions of a max_uses:1 code cannot both succeed', async () => {
+  makeCode('RACECODE', { maxUses: 1 });
+  const p1 = makeProject();
+  const p2 = makeProject();
+  const [r1, r2] = await Promise.all([
+    fetch(`${BASE}/api/projects/${p1}/redeem`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: 'RACECODE' }) }),
+    fetch(`${BASE}/api/projects/${p2}/redeem`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: 'RACECODE' }) })
+  ]);
+  const statuses = [r1.status, r2.status].sort();
+  assert.deepEqual(statuses, [200, 400], `expected exactly one 200 and one 400, got ${statuses}`);
+
+  const finalCount = db.prepare('SELECT uses_count FROM access_codes WHERE code = ?').get('RACECODE').uses_count;
+  assert.equal(finalCount, 1, 'uses_count must reflect exactly one successful redemption, not two');
+});
+
 test('an unlimited code can unlock multiple different projects', async () => {
   makeCode('FOUNDERCODE');
   const p1 = makeProject();
