@@ -3,8 +3,7 @@
 // (list). Self-contained Anthropic call following server/llm.js's pattern —
 // not importing from llm.js since its callAnthropic/callGemini are wired to
 // the permit-roadmap SYSTEM_PROMPT specifically.
-import { readBody, sendJson, requirePaid } from '../http-utils.js';
-import { isRateLimited } from '../rate-limit.js';
+import { readBody, sendJson, requirePaid, checkRateLimit } from '../http-utils.js';
 import { callAnthropicJSON } from '../ai.js';
 import { getProjectStmt, insertCostStmt, getCostsByProjectStmt } from '../db.js';
 
@@ -69,7 +68,7 @@ export async function handleCostRoutes(req, res, ip) {
     const existing = getCostsByProjectStmt.all(id);
     if (existing.length > 0) { sendJson(res, 200, { costs: existing.map(costRowToJson) }); return true; }
 
-    if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
+    if (checkRateLimit(res, ip)) return true;
 
     try {
       const { costs } = await generateCostEstimate(project);

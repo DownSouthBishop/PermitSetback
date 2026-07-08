@@ -1,7 +1,6 @@
 // Passwordless magic-link accounts: POST /api/auth/request-link,
 // GET /api/auth/verify, GET /api/me/projects.
-import { readBody, sendJson } from '../http-utils.js';
-import { isRateLimited } from '../rate-limit.js';
+import { readBody, sendJson, checkRateLimit } from '../http-utils.js';
 import {
   getOrCreateUser, insertMagicLinkStmt, getMagicLinkStmt, markMagicLinkUsedStmt,
   insertSessionStmt, linkProjectToUserStmt, getProjectsByUserStmt, getSessionUserStmt
@@ -36,7 +35,7 @@ export async function handleAuthRoutes(req, res, ip) {
   // handed straight back in the response instead of being emailed. Swap
   // that in later without changing this shape.
   if (req.method === 'POST' && req.url === '/api/auth/request-link') {
-    if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
+    if (checkRateLimit(res, ip)) return true;
     try {
       const { email, projectId } = JSON.parse((await readBody(req)) || '{}');
       if (typeof email !== 'string' || !email.includes('@')) {

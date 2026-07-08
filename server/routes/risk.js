@@ -7,8 +7,7 @@
 // in project_findings with category = 'risk' (Feasibility Intelligence
 // shares the table via category = 'feasibility', so this file never touches
 // those rows).
-import { readBody, sendJson, requirePaid } from '../http-utils.js';
-import { isRateLimited } from '../rate-limit.js';
+import { readBody, sendJson, requirePaid, checkRateLimit } from '../http-utils.js';
 import { callAnthropicJSON } from '../ai.js';
 import { getProjectStmt, insertFindingStmt, getFindingsByProjectStmt } from '../db.js';
 
@@ -75,7 +74,7 @@ export async function handleRiskRoutes(req, res, ip) {
     const existing = getFindingsByProjectStmt.all(id, 'risk');
     if (existing.length > 0) { sendJson(res, 200, { findings: existing.map(findingRowToJson) }); return true; }
 
-    if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
+    if (checkRateLimit(res, ip)) return true;
     try {
       const risks = await generateRiskFindings(project);
       const now = new Date().toISOString();

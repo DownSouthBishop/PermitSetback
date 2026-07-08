@@ -11,8 +11,7 @@
 //  - Step tasks: computed live from getProjectProgress, never persisted —
 //    "run this module" prompts that disappear on their own once the module
 //    has data. Doing the thing is what marks it done, not a checkbox.
-import { readBody, sendJson, requirePaid } from '../http-utils.js';
-import { isRateLimited } from '../rate-limit.js';
+import { readBody, sendJson, requirePaid, checkRateLimit } from '../http-utils.js';
 import {
   getProjectStmt, insertTaskStmt, getTasksByProjectStmt, getTaskBySourceStmt, updateTaskStatusStmt,
   getFindingsByProjectStmt
@@ -95,7 +94,7 @@ export async function handleTasksRoutes(req, res, ip) {
 
   const statusMatch = req.url.match(/^\/api\/projects\/([^/]+)\/tasks\/([^/]+)\/status$/);
   if (req.method === 'POST' && statusMatch) {
-    if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
+    if (checkRateLimit(res, ip)) return true;
     const [, projectId, taskId] = statusMatch;
     const project = getProjectStmt.get(projectId);
     if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }

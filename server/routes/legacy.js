@@ -8,8 +8,7 @@
 // flow). Previously this endpoint returned the full result directly, which
 // meant the entire paid answer was already sitting in the browser before
 // checkout ever ran; the teaser screen was only hiding it, not gating it.
-import { readBody, sendJson } from '../http-utils.js';
-import { isRateLimited } from '../rate-limit.js';
+import { readBody, sendJson, checkRateLimit } from '../http-utils.js';
 import { classifyTrade } from '../classify.js';
 import { generateRoadmap } from '../llm.js';
 import { db, insertRoadmap, insertProject, insertOutcome, insertEvent } from '../db.js';
@@ -18,7 +17,7 @@ import { db, insertRoadmap, insertProject, insertOutcome, insertEvent } from '..
 // false if the caller should try the next route module.
 export async function handleLegacyRoutes(req, res, ip) {
   if (req.method === 'POST' && req.url === '/api/roadmap') {
-    if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
+    if (checkRateLimit(res, ip)) return true;
     try {
       const { location, description } = JSON.parse((await readBody(req)) || '{}');
       if (!location || !description) { sendJson(res, 400, { error: 'location and description are required' }); return true; }
@@ -52,7 +51,7 @@ export async function handleLegacyRoutes(req, res, ip) {
   }
 
   if (req.method === 'POST' && req.url === '/api/outcome') {
-    if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
+    if (checkRateLimit(res, ip)) return true;
     try {
       const { location, description, outcome } = JSON.parse((await readBody(req)) || '{}');
       const validOutcomes = ['approved', 'comments', 'rejected'];
@@ -69,7 +68,7 @@ export async function handleLegacyRoutes(req, res, ip) {
   }
 
   if (req.method === 'POST' && req.url === '/api/event') {
-    if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
+    if (checkRateLimit(res, ip)) return true;
     try {
       const { name, properties } = JSON.parse((await readBody(req)) || '{}');
       if (!name) { sendJson(res, 400, { error: 'name is required' }); return true; }

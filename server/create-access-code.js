@@ -13,12 +13,7 @@
 // See what's already out there, and how much each code has been used:
 //   node --env-file=.env create-access-code.js --list
 
-import { DatabaseSync } from 'node:sqlite';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const db = new DatabaseSync(process.env.SETBACK_DB_PATH || join(__dirname, 'data.db'));
+import { insertAccessCodeStmt, listAccessCodesStmt } from './db.js';
 
 function arg(name) {
   const i = process.argv.indexOf(`--${name}`);
@@ -29,7 +24,7 @@ function flag(name) {
 }
 
 if (flag('list')) {
-  const rows = db.prepare('SELECT * FROM access_codes ORDER BY created_at DESC').all();
+  const rows = listAccessCodesStmt.all();
   if (rows.length === 0) {
     console.log('No access codes yet.');
   } else {
@@ -56,10 +51,7 @@ const expiresArg = arg('expires');
 const expiresAt = expiresArg ? new Date(expiresArg).toISOString() : null;
 
 try {
-  db.prepare(`
-    INSERT INTO access_codes (code, label, max_uses, expires_at, created_at)
-    VALUES (?, ?, ?, ?, ?)
-  `).run(normalizedCode, label, maxUses, expiresAt, new Date().toISOString());
+  insertAccessCodeStmt.run(normalizedCode, label, maxUses, expiresAt, new Date().toISOString());
   console.log(`Created code "${normalizedCode}" — ${label} — ${maxUses === null ? 'unlimited uses' : `${maxUses} uses`}${expiresAt ? `, expires ${expiresAt}` : ', never expires'}.`);
 } catch (err) {
   console.error(`Failed to create code: ${err.message}`);

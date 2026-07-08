@@ -21,7 +21,8 @@ function phaseCard(phase) {
 async function loadPhases(project) {
   const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/timeline`, {}, 8000);
   if (!res.ok) throw new Error(`Backend returned ${res.status}`);
-  return res.json();
+  const data = await res.json();
+  return data.phases;
 }
 
 function renderEmpty(container, project) {
@@ -44,8 +45,8 @@ function renderEmpty(container, project) {
         headers: { 'Content-Type': 'application/json' }
       }, 160000);
       if (!res.ok) throw new Error(`Backend returned ${res.status}`);
-      const phases = await res.json();
-      renderPhases(container, project, phases);
+      const data = await res.json();
+      renderPhases(container, project, data.phases);
     } catch (err) {
       btn.disabled = false;
       status.innerHTML = `<div class="err">Couldn't generate a timeline — is the backend running? Try again in a moment.</div>`;

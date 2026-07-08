@@ -5,8 +5,7 @@
 // fresh batch via the LLM and persists them. Findings live in
 // project_findings with category = 'feasibility' (Risk Intelligence shares
 // the table via category = 'risk', so this file never touches those rows).
-import { readBody, sendJson, requirePaid } from '../http-utils.js';
-import { isRateLimited } from '../rate-limit.js';
+import { readBody, sendJson, requirePaid, checkRateLimit } from '../http-utils.js';
 import { callAnthropicJSON } from '../ai.js';
 import { getProjectStmt, insertFindingStmt, getFindingsByProjectStmt } from '../db.js';
 
@@ -70,7 +69,7 @@ export async function handleFeasibilityRoutes(req, res, ip) {
     const existing = getFindingsByProjectStmt.all(id, 'feasibility');
     if (existing.length > 0) { sendJson(res, 200, { findings: existing.map(findingRowToJson) }); return true; }
 
-    if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
+    if (checkRateLimit(res, ip)) return true;
     try {
       const findings = await generateFeasibilityFindings(project);
       const now = new Date().toISOString();

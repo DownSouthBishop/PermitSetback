@@ -1,3 +1,5 @@
+import { isRateLimited } from './rate-limit.js';
+
 // Generous for this app's actual payloads (the largest is a roadmap
 // narrative, a few KB) — this exists to stop an unbounded request body from
 // being buffered into memory in full, not to constrain real usage.
@@ -24,6 +26,26 @@ export function readBody(req) {
 export function sendJson(res, status, obj) {
   res.writeHead(status, { 'content-type': 'application/json' });
   res.end(JSON.stringify(obj));
+}
+
+// Was copy-pasted as `if (isRateLimited(ip)) { sendJson(res, 429, {...}); return true; }`
+// in 22 places across 13 route files. One shared check: true means the
+// caller should stop (response already sent), same return convention every
+// route handler already uses.
+export function checkRateLimit(res, ip) {
+  if (!isRateLimited(ip)) return false;
+  sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' });
+  return true;
+}
+
+// Stripe (and any other redirect-based flow) needs an absolute URL — derived
+// from the request itself (Host header + whether this hop is HTTPS) rather
+// than hardcoded, so it's correct in both local dev and behind Railway's
+// TLS-terminating edge. Was duplicated identically in routes/billing.js and
+// routes/projects.js.
+export function originFromRequest(req) {
+  const proto = req.socket.encrypted || (req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'https' ? 'https' : 'http';
+  return `${proto}://${req.headers.host}`;
 }
 
 // 402 if a project hasn't been paid for at the full-workspace tier.

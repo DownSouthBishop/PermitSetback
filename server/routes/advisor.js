@@ -1,6 +1,5 @@
 // AI Advisor: GET /api/projects/:id/conversation, POST /api/projects/:id/conversation
-import { readBody, sendJson, requirePaid } from '../http-utils.js';
-import { isRateLimited } from '../rate-limit.js';
+import { readBody, sendJson, requirePaid, checkRateLimit } from '../http-utils.js';
 import { getProjectStmt, insertConversationMessageStmt, getConversationByProjectStmt } from '../db.js';
 import { askAdvisor } from '../llm.js';
 
@@ -39,7 +38,7 @@ export async function handleAdvisorRoutes(req, res, ip) {
   }
 
   if (req.method === 'POST') {
-    if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
+    if (checkRateLimit(res, ip)) return true;
     try {
       const { message } = JSON.parse((await readBody(req)) || '{}');
       if (typeof message !== 'string' || !message.trim()) {

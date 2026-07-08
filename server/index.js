@@ -12,6 +12,8 @@ import { createServer } from 'node:http';
 import { sendJson } from './http-utils.js';
 import { handleLegacyRoutes } from './routes/legacy.js';
 import { handleProjectsRoutes } from './routes/projects.js';
+import { handleCheckoutRoutes } from './routes/checkout.js';
+import { handleAdminRoutes } from './routes/admin.js';
 import { handleAuthRoutes } from './routes/auth.js';
 import { handleBillingRoutes } from './routes/billing.js';
 import { handleAdvisorRoutes } from './routes/advisor.js';
@@ -76,6 +78,8 @@ export const server = createServer(async (req, res) => {
 
   if (await handleLegacyRoutes(req, res, ip)) return;
   if (await handleProjectsRoutes(req, res, ip)) return;
+  if (await handleCheckoutRoutes(req, res, ip)) return;
+  if (await handleAdminRoutes(req, res, ip)) return;
   if (await handleAuthRoutes(req, res, ip)) return;
   if (await handleBillingRoutes(req, res, ip)) return;
   if (await handleAdvisorRoutes(req, res, ip)) return;

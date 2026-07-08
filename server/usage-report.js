@@ -7,22 +7,14 @@
 // run more than one module (i.e. someone who explored the workspace, not
 // just the base roadmap) — that per-project number is the one that actually
 // matters against the $19/$39 price, not the cost of a single roadmap call.
-import { DatabaseSync } from 'node:sqlite';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const db = new DatabaseSync(process.env.SETBACK_DB_PATH || join(__dirname, 'data.db'));
+import { db, getUsageSummaryStmt } from './db.js';
 
 function money(n) {
   return n == null ? 'n/a (unpriced model)' : `$${n.toFixed(4)}`;
 }
 
 console.log('=== Cost by call type ===');
-const byType = db.prepare(`
-  SELECT call_type, COUNT(*) AS calls, SUM(input_tokens) AS input_tokens, SUM(output_tokens) AS output_tokens, SUM(cost_usd) AS cost_usd
-  FROM api_usage_log GROUP BY call_type ORDER BY cost_usd DESC
-`).all();
+const byType = getUsageSummaryStmt.all();
 
 if (byType.length === 0) {
   console.log('No usage logged yet — this fills in as the app is actually used.');

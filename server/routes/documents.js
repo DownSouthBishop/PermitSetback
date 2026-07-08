@@ -2,8 +2,7 @@
 // already exists on the project (project.narrative, written at roadmap
 // generation time). GET /api/projects/:id/documents lists saved documents;
 // POST generates the remaining set in one LLM call and persists them.
-import { sendJson, requirePaid } from '../http-utils.js';
-import { isRateLimited } from '../rate-limit.js';
+import { sendJson, requirePaid, checkRateLimit } from '../http-utils.js';
 import { callAnthropicJSON } from '../ai.js';
 import { getProjectStmt, insertDocumentStmt, getDocumentsByProjectStmt } from '../db.js';
 
@@ -89,7 +88,7 @@ export async function handleDocumentsRoutes(req, res, ip) {
     const existing = getDocumentsByProjectStmt.all(id);
     if (existing.length > 0) { sendJson(res, 200, { documents: withNarrative(project, existing.map(documentRowToJson)) }); return true; }
 
-    if (isRateLimited(ip)) { sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' }); return true; }
+    if (checkRateLimit(res, ip)) return true;
     try {
       const docs = await generateDocuments(project);
       const now = new Date().toISOString();
