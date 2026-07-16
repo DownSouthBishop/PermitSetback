@@ -1,4 +1,4 @@
-import { isRateLimited } from './rate-limit.js';
+import { isRateLimited, isGenerouslyRateLimited } from './rate-limit.js';
 
 // Generous for this app's actual payloads (the largest is a roadmap
 // narrative, a few KB) — this exists to stop an unbounded request body from
@@ -34,6 +34,16 @@ export function sendJson(res, status, obj) {
 // route handler already uses.
 export function checkRateLimit(res, ip) {
   if (!isRateLimited(ip)) return false;
+  sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' });
+  return true;
+}
+
+// Same contract as checkRateLimit, on the generous (60/min) bucket instead
+// — for read-only GETs and low-risk POSTs that share no fate with the
+// LLM-triggering/auth/checkout traffic the tight bucket protects. See
+// rate-limit.js.
+export function checkGenerousRateLimit(res, ip) {
+  if (!isGenerouslyRateLimited(ip)) return false;
   sendJson(res, 429, { error: 'Too many requests — wait a minute and try again.' });
   return true;
 }

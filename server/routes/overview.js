@@ -4,7 +4,7 @@
 // much of the intelligence-gathering journey is done," and risk is a
 // transparent count of the high-severity findings already surfaced
 // elsewhere, not a separate hidden model.
-import { sendJson, requirePaid, checkRateLimit } from '../http-utils.js';
+import { sendJson, requirePaid, checkGenerousRateLimit } from '../http-utils.js';
 import { getProjectStmt, getFindingsByProjectStmt } from '../db.js';
 import { getProjectProgress } from '../project-progress.js';
 
@@ -22,7 +22,7 @@ const STEPS = [
 export async function handleOverviewRoutes(req, res, ip) {
   const match = req.url.match(/^\/api\/projects\/([^/]+)\/overview$/);
   if (req.method !== 'GET' || !match) return false;
-  if (checkRateLimit(res, ip)) return true;
+  if (checkGenerousRateLimit(res, ip)) return true;
 
   const project = getProjectStmt.get(match[1]);
   if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }

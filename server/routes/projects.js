@@ -12,7 +12,7 @@
 // redemption) lives in routes/checkout.js instead — this file used to carry
 // all of it plus the ADMIN_SECRET-gated admin routes (now routes/admin.js)
 // for unrelated reasons.
-import { readBody, sendJson, checkRateLimit } from '../http-utils.js';
+import { readBody, sendJson, checkGenerousRateLimit } from '../http-utils.js';
 import { getProjectStmt, updateProjectOutcomeStmt, insertOutcome, insertRefundClaimStmt, getReferralCodeByReferrerStmt } from '../db.js';
 
 export function projectRowToJson(row) {
@@ -71,7 +71,7 @@ function projectTeaserJson(row) {
 // false if the caller should try the next route module.
 export async function handleProjectsRoutes(req, res, ip) {
   if (req.method === 'POST' && /^\/api\/projects\/[^/]+\/outcome$/.test(req.url)) {
-    if (checkRateLimit(res, ip)) return true;
+    if (checkGenerousRateLimit(res, ip)) return true;
     const id = req.url.split('/')[3];
     try {
       const { outcome } = JSON.parse((await readBody(req)) || '{}');
@@ -100,7 +100,7 @@ export async function handleProjectsRoutes(req, res, ip) {
   // rejection notice) — this just makes sure the claim reaches someone
   // instead of evaporating. Reviewed manually via server/refund-claims.js.
   if (req.method === 'POST' && /^\/api\/projects\/[^/]+\/refund-claim$/.test(req.url)) {
-    if (checkRateLimit(res, ip)) return true;
+    if (checkGenerousRateLimit(res, ip)) return true;
     const id = req.url.split('/')[3];
     try {
       const { details, contactEmail } = JSON.parse((await readBody(req)) || '{}');

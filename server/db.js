@@ -11,7 +11,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // file instead of the real dev/production data.db, and so a real deployment
 // can point it at a mounted volume (e.g. Railway) instead of the app's own
 // source directory, which doesn't persist across deploys.
-const DB_PATH = process.env.SETBACK_DB_PATH || join(__dirname, 'data.db');
+export const DB_PATH = process.env.SETBACK_DB_PATH || join(__dirname, 'data.db');
 // SQLite creates the database *file* itself if missing, but not the
 // directory it lives in — on a freshly attached, never-before-written
 // volume that directory may not exist yet, which surfaced as a bare
@@ -522,6 +522,15 @@ export const getUsageSummaryStmt = db.prepare(`
   SELECT call_type, COUNT(*) AS calls, SUM(input_tokens) AS input_tokens, SUM(output_tokens) AS output_tokens, SUM(cost_usd) AS cost_usd
   FROM api_usage_log GROUP BY call_type ORDER BY cost_usd DESC
 `);
+// Backs the unpaid-generation circuit breaker (POST /api/roadmap) — an
+// unauthenticated endpoint that costs real Anthropic money per call, so a
+// runaway loop (or a bypassed rate limit) needs a hard dollar ceiling per
+// day, not just a per-IP request count. created_at is an ISO string, so a
+// plain string comparison against the UTC day boundary works without a
+// date function.
+export const getTodayUsageCostStmt = db.prepare(
+  "SELECT COALESCE(SUM(cost_usd), 0) AS total FROM api_usage_log WHERE created_at >= ?"
+);
 
 // --- Subscriptions (contractor $79/mo plan) --------------------------------
 export const insertSubscriptionStmt = db.prepare(`

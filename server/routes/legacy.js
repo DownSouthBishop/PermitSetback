@@ -8,16 +8,31 @@
 // flow). Previously this endpoint returned the full result directly, which
 // meant the entire paid answer was already sitting in the browser before
 // checkout ever ran; the teaser screen was only hiding it, not gating it.
-import { readBody, sendJson, checkRateLimit } from '../http-utils.js';
+import { readBody, sendJson, checkRateLimit, checkGenerousRateLimit } from '../http-utils.js';
 import { classifyTrade } from '../classify.js';
 import { generateRoadmap } from '../llm.js';
-import { db, insertRoadmap, insertProject, insertOutcome, insertEvent } from '../db.js';
+import { db, insertRoadmap, insertProject, insertOutcome, insertEvent, getTodayUsageCostStmt } from '../db.js';
+
+// Hard dollar ceiling on today's unpaid generation spend — /api/roadmap has
+// no auth and no payment gate, so this is the backstop against a runaway
+// loop (or a rate-limit bypass) burning real Anthropic budget. Paid module
+// generation (behind requirePaid elsewhere) never calls this.
+const DAILY_UNPAID_SPEND_CAP_USD = Number(process.env.DAILY_UNPAID_SPEND_CAP_USD) || 20;
+
+function todayUnpaidSpendExceeded() {
+  const utcDayStart = new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z';
+  return getTodayUsageCostStmt.get(utcDayStart).total > DAILY_UNPAID_SPEND_CAP_USD;
+}
 
 // Returns true if this module handled the request (response already sent),
 // false if the caller should try the next route module.
 export async function handleLegacyRoutes(req, res, ip) {
   if (req.method === 'POST' && req.url === '/api/roadmap') {
     if (checkRateLimit(res, ip)) return true;
+    if (todayUnpaidSpendExceeded()) {
+      sendJson(res, 503, { error: 'Temporarily at capacity — try again shortly.' });
+      return true;
+    }
     try {
       const { location, description } = JSON.parse((await readBody(req)) || '{}');
       if (!location || !description) { sendJson(res, 400, { error: 'location and description are required' }); return true; }
@@ -51,7 +66,7 @@ export async function handleLegacyRoutes(req, res, ip) {
   }
 
   if (req.method === 'POST' && req.url === '/api/outcome') {
-    if (checkRateLimit(res, ip)) return true;
+    if (checkGenerousRateLimit(res, ip)) return true;
     try {
       const { location, description, outcome } = JSON.parse((await readBody(req)) || '{}');
       const validOutcomes = ['approved', 'comments', 'rejected'];
@@ -68,7 +83,7 @@ export async function handleLegacyRoutes(req, res, ip) {
   }
 
   if (req.method === 'POST' && req.url === '/api/event') {
-    if (checkRateLimit(res, ip)) return true;
+    if (checkGenerousRateLimit(res, ip)) return true;
     try {
       const { name, properties } = JSON.parse((await readBody(req)) || '{}');
       if (!name) { sendJson(res, 400, { error: 'name is required' }); return true; }

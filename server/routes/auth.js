@@ -7,6 +7,17 @@ import {
   getActiveSubscriptionByUserStmt, getPackCreditsByUserStmt
 } from '../db.js';
 import { computeAttentionItems } from '../attention.js';
+import { sendEmail } from '../email.js';
+
+// True once a real sender is configured, or once this is genuinely a
+// production deploy — either way, the sign-in link must never be handed
+// back in the API response from this point on (that was a full
+// account-takeover hole: anyone could POST any email and get back a valid
+// login link for it). Below this line, devLink stays response-only for
+// local dev with no email sender wired up.
+function mustEmailLink() {
+  return !!process.env.RESEND_API_KEY || process.env.NODE_ENV === 'production';
+}
 
 const PORT = process.env.PORT || 8787;
 
@@ -34,10 +45,6 @@ function projectSummary(p) {
 // Returns true if this module handled the request (response already sent),
 // false if the caller should try the next route module.
 export async function handleAuthRoutes(req, res, ip) {
-  // No real email sender is wired up yet (that's a cloud dependency this
-  // build deliberately hasn't added without sign-off), so the link is
-  // handed straight back in the response instead of being emailed. Swap
-  // that in later without changing this shape.
   if (req.method === 'POST' && req.url === '/api/auth/request-link') {
     if (checkRateLimit(res, ip)) return true;
     try {
@@ -53,7 +60,28 @@ export async function handleAuthRoutes(req, res, ip) {
       insertMagicLinkStmt.run(token, email, projectId || null, now.toISOString(), expires.toISOString());
       const proto = req.headers['x-forwarded-proto'] || 'http';
       const origin = `${proto}://${req.headers.host}`;
-      sendJson(res, 200, { devLink: `${origin}/api/auth/verify?token=${token}` });
+      const link = `${origin}/api/auth/verify?token=${token}`;
+
+      if (mustEmailLink()) {
+        // Never let a send failure change this response's shape — that
+        // would let someone distinguish "email sent" from "email failed"
+        // per address, which is its own small oracle. Log and move on.
+        try {
+          await sendEmail({
+            to: email,
+            subject: 'Your Setback sign-in link',
+            html: `<p>Here's your sign-in link — it expires in 15 minutes:</p><p><a href="${link}">${link}</a></p>`,
+            text: `Here's your sign-in link — it expires in 15 minutes: ${link}`
+          });
+        } catch (err) {
+          console.error('[auth] sendEmail failed:', err.message);
+        }
+        sendJson(res, 200, { ok: true });
+      } else {
+        // Local dev only, no email sender configured: hand the link back
+        // directly instead of emailing it.
+        sendJson(res, 200, { devLink: link });
+      }
     } catch (err) {
       sendJson(res, 400, { error: 'invalid request body' });
     }

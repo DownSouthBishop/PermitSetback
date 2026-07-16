@@ -4,7 +4,7 @@
 // every request went out anonymous, which Nominatim's usage policy asks
 // callers not to do. Routing it through here lets the server identify
 // itself properly, on behalf of whichever visitor triggered the check.
-import { sendJson, checkRateLimit } from '../http-utils.js';
+import { sendJson, checkGenerousRateLimit } from '../http-utils.js';
 
 async function fetchWithTimeout(url, options, ms) {
   const controller = new AbortController();
@@ -20,7 +20,7 @@ async function fetchWithTimeout(url, options, ms) {
 // if the caller should try the next route module.
 export async function handleGeocodeRoutes(req, res, ip) {
   if (req.method !== 'GET' || !req.url.startsWith('/api/geocode')) return false;
-  if (checkRateLimit(res, ip)) return true;
+  if (checkGenerousRateLimit(res, ip)) return true;
 
   const q = new URL(req.url, 'http://localhost').searchParams.get('q') || '';
   if (!q.trim()) { sendJson(res, 400, { error: 'q is required' }); return true; }

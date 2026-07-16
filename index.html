@@ -784,14 +784,22 @@ function openSubscribeModal(){
         }, 8000);
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || `Backend returned ${res.status}`);
-        const verifyToken = new URL(data.devLink).searchParams.get('token');
-        const ownLink = `${location.origin}${location.pathname}?verify=${encodeURIComponent(verifyToken)}`;
-        modal.querySelector('#subModalBox').innerHTML = `
-          <h3 id="subModalTitle">Check your link</h3>
-          <p style="color:var(--ink-soft);font-size:13px;margin:0 0 14px;">There's no real email delivery yet, so here's your sign-in link directly. Open it, then come back and click "Start Setback Pro" again.</p>
-          <p style="margin:0 0 16px;"><a href="${esc(ownLink)}" style="color:var(--accent-deep);font-weight:600;">Your sign-in link</a></p>
-          <button class="btn secondary" id="subCancel">Close</button>
-        `;
+        if (data.devLink){
+          const verifyToken = new URL(data.devLink).searchParams.get('token');
+          const ownLink = `${location.origin}${location.pathname}?verify=${encodeURIComponent(verifyToken)}`;
+          modal.querySelector('#subModalBox').innerHTML = `
+            <h3 id="subModalTitle">Check your link</h3>
+            <p style="color:var(--ink-soft);font-size:13px;margin:0 0 14px;">There's no real email delivery yet, so here's your sign-in link directly. Open it, then come back and click "Start Setback Pro" again.</p>
+            <p style="margin:0 0 16px;"><a href="${esc(ownLink)}" style="color:var(--accent-deep);font-weight:600;">Your sign-in link</a></p>
+            <button class="btn secondary" id="subCancel">Close</button>
+          `;
+        } else {
+          modal.querySelector('#subModalBox').innerHTML = `
+            <h3 id="subModalTitle">Check your email</h3>
+            <p style="color:var(--ink-soft);font-size:13px;margin:0 0 16px;">We sent a sign-in link to that address. Open it, then come back and click "Start Setback Pro" again.</p>
+            <button class="btn secondary" id="subCancel">Close</button>
+          `;
+        }
         modal.querySelector('#subCancel').onclick = closeModal;
       } catch (err){
         errBox.innerHTML = `<div class="err">Couldn't send that — is the backend running?</div>`;
@@ -961,11 +969,19 @@ async function generateRoadmap(){
     renderTeaser();
   } catch (err){
     console.error('Setback: roadmap generation failed —', err);
-    document.getElementById('errbox').innerHTML = `<div class="err">Something interrupted the engine: ${String(err)}. Is the backend running? Falling back to demo data below for now.</div>`;
-    state.result = mockResult();
-    state.counts = { agencies: state.result.agencies.length, flags: state.result.flags.length, risks: state.result.risks.length };
-    state.isMock = true;
-    renderTeaser();
+    // Demo data is a local-dev-only convenience for working on the frontend
+    // without a running backend. It must never reach production: rendering
+    // it as if real (and letting checkout_completed fire against it) is a
+    // fabricated-data path a real visitor could hit on any real outage.
+    if (location.hostname === 'localhost'){
+      document.getElementById('errbox').innerHTML = `<div class="err">Something interrupted the engine: ${String(err)}. Is the backend running? Falling back to demo data below for now.</div>`;
+      state.result = mockResult();
+      state.counts = { agencies: state.result.agencies.length, flags: state.result.flags.length, risks: state.result.risks.length };
+      state.isMock = true;
+      renderTeaser();
+    } else {
+      document.getElementById('errbox').innerHTML = `<div class="err">Something interrupted the generation. You weren't charged, and nothing was saved. Try again.</div>`;
+    }
   } finally {
     clearInterval(stageTimer);
     btn.disabled = false;
@@ -1204,18 +1220,26 @@ function showEmailCapture(modal, heading){
       }, 8000);
       if (!res.ok) throw new Error(`Backend returned ${res.status}`);
       const { devLink } = await res.json();
-      // devLink points straight at the backend's own verify endpoint (raw JSON,
-      // not a page) — rewrite it to a same-origin link so clicking it actually
-      // lands back on this app and runs handleVerifyReturn(), same fix
-      // projects.html already applies to its own request-link flow.
-      const verifyToken = new URL(devLink).searchParams.get('token');
-      const ownLink = `${location.origin}${location.pathname}?verify=${encodeURIComponent(verifyToken)}`;
-      box.innerHTML = `
-        <h3 id="modalTitle">Saved</h3>
-        <p style="color:var(--ink-soft);font-size:13px;margin:0 0 14px;">There's no real email delivery yet, so here's your link directly:</p>
-        <p style="margin:0 0 16px;"><a href="${esc(ownLink)}" style="color:var(--accent-deep);font-weight:600;">Your access link (temporary — real email delivery comes later)</a></p>
-        <button class="btn" id="captureContinue">Continue to my roadmap</button>
-      `;
+      if (devLink){
+        // devLink points straight at the backend's own verify endpoint (raw
+        // JSON, not a page) — rewrite it to a same-origin link so clicking
+        // it actually lands back on this app and runs handleVerifyReturn(),
+        // same fix projects.html already applies to its own request-link flow.
+        const verifyToken = new URL(devLink).searchParams.get('token');
+        const ownLink = `${location.origin}${location.pathname}?verify=${encodeURIComponent(verifyToken)}`;
+        box.innerHTML = `
+          <h3 id="modalTitle">Saved</h3>
+          <p style="color:var(--ink-soft);font-size:13px;margin:0 0 14px;">There's no real email delivery yet, so here's your link directly:</p>
+          <p style="margin:0 0 16px;"><a href="${esc(ownLink)}" style="color:var(--accent-deep);font-weight:600;">Your access link (temporary — real email delivery comes later)</a></p>
+          <button class="btn" id="captureContinue">Continue to my roadmap</button>
+        `;
+      } else {
+        box.innerHTML = `
+          <h3 id="modalTitle">Check your email</h3>
+          <p style="color:var(--ink-soft);font-size:13px;margin:0 0 16px;">We emailed you a link that finds this roadmap anytime.</p>
+          <button class="btn" id="captureContinue">Continue to my roadmap</button>
+        `;
+      }
       document.getElementById('captureContinue').onclick = () => { modal.remove(); renderFull(); };
     } catch (err){
       errBox.innerHTML = `<div class="err">Couldn't save that — is the backend running? You can try again or skip for now.</div>`;
@@ -1325,13 +1349,20 @@ function renderFull(opts){
         }, 8000);
         if (!res.ok) throw new Error(`Backend returned ${res.status}`);
         const { devLink } = await res.json();
-        const verifyToken = new URL(devLink).searchParams.get('token');
-        const ownLink = `${location.origin}${location.pathname}?verify=${encodeURIComponent(verifyToken)}`;
-        document.getElementById('saveInlineCard').innerHTML = `
-          <h3>${ICON.check} Saved</h3>
-          <p style="color:var(--ink-soft);font-size:13px;margin:0 0 14px;">There's no real email delivery yet, so here's your link directly:</p>
-          <p style="margin:0;"><a href="${esc(ownLink)}" style="color:var(--accent-deep);font-weight:600;">Your access link (temporary — real email delivery comes later)</a></p>
-        `;
+        if (devLink){
+          const verifyToken = new URL(devLink).searchParams.get('token');
+          const ownLink = `${location.origin}${location.pathname}?verify=${encodeURIComponent(verifyToken)}`;
+          document.getElementById('saveInlineCard').innerHTML = `
+            <h3>${ICON.check} Saved</h3>
+            <p style="color:var(--ink-soft);font-size:13px;margin:0 0 14px;">There's no real email delivery yet, so here's your link directly:</p>
+            <p style="margin:0;"><a href="${esc(ownLink)}" style="color:var(--accent-deep);font-weight:600;">Your access link (temporary — real email delivery comes later)</a></p>
+          `;
+        } else {
+          document.getElementById('saveInlineCard').innerHTML = `
+            <h3>${ICON.check} Saved</h3>
+            <p style="color:var(--ink-soft);font-size:13px;margin:0;">We emailed you a link that finds this roadmap anytime.</p>
+          `;
+        }
       } catch (err){
         errBox.innerHTML = `<div class="err">Couldn't save that — is the backend running? You can try again or skip for now.</div>`;
         submitBtn.innerHTML = 'Save my roadmap';

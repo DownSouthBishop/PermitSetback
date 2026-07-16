@@ -58,10 +58,26 @@ deploy the backend to Railway (or any VPS) first, then:
 This is a real tradeoff, not a workaround: same-origin (Railway alone) is
 zero-config; split hosting works but costs you that one manual edit.
 
-## What still isn't real
+## What's real
 
-- **Payment.** Checkout is an explicitly labeled demo. Wiring Stripe is a
-  deliberate, separate decision — not done here.
-- **Email.** Magic-link login returns the link directly in the API
-  response instead of emailing it (`devLink` in `server/routes/auth.js`).
-  No email provider is wired up.
+- **Payment.** Stripe Checkout is fully live (`server/stripe.js`,
+  `server/routes/checkout.js`, `server/routes/stripe-webhook.js`) — set
+  `STRIPE_SECRET_KEY` (and ideally `STRIPE_WEBHOOK_SECRET`) in `.env` and
+  real cards are charged.
+- **Email.** Magic-link sign-in emails send via Resend
+  (`server/email.js`) once `RESEND_API_KEY` is set in `.env`, or
+  automatically in any deploy with `NODE_ENV=production`. With neither set,
+  the link is returned directly in the API response (`devLink`) instead —
+  that's the local-dev fallback, not the production path.
+
+## Backups
+
+`server/backup.js` copies the live SQLite database to a timestamped file
+via SQLite's own online backup API — safe to run while the server keeps
+writing to it. Uploads the copy if `BACKUP_UPLOAD_URL` is set, otherwise
+just writes it to disk next to `data.db` and logs the path. Run it on a
+schedule, e.g. daily at 3am:
+
+```
+0 3 * * * cd /path/to/setback/server && node --env-file=.env backup.js >> backup.log 2>&1
+```

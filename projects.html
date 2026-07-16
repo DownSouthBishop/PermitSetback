@@ -344,11 +344,17 @@ async function handleRequestLink(){
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `Backend returned ${res.status}`);
-    const token = new URL(data.devLink).searchParams.get('token');
-    const ownLink = `${window.location.origin}${window.location.pathname}?verify=${token}`;
-    document.getElementById('linkResult').innerHTML = `
-      <div class="linkbox">Your access link (temporary — real email delivery comes later): <a href="${ownLink}">${esc(ownLink)}</a></div>
-    `;
+    if (data.devLink){
+      const token = new URL(data.devLink).searchParams.get('token');
+      const ownLink = `${window.location.origin}${window.location.pathname}?verify=${token}`;
+      document.getElementById('linkResult').innerHTML = `
+        <div class="linkbox">Your access link (temporary — real email delivery comes later): <a href="${ownLink}">${esc(ownLink)}</a></div>
+      `;
+    } else {
+      document.getElementById('linkResult').innerHTML = `
+        <div class="linkbox">Check your email for your sign-in link.</div>
+      `;
+    }
   } catch (err){
     errbox.innerHTML = `<div class="err">Couldn't send that link: ${esc(err.message)}. Is the backend running?</div>`;
   } finally {

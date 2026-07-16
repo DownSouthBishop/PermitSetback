@@ -29,6 +29,7 @@ import { handleStripeWebhookRoutes } from './routes/stripe-webhook.js';
 import { handleStaticRoutes, SECURITY_HEADERS, isHttpsRequest } from './static.js';
 import { runLearningPass } from './learn.js';
 import { runAttentionDigestPass } from './attention-digest.js';
+import { sweepRateLimitMaps } from './rate-limit.js';
 import { db } from './db.js';
 
 const PORT = process.env.PORT || 8787;
@@ -70,11 +71,19 @@ export const server = createServer(async (req, res) => {
   // Railway (and most PaaS/CDN fronts) terminate the connection at an edge
   // proxy, so req.socket.remoteAddress is the proxy's address, not the
   // visitor's — that would silently put every visitor in one rate-limit
-  // bucket. Trust the first hop of X-Forwarded-For when present (the edge
-  // sets this; it isn't attacker-controlled unless something is badly
-  // misconfigured), falling back to the socket for plain local dev.
-  const forwardedFor = (req.headers['x-forwarded-for'] || '').split(',')[0].trim();
-  const ip = forwardedFor || req.socket.remoteAddress || 'unknown';
+  // bucket. X-Forwarded-For is a client-appended, comma-separated chain
+  // (each proxy hop appends the address it saw); the LEFTMOST entry is
+  // whatever the original client sent and is fully attacker-controlled — a
+  // request can spoof "X-Forwarded-For: 1.2.3.4" to get a fresh rate-limit
+  // bucket on every call. Only the RIGHTMOST N entries were actually
+  // appended by trusted infrastructure, where N is how many proxy hops sit
+  // in front of this process (TRUSTED_PROXY_HOPS, default 1 — Railway's
+  // single edge). x-real-ip, when a proxy sets it, is a single trusted
+  // value with nothing to spoof around it and takes priority.
+  const trustedHops = Number(process.env.TRUSTED_PROXY_HOPS) || 1;
+  const xRealIp = (req.headers['x-real-ip'] || '').trim();
+  const xffChain = (req.headers['x-forwarded-for'] || '').split(',').map(s => s.trim()).filter(Boolean);
+  const ip = xRealIp || xffChain[xffChain.length - trustedHops] || req.socket.remoteAddress || 'unknown';
 
   if (await handleLegacyRoutes(req, res, ip)) return;
   if (await handleProjectsRoutes(req, res, ip)) return;
@@ -121,5 +130,6 @@ server.listen(PORT, () => {
 setTimeout(() => {
   runLearningPass();
   runAttentionDigestPass();
-  setInterval(() => { runLearningPass(); runAttentionDigestPass(); }, 6 * 60 * 60 * 1000).unref();
+  sweepRateLimitMaps();
+  setInterval(() => { runLearningPass(); runAttentionDigestPass(); sweepRateLimitMaps(); }, 6 * 60 * 60 * 1000).unref();
 }, 30_000).unref();
