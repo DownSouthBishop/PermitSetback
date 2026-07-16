@@ -363,22 +363,7 @@ async function handleRequestLink(){
   }
 }
 
-// The subscription pitch on index.html claims Setback Pro "pays for itself
-// at your second project" — an abstract claim made to every visitor. This
-// runs that same math against the specific account looking at it: someone
-// who's already paid full price twice is sitting on proof, not a pitch.
-function proNudgeHtml(projects, subscribed){
-  if (subscribed) return '';
-  const fullPriceCount = projects.filter(p => p.paid && p.tier === 'full').length;
-  if (fullPriceCount < 2) return '';
-  return `
-    <div class="card rollup">
-      <p style="margin:0;">You've paid $97 for <b>${fullPriceCount}</b> full-workspace projects. Setback Pro is $79/mo and drops every one of those to $49 — two projects already save more than the membership costs.</p>
-    </div>
-  `;
-}
-
-function renderProjects(projects, sessionToken, subscribed){
+function renderProjects(projects, sessionToken){
   if (!projects || projects.length === 0){
     renderShell(`<div class="empty">No saved projects yet — <a href="index.html">generate a roadmap</a> and save it to see it here.</div>`);
     return;
@@ -395,7 +380,7 @@ function renderProjects(projects, sessionToken, subscribed){
       ${jurisdictionNoteHtml(p, jurisdictionStats)}
     </a>
   `).join('');
-  renderShell(`${statStripHtml(projects)}<div id="rollupSlot"></div><div id="packsSlot"></div>${proNudgeHtml(projects, subscribed)}${cards}`);
+  renderShell(`${statStripHtml(projects)}<div id="rollupSlot"></div><div id="packsSlot"></div>${cards}`);
   loadRollup(sessionToken);
   loadPacks(sessionToken);
 }
@@ -407,15 +392,15 @@ function packsHtml(packs){
   if (!packs.length) return '';
   return `
     <div class="card packcard">
-      <h2>Expediter credits</h2>
+      <h2>Your packs</h2>
       ${packs.map(p => {
         const remaining = p.creditsTotal - p.creditsUsed;
         const pct = Math.min(100, Math.round((p.creditsUsed / p.creditsTotal) * 100));
         return `
           <div class="packrow${remaining === 0 ? ' exhausted' : ''}">
             <div class="packmeta">
-              <b>${p.creditsUsed} of ${p.creditsTotal} used</b>
-              <span>${remaining === 0 ? 'none left' : `${remaining} left`}</span>
+              <b>${esc(p.label)}: ${remaining} of ${p.creditsTotal} packet${p.creditsTotal === 1 ? '' : 's'} remaining</b>
+              <span>${remaining === 0 ? 'none left' : `${p.creditsUsed} used`}</span>
             </div>
             <div class="packbar"><div style="width:${pct}%"></div></div>
           </div>
@@ -491,7 +476,7 @@ async function verifyToken(token){
     if (!res.ok) throw new Error(data.error || `Backend returned ${res.status}`);
     localStorage.setItem(SESSION_KEY, data.sessionToken);
     window.history.replaceState(null, '', window.location.pathname);
-    renderProjects(data.projects, data.sessionToken, data.subscribed);
+    renderProjects(data.projects, data.sessionToken);
   } catch (err){
     renderError(`Couldn't verify that link: ${err.message}`);
   }
@@ -509,7 +494,7 @@ async function loadProjects(sessionToken){
     }
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `Backend returned ${res.status}`);
-    renderProjects(data.projects, sessionToken, data.subscribed);
+    renderProjects(data.projects, sessionToken);
   } catch (err){
     renderError(`Couldn't load your projects: ${err.message}. Is the backend running?`);
   }

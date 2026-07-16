@@ -4,14 +4,40 @@
 
 import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf, renderUpgradeCard } from './shared.js';
 
+// Confirm-before-filing hedge for the two document types that ask the
+// county/HOA a direct question rather than just organizing what's already
+// known — matches the same hedge the permit narrative and workspace
+// disclaimers already carry elsewhere; these are the two most likely to be
+// read as more authoritative than they are.
+const CONFIRM_CAPTION = {
+  building_dept_questions: 'Confirm before submitting — the building department has the final word.',
+  hoa_questions: 'Confirm before submitting — the HOA has the final word.'
+};
+
 function docCard(doc, index) {
+  const caption = CONFIRM_CAPTION[doc.docType] ? `<p style="color:var(--ink-soft);font-size:12px;margin:8px 0 0;">${esc(CONFIRM_CAPTION[doc.docType])}</p>` : '';
   return `
     <div class="card">
       <h3>${ICON.doc} ${esc(doc.title)}</h3>
       <div class="narrative" id="doc-${index}">${esc(doc.content)}</div>
       <button class="copybtn" data-idx="${index}">Copy</button>
+      ${caption}
     </div>
   `;
+}
+
+// Groups the flat document list into the three-audience structure a
+// contractor actually hands these to: the homeowner, the county, and
+// themselves. Order within each group is the order documents arrive in
+// (server-decided), not re-sorted here.
+const DOC_GROUPS = [
+  { heading: 'For your client', types: ['owner_summary'] },
+  { heading: 'For the county', types: ['permit_narrative', 'permit_checklist', 'hoa_questions', 'building_dept_questions', 'inspection_checklist'] },
+  { heading: 'For you', types: ['contractor_summary'] }
+];
+
+function groupHeadingHtml(heading) {
+  return `<h4 style="font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin:20px 0 8px;">${esc(heading)}</h4>`;
 }
 
 function wireCopyButtons(container) {
@@ -32,7 +58,17 @@ function wireCopyButtons(container) {
 }
 
 function renderDocs(container, documents) {
-  container.innerHTML = documents.map(docCard).join('') +
+  const byType = new Map();
+  documents.forEach((doc, index) => {
+    if (!byType.has(doc.docType)) byType.set(doc.docType, []);
+    byType.get(doc.docType).push({ doc, index });
+  });
+  const grouped = DOC_GROUPS.map(group => {
+    const entries = group.types.flatMap(t => byType.get(t) || []);
+    if (!entries.length) return '';
+    return groupHeadingHtml(group.heading) + entries.map(({ doc, index }) => docCard(doc, index)).join('');
+  }).join('');
+  container.innerHTML = grouped +
     `<p class="disc">These are drafts to review and adapt, not final submissions — confirm specifics with the relevant party before sending.</p>`;
   wireCopyButtons(container);
 }

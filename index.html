@@ -3,19 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Setback — Every Permit, Decoded</title>
-<meta name="description" content="The median contractor loses $52,000/year to permit delays. Setback finds every agency, rejection risk, and timeline in 60 seconds — any trade, any US location.">
+<title>Setback — The Permit Packet That Wins the Bid</title>
+<meta name="description" content="Type the address and describe the job. 60 seconds later you have every permit, every agency, every rejection risk — and a client-ready packet with your company's name on the cover.">
 <link rel="canonical" href="https://setback.example/">
-<meta property="og:title" content="Setback — Every Permit, Decoded">
-<meta property="og:description" content="In 60 seconds, know more about your permit than a week of phone calls would tell you. Any trade, any US location, no account required.">
+<meta property="og:title" content="Setback — The Permit Packet That Wins the Bid">
+<meta property="og:description" content="The contractor who shows the homeowner her permits wins the job. Usually before he's finished his coffee.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://setback.example/">
 <meta property="og:image" content="https://setback.example/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Setback — Every Permit, Decoded">
-<meta name="twitter:description" content="In 60 seconds, know more about your permit than a week of phone calls would tell you. Any trade, any US location, no account required.">
+<meta name="twitter:title" content="Setback — The Permit Packet That Wins the Bid">
+<meta name="twitter:description" content="The contractor who shows the homeowner her permits wins the job. Usually before he's finished his coffee.">
 <meta name="twitter:image" content="https://setback.example/og-image.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231D6FE0'/%3E%3Cpath d='M5 19V10h6V5h9' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F5F7F8">
@@ -31,14 +31,15 @@
       "provider": { "@type": "Organization", "name": "Setback" },
       "areaServed": "US",
       "offers": [
-        { "@type": "Offer", "name": "Roadmap", "price": "49.00", "priceCurrency": "USD", "description": "Every agency, jurisdiction flag, rejection risk, timeline, and a ready-to-paste permit narrative." },
-        { "@type": "Offer", "name": "Full Workspace", "price": "97.00", "priceCurrency": "USD", "description": "Everything in Roadmap, plus feasibility screening, a cost estimate, a task list, documents, and an AI Advisor." }
+        { "@type": "Offer", "name": "Quote-Ready Roadmap", "price": "49.00", "priceCurrency": "USD", "description": "Every permit, agency, flag, and rejection risk for this exact project — so the number you quote is a number you can keep." },
+        { "@type": "Offer", "name": "The Bid Packet", "price": "97.00", "priceCurrency": "USD", "description": "Everything in the Roadmap, plus the Client Packet and City Submission Pack — feasibility, cost, timeline, risk, and an AI advisor that has read the entire file." }
       ]
     },
     {
       "@type": "FAQPage",
       "mainEntity": [
         { "@type": "Question", "name": "Is this legal advice?", "acceptedAnswer": { "@type": "Answer", "text": "No. Setback is a research shortcut, not a legal determination. It's meant to be reviewed with your engineer and the permitting authorities — always confirm current requirements with the issuing agencies before you submit." } },
+        { "@type": "Question", "name": "Do you guarantee my permit gets approved?", "acceptedAnswer": { "@type": "Answer", "text": "No — we guarantee the packet, not the county's decision. If you submit the application as our packet drafted it and the county rejects it, you get your money back, in full. The guarantee covers rejection of the application as drafted; it doesn't cover approval timelines, inspection outcomes, or scope you changed after drafting." } },
         { "@type": "Question", "name": "What if Setback misses something?", "acceptedAnswer": { "@type": "Answer", "text": "If we miss an agency or permit your project clearly needed, that pull is refunded. Report a rejected outcome on your project page and file a claim right there, or email support@setback.example with the rejection notice or the jurisdiction's own code section, within 30 days — that's the whole process." } },
         { "@type": "Question", "name": "Do I need an account?", "acceptedAnswer": { "@type": "Answer", "text": "No account to generate a roadmap. If you want to save it and come back later, we'll send a link to your email — no password, ever." } },
         { "@type": "Question", "name": "What trades and locations do you cover?", "acceptedAnswer": { "@type": "Answer", "text": "Any construction or improvement trade, any US location — pools, decks, roofing, solar, fencing, additions, garages, and beyond." } },
@@ -151,7 +152,7 @@
 
   /* ---- Compare ---- */
   .compare{ padding:40px 0 52px; background:var(--band); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
-  .compare h2, .how h2, .faq h2, .finalcta h2, .subscribe h2, .expediterpitch h2{ font-size:clamp(22px,3vw,30px); font-weight:800; letter-spacing:-0.02em; margin:0 0 8px; text-align:center; }
+  .compare h2, .how h2, .faq h2, .finalcta h2, .expediterpitch h2{ font-size:clamp(22px,3vw,30px); font-weight:800; letter-spacing:-0.02em; margin:0 0 8px; text-align:center; }
   .sectionsub{ text-align:center; color:var(--ink-soft); font-size:15px; max-width:56ch; margin:0 auto 32px; }
   .comparegrid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; }
   .comparecard{ background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); padding:22px 20px; }
@@ -162,8 +163,7 @@
   .comparecard.highlight .figure{ color:var(--accent-deep); font-size:26px; }
   .comparecard.highlight h3{ color:var(--accent-deep); }
 
-  /* ---- Contractor subscription ---- */
-  .subscribe{ padding:40px 0 52px; }
+  /* ---- Pricing card (used by the expediter pack pitch) ---- */
   .subscribecard{ max-width:460px; margin:0 auto; background:var(--paper-raised); border:1.5px solid var(--accent); border-radius:var(--radius); padding:26px 24px; text-align:center; }
   .subscribecard .tierprice{ font-size:34px; }
   .subscribecard .tierprice span{ font-family:var(--font-sans); font-size:14px; font-weight:600; color:var(--ink-soft); }
@@ -306,7 +306,9 @@
   .walletbtn{ flex:1; background:#000; color:#fff; border:none; border-radius:8px; padding:11px; font-size:13px; font-weight:600; opacity:.45; cursor:not-allowed; }
   .walletbtn.g{ background:var(--paper); color:var(--ink); border:1px solid var(--line); }
   .walletnote{ font-size:11.5px; color:var(--ink-soft); text-align:center; margin:0 0 14px; }
-  .divider{ text-align:center; font-size:11px; color:var(--ink-soft); margin:10px 0; }
+  .codeToggle{ margin:10px 0; }
+  .codeToggle summary{ cursor:pointer; font-size:13px; color:var(--accent-deep); font-weight:600; }
+  .codeToggle > div{ margin-top:8px; }
   .spinner{ display:inline-block; width:14px; height:14px; border:2px solid #ffffff66; border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; margin-right:7px; vertical-align:middle; }
   @keyframes spin{ to{ transform:rotate(360deg); } }
 
@@ -326,15 +328,53 @@
   </div>
 </header>
 
+<!-- Alternate headlines, held for future A/B testing — current pick is below.
+"Win the bid at the kitchen table — before the other guy has even called the county."
+"How contractors win bids they used to lose: hand the homeowner her permit packet with the quote."
+"Homeowners don't hire the cheapest bid. They hire the one who looks like nothing will go wrong." -->
 <section class="hero-static">
   <div class="wrap-wide">
     <div class="tag">The setback you'll never have.</div>
-    <h1 class="hero-big">In 60 seconds, know more about your permit than a week of phone calls would tell you.</h1>
-    <p class="sub-big">The median contractor loses $52,000 a year to permit delays — and most of it is avoidable. The rule that gets your project kicked back is public information; you just don't find out about it until after you've submitted. Setback finds it first. Describe the job, tell us where it is, and get every agency involved, the local rejection risks, a realistic timeline, and a permit narrative ready to paste onto the application. Any trade. Any US location. No account required.</p>
+    <h1 class="hero-big">The contractor who shows the homeowner her permits wins the job. Usually before he's finished his coffee.</h1>
+    <p class="sub-big">Type the address and describe the job. 60 seconds later you have every permit, every agency, every rejection risk — and a client-ready packet with your company's name on the cover.</p>
     <div class="heroCtaRow">
-      <a class="heroCta" href="#tool">Show me my permits &darr;</a>
-      <span class="heroCtaNote">$49 for the roadmap, $97 for the full workspace. One time. Refunded if we miss something.</span>
+      <a class="heroCta" href="#tool">Show me my permits — free &darr;</a>
+      <span class="heroCtaNote">$49 for the roadmap, $97 for the bid packet. One time. Rejected as drafted? Refunded in full.</span>
     </div>
+  </div>
+</section>
+
+<section class="leadblock" aria-labelledby="leadHead">
+  <div class="wrap-wide" style="max-width:720px;">
+    <h2 id="leadHead" style="font-size:clamp(20px,2.6vw,26px);font-weight:800;letter-spacing:-0.02em;margin:0 0 14px;">Here is what actually happens at the kitchen table.</h2>
+    <p style="font-size:15.5px;line-height:1.7;">The homeowner has three quotes in front of her. Yours is the middle one. She is not thinking about price — she is thinking about the neighbor whose kitchen sat gutted for four months because something got red-tagged at the county.</p>
+    <p style="font-size:15.5px;line-height:1.7;">Now imagine you slide a packet across the table. Her address on it. Your logo on it. Every permit the job needs, every agency that will touch it, the realistic timeline, and a page titled &ldquo;What I handle so you don't have to.&rdquo;</p>
+    <p style="font-size:15.5px;line-height:1.7;">The other two contractors said &ldquo;don't worry, I'll deal with the permits.&rdquo;</p>
+    <p style="font-size:15.5px;line-height:1.7;font-weight:700;">You showed her.</p>
+    <p style="font-size:15.5px;line-height:1.7;">That is the whole product. It takes 60 seconds and costs less than the gas you'll burn driving to the county office.</p>
+  </div>
+</section>
+
+<section class="factsblock" aria-labelledby="factsHead">
+  <div class="wrap-wide" style="max-width:720px;">
+    <h2 id="factsHead" style="font-size:clamp(20px,2.6vw,26px);font-weight:800;letter-spacing:-0.02em;margin:0 0 14px;">What comes back in 60 seconds:</h2>
+    <ul style="font-size:15px;line-height:1.8;padding-left:20px;">
+      <li>Every permit the project is likely to need — building, trade, zoning — each one explained in plain English</li>
+      <li>Every agency that will review it, and what each one cares about</li>
+      <li>The rejection risks specific to your jurisdiction and job type — the things that get projects red-tagged — with how to get ahead of each one</li>
+      <li>A realistic phase-by-phase timeline you can put in front of a client without flinching</li>
+      <li>A submission-ready permit narrative — the description-of-work the county actually wants to read</li>
+      <li>A checklist of exactly what to gather before you file: plans, authorizations, license details, the lot</li>
+    </ul>
+    <p style="font-size:15px;line-height:1.7;color:var(--ink-soft);">Nothing here is generic. It is generated for your address, your jurisdiction, your scope of work. A pool in Broward County is not a deck in Travis County, and the packet knows it.</p>
+  </div>
+</section>
+
+<section class="moneylogic" aria-labelledby="moneyHead">
+  <div class="wrap-wide" style="max-width:720px;">
+    <h2 id="moneyHead" style="font-size:clamp(20px,2.6vw,26px);font-weight:800;letter-spacing:-0.02em;margin:0 0 14px;">The arithmetic is not complicated.</h2>
+    <p style="font-size:15.5px;line-height:1.7;">A permit expediter charges $500 to $3,000 to research a single job. A rejected application costs you two to six weeks and a very awkward phone call to your client.</p>
+    <p style="font-size:15.5px;line-height:1.7;">A Setback bid packet costs $97. One extra job won pays for years of them.</p>
   </div>
 </section>
 
@@ -380,24 +420,8 @@
       <div class="comparecard highlight">
         <span class="figure">$49</span>
         <h3>Setback</h3>
-        <p>The same lookup, in 60 seconds, for a fraction of an expediter's fee. $97 gets the full project workspace instead of just the roadmap.</p>
+        <p>The same lookup, in 60 seconds, for a fraction of an expediter's fee. $97 gets the full bid packet instead of just the roadmap.</p>
       </div>
-    </div>
-  </div>
-</section>
-
-<section class="subscribe" aria-labelledby="subscribeHead">
-  <div class="wrap-wide">
-    <h2 id="subscribeHead">Running more than one job at a time?</h2>
-    <p class="sectionsub">Setback Pro drops every full workspace to the $49 rate, for as many projects as you run. It pays for itself at your second project of the month — every one after that is pure savings.</p>
-    <div class="subscribecard">
-      <div class="tierprice">$79<span>/month</span></div>
-      <ul>
-        <li>Every full workspace at $49 instead of $97 — two projects a month already save more than the membership costs</li>
-        <li>Feasibility, cost estimate, timeline, risk assessment, task list, hand-off documents, AI Advisor — on every project, not just your first</li>
-        <li>Cancel anytime, no contract</li>
-      </ul>
-      <button class="btn" id="subscribeBtn">Start Setback Pro — $79/mo</button>
     </div>
   </div>
 </section>
@@ -405,16 +429,16 @@
 <section class="expediterpitch" aria-labelledby="expediterHead">
   <div class="wrap-wide">
     <h2 id="expediterHead">Running 20+ jobs a year, not one at a time?</h2>
-    <p class="sectionsub">Prepaid packs for permit expediters and high-volume shops — starting at $549, down to the lowest per-pull rate Setback offers for firms who already know they'll use every credit.</p>
+    <p class="sectionsub">Prepaid packs for permit expediters and high-volume shops — starting at $549, down to the lowest per-pull rate Setback offers for firms who already know they'll use every credit. Bidding weekly but not at firm volume? The $299 Bid Pack (5 packets, ~$60 each) is the smaller step.</p>
     <div class="subscribecard">
       <div class="tierprice">$1,499<span>for 50 pulls</span></div>
       <ul>
-        <li>~$30 per roadmap — well under the subscriber rate, reserved for real volume</li>
+        <li>~$30 per roadmap — reserved for real volume</li>
         <li>White-label option — no Setback branding visible to your own client</li>
-        <li>One prepaid pack, no subscription, no per-pull billing — use them whenever, any trade, any US location</li>
-        <li>Same 30-day refund guarantee as every other tier</li>
+        <li>One prepaid pack, no per-pull billing — use them whenever, any trade, any US location</li>
+        <li>Same rejection-as-drafted guarantee as every other tier</li>
       </ul>
-      <a class="btn" href="expediters.html" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box;">See both pack sizes &rarr;</a>
+      <a class="btn" href="expediters.html" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box;">See pack sizes &rarr;</a>
     </div>
   </div>
 </section>
@@ -447,6 +471,15 @@
   </div>
 </section>
 
+<section class="homeownermirror" aria-labelledby="homeownerMirrorHead">
+  <div class="wrap-wide" style="max-width:640px;text-align:center;">
+    <h2 id="homeownerMirrorHead" style="font-size:clamp(20px,2.6vw,26px);font-weight:800;letter-spacing:-0.02em;margin:0 0 14px;">Hiring a contractor instead of being one?</h2>
+    <p style="font-size:15.5px;line-height:1.7;">Run your project through Setback before you sign anything. In 60 seconds you'll know every permit your job needs and every question your contractor should have a good answer to.</p>
+    <p style="font-size:15.5px;line-height:1.7;">The contractor who welcomes those questions is the one you want.</p>
+    <a class="heroCta" href="#tool" style="display:inline-block;margin-top:8px;">Check my project — free</a>
+  </div>
+</section>
+
 <section class="faq" aria-labelledby="faqHead">
   <div class="wrap-wide">
     <h2 id="faqHead">Questions worth asking before you pay us anything</h2>
@@ -454,6 +487,10 @@
       <details>
         <summary>Is this legal advice?</summary>
         <p>No. Setback is a research shortcut, not a legal determination. It's meant to be reviewed with your engineer and the permitting authorities — always confirm current requirements with the issuing agencies before you submit.</p>
+      </details>
+      <details>
+        <summary>Do you guarantee my permit gets approved?</summary>
+        <p>No — we guarantee the packet, not the county's decision. If you submit the application as our packet drafted it and the county rejects it, you get your money back, in full. You keep the packet. The guarantee covers rejection of the application as drafted; it doesn't cover approval timelines, inspection outcomes, or scope you changed after drafting. Counties have the final word on requirements — always confirm before you file.</p>
       </details>
       <details>
         <summary>What if Setback misses something?</summary>
@@ -478,7 +515,7 @@
 <section class="finalcta">
   <div class="wrap-wide">
     <h2>Find out before you submit, not after you're rejected.</h2>
-    <p>Sixty seconds. $49 for the roadmap, $97 for the full workspace. No phone hold music.</p>
+    <p>Sixty seconds. $49 for the roadmap, $97 for the bid packet. No phone hold music.</p>
     <a class="heroCta" href="#tool">Show me my permits</a>
   </div>
 </section>
@@ -651,7 +688,7 @@ const root = document.getElementById('app');
 // not a conversion one. Hidden only during renderFull(), restored on any
 // fresh render() (a new visitor, or "add more detail" from the teaser).
 function setMarketingVisible(visible){
-  document.querySelectorAll('.compare, .subscribe, .how, .who, .faq, .finalcta').forEach(el => {
+  document.querySelectorAll('.leadblock, .factsblock, .moneylogic, .compare, .how, .who, .homeownermirror, .faq, .finalcta').forEach(el => {
     el.style.display = visible ? '' : 'none';
   });
 }
@@ -715,119 +752,6 @@ function toggleTheme(){
 }
 document.getElementById('themetoggle').onclick = toggleTheme;
 document.getElementById('themetoggle').textContent = state.theme === 'dark' ? 'Light' : 'Dark';
-
-// Subscriptions belong to an account, not a project — reuses the same
-// passwordless magic-link session projects.html already establishes
-// (same localStorage key), rather than inventing a second auth path.
-function openSubscribeModal(){
-  const modal = document.createElement('div');
-  modal.className = 'modal-backdrop';
-  modal.setAttribute('role', 'dialog');
-  modal.setAttribute('aria-modal', 'true');
-  modal.setAttribute('aria-labelledby', 'subModalTitle');
-  const sessionToken = localStorage.getItem(SESSION_KEY);
-
-  async function startSubscriptionCheckout(){
-    const box = modal.querySelector('#subModalBox');
-    box.innerHTML = `<h3 id="subModalTitle">Starting checkout&hellip;</h3><p style="color:var(--ink-soft);font-size:13px;">${'<span class="spinner"></span>'}Redirecting to Stripe...</p>`;
-    try {
-      const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/subscription/create-checkout-session`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionToken}` }
-      }, 15000);
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error || `Backend returned ${res.status}`);
-      // Stripe's hosted page redirects back to "/" with no way to say which
-      // kind of purchase this was — remembered here so init() knows to call
-      // the subscription confirm endpoint (not the expediter-pack one) on return.
-      sessionStorage.setItem('pendingCheckout', 'subscription');
-      window.location.href = body.url;
-    } catch (err){
-      box.innerHTML = `
-        <h3 id="subModalTitle">Couldn't start checkout</h3>
-        <p class="err">${esc(err.message || 'Something went wrong — try again in a moment.')}</p>
-        <button class="btn secondary" id="subCancel">Close</button>
-      `;
-      box.querySelector('#subCancel').onclick = closeModal;
-    }
-  }
-
-  // Queries scoped to `modal` (not the global `document`) throughout this
-  // function — modal isn't appended to the document until after this runs
-  // in the no-session branch below, so document.getElementById would find
-  // nothing yet and throw. That's not hypothetical: it's exactly what used
-  // to happen here, silently killing the whole subscribe flow for anyone
-  // without an existing session (i.e. almost every first-time visitor) —
-  // the modal was built, then the error aborted the function before the
-  // appendChild that would have shown it.
-  function renderEmailStep(){
-    modal.innerHTML = `
-      <div class="modal fadein" id="subModalBox" tabindex="-1" style="outline:none;">
-        <h3 id="subModalTitle">Start Setback Pro — $79/mo</h3>
-        <p style="color:var(--ink-soft);font-size:13px;margin:0 0 16px;">Sign in first so the subscription attaches to your account.</p>
-        <input type="email" id="subEmail" placeholder="you@email.com" aria-label="Email">
-        <div id="subErr"></div>
-        <button class="btn" id="subSendLink">Email me a sign-in link</button>
-        <button class="btn secondary" id="subCancel" style="margin-top:8px;">Cancel</button>
-      </div>
-    `;
-    modal.querySelector('#subCancel').onclick = closeModal;
-    modal.querySelector('#subSendLink').onclick = async () => {
-      const email = modal.querySelector('#subEmail').value.trim();
-      const errBox = modal.querySelector('#subErr');
-      if (!email || !email.includes('@')){ errBox.innerHTML = `<div class="err">Enter a valid email address.</div>`; return; }
-      const btn = modal.querySelector('#subSendLink');
-      btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>Sending...`;
-      try {
-        const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/auth/request-link`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email })
-        }, 8000);
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || `Backend returned ${res.status}`);
-        if (data.devLink){
-          const verifyToken = new URL(data.devLink).searchParams.get('token');
-          const ownLink = `${location.origin}${location.pathname}?verify=${encodeURIComponent(verifyToken)}`;
-          modal.querySelector('#subModalBox').innerHTML = `
-            <h3 id="subModalTitle">Check your link</h3>
-            <p style="color:var(--ink-soft);font-size:13px;margin:0 0 14px;">There's no real email delivery yet, so here's your sign-in link directly. Open it, then come back and click "Start Setback Pro" again.</p>
-            <p style="margin:0 0 16px;"><a href="${esc(ownLink)}" style="color:var(--accent-deep);font-weight:600;">Your sign-in link</a></p>
-            <button class="btn secondary" id="subCancel">Close</button>
-          `;
-        } else {
-          modal.querySelector('#subModalBox').innerHTML = `
-            <h3 id="subModalTitle">Check your email</h3>
-            <p style="color:var(--ink-soft);font-size:13px;margin:0 0 16px;">We sent a sign-in link to that address. Open it, then come back and click "Start Setback Pro" again.</p>
-            <button class="btn secondary" id="subCancel">Close</button>
-          `;
-        }
-        modal.querySelector('#subCancel').onclick = closeModal;
-      } catch (err){
-        errBox.innerHTML = `<div class="err">Couldn't send that — is the backend running?</div>`;
-        btn.disabled = false; btn.textContent = 'Email me a sign-in link';
-      }
-    };
-  }
-
-  // Append before wiring anything, and before rendering either branch —
-  // matches openCheckout()'s order, which never had this bug.
-  document.body.appendChild(modal);
-  if (sessionToken){
-    modal.innerHTML = `<div class="modal fadein" id="subModalBox" tabindex="-1" style="outline:none;"></div>`;
-    startSubscriptionCheckout();
-  } else {
-    renderEmailStep();
-  }
-  modal.querySelector('#subModalBox').focus();
-
-  function onKeydown(e){ if (e.key === 'Escape') closeModal(); }
-  function closeModal(){
-    modal.remove();
-    document.removeEventListener('keydown', onKeydown);
-    document.getElementById('subscribeBtn')?.focus();
-  }
-  document.addEventListener('keydown', onKeydown);
-}
-document.getElementById('subscribeBtn').onclick = openSubscribeModal;
 
 function needsClarifying(desc){
   const d = desc.toLowerCase();
@@ -928,11 +852,9 @@ async function handleGenerate(){
 // A full, non-streamed generation realistically runs ~30-45s, not instant —
 // rotating status text keeps a long wait from reading as a stuck/broken page.
 const LOOKUP_STAGES = [
-  'Checking agencies for your area...',
-  'Mapping jurisdiction rules...',
-  'Cross-checking rejection risks...',
-  'Drafting your permit narrative...',
-  'Almost done...'
+  "Reading your jurisdiction's requirements…",
+  'Checking rejection risks for this job type…',
+  'Drafting your timeline…'
 ];
 
 async function generateRoadmap(){
@@ -980,7 +902,8 @@ async function generateRoadmap(){
       state.isMock = true;
       renderTeaser();
     } else {
-      document.getElementById('errbox').innerHTML = `<div class="err">Something interrupted the generation. You weren't charged, and nothing was saved. Try again.</div>`;
+      document.getElementById('errbox').innerHTML = `<div class="err">Something interrupted the generation. You weren't charged, and nothing was saved. Try again.</div><button class="btn secondary" id="retryGenerate" style="margin-top:8px;">Retry</button>`;
+      document.getElementById('retryGenerate').onclick = () => { document.getElementById('errbox').innerHTML = ''; generateRoadmap(); };
     }
   } finally {
     clearInterval(stageTimer);
@@ -1006,8 +929,9 @@ function mockResult(){
 
 function esc(s){ return String(s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
-const TIER_LABEL = { roadmap: 'Roadmap', full: 'Full Workspace' };
+const TIER_LABEL = { roadmap: 'Quote-Ready Roadmap', full: 'The Bid Packet' };
 const TIER_PRICE = { roadmap: 49, full: 97 };
+const TIER_CTA = { roadmap: 'Get the roadmap', full: 'Build my bid packet' };
 
 function renderTeaser(){
   const c = state.counts;
@@ -1018,46 +942,59 @@ function renderTeaser(){
     <div class="card">
       <h3>${ICON.doc} Here's what you told us</h3>
       <div class="recap">${esc(state.project.description)} — in ${esc(state.project.location)}. <a id="editdesc">Add more detail</a></div>
+      <p style="font-size:14.5px;">Your project touches <b>${c.agencies}</b> agenc${c.agencies === 1 ? 'y' : 'ies'} and we flagged <b>${c.risks}</b> rejection risk${c.risks === 1 ? '' : 's'} worth knowing about before you bid.</p>
       <div class="counts">
         <div class="countbox"><b>${c.agencies}</b><span>Agencies</span></div>
         <div class="countbox"><b>${c.flags}</b><span>Jurisdiction flags</span></div>
         <div class="countbox"><b>${c.risks}</b><span>Rejection risks</span></div>
       </div>
+      <p style="font-size:13.5px;color:var(--ink-soft);">Here's the shape of it — the full packet is one step away.</p>
 
-      <div class="anchor"><span>A permit expediter typically charges <b>$500 to $3,000</b> for exactly this research</span></div>
+      <div class="anchor"><span>The names, the narratives, the checklists, and the client-ready PDF are in the full packet. A permit expediter would charge <b>$500&ndash;$3,000</b> to assemble what's behind this screen. You've already done the hard part — you told us the job.</span></div>
+
+      <p style="font-size:14px;font-weight:700;text-align:center;margin:14px 0;">Rejected as drafted? Refunded in full. That's the deal.</p>
+
+      <div class="guarantee">
+        <b>The Rejected-As-Drafted Guarantee</b><br>
+        If you submit the permit application as our packet drafted it and the county rejects it, you get your money back. All of it. You keep the packet.<br>
+        We can make this promise because every packet is built from what actually happens in your jurisdiction — and because we'd rather refund $97 than let you look unprepared in front of a client.<br>
+        <span style="font-size:12.5px;color:var(--ink-soft);">The fine print is short: the guarantee covers rejection of the application as drafted. It does not cover approval timelines, inspection outcomes, or scope you changed after drafting. Counties have the final word on requirements — always confirm before you file.</span>
+      </div>
 
       <div class="tiergrid" role="radiogroup" aria-label="Choose what to unlock">
         <label class="tiercard${state.selectedTier === 'roadmap' ? ' selected' : ''}" data-tier="roadmap">
           <input type="radio" name="tier" value="roadmap" ${state.selectedTier === 'roadmap' ? 'checked' : ''}>
-          <span class="tiername">Roadmap</span>
+          <span class="tiername">Quote-Ready Roadmap</span>
           <span class="tierprice">$49</span>
-          <span class="tierdesc">Every agency, jurisdiction flags, rejection risks, timeline, and a ready-to-paste permit narrative.</span>
+          <span class="tierdesc">Price the job with nothing left to surprise you. Every permit, agency, flag, and rejection risk for this exact project — so the number you quote is a number you can keep.</span>
+          <span class="tierdesc" style="display:block;margin-top:6px;color:var(--ink-soft);font-size:12.5px;">Right size for: one job, or checking a job before you commit to it.</span>
         </label>
         <label class="tiercard${state.selectedTier === 'full' ? ' selected' : ''}" data-tier="full">
-          <span class="tierbadge">Most complete</span>
+          <span class="tierbadge">Most chosen by contractors</span>
           <input type="radio" name="tier" value="full" ${state.selectedTier === 'full' ? 'checked' : ''}>
-          <span class="tiername">Full Workspace</span>
+          <span class="tiername">The Bid Packet</span>
           <span class="tierprice">$97</span>
-          <span class="tierdesc">Everything in Roadmap, plus feasibility screening, a cost estimate, a task list, hand-off documents, and an AI Advisor.</span>
+          <span class="tierdesc">Everything in the Roadmap — plus the packet that wins the job: a branded Client Packet PDF and a City Submission Pack, feasibility/cost/risk workups, and an AI advisor that has read the entire file.</span>
+          <span class="tierdesc" style="display:block;margin-top:6px;color:var(--ink-soft);font-size:12.5px;">One packet, two wins: close the client, clear the county.</span>
           <a class="samplelink" href="${SAMPLE_WORKSPACE_URL}" target="_blank" rel="noopener">See a real example workspace &rarr;</a>
         </label>
       </div>
 
-      <div class="referralRow${state.selectedTier === 'full' ? '' : ' hidden'}" id="referralRow">
-        <label for="referralInput">Referral code?</label>
-        <input id="referralInput" placeholder="e.g. AB3DEFGH" value="${esc(state.referralCode || '')}">
-      </div>
-
-      <div class="referralRow${state.selectedTier === 'roadmap' ? '' : ' hidden'}" id="partnerRow">
-        <label for="partnerInput">Promo code?</label>
-        <input id="partnerInput" placeholder="e.g. HORSEPOWER" value="${esc(state.partnerCode || '')}">
-      </div>
-
-      <div class="guarantee">Our promise: if we miss an agency your project clearly needed, that pull is refunded. Send the rejection notice, or the jurisdiction's own code section, within 30 days — that's all it takes.</div>
+      <details class="codeToggle">
+        <summary>Have a code?</summary>
+        <div class="referralRow${state.selectedTier === 'full' ? '' : ' hidden'}" id="referralRow">
+          <label for="referralInput">Referral code?</label>
+          <input id="referralInput" placeholder="e.g. AB3DEFGH" value="${esc(state.referralCode || '')}">
+        </div>
+        <div class="referralRow${state.selectedTier === 'roadmap' ? '' : ' hidden'}" id="partnerRow">
+          <label for="partnerInput">Promo code?</label>
+          <input id="partnerInput" placeholder="e.g. HORSEPOWER" value="${esc(state.partnerCode || '')}">
+        </div>
+      </details>
 
       <label class="checkline"><input type="checkbox" id="disc-check"> I understand this is an informational roadmap, not a permit guarantee or legal determination.</label>
 
-      <button class="btn" id="unlock" disabled>Continue — $${TIER_PRICE[state.selectedTier]}</button>
+      <button class="btn" id="unlock" disabled>${TIER_CTA[state.selectedTier]} — $${TIER_PRICE[state.selectedTier]}</button>
     </div>
   `);
   document.getElementById('editdesc').onclick = () => {
@@ -1074,7 +1011,7 @@ function renderTeaser(){
       document.querySelectorAll('.tiercard').forEach(c => c.classList.toggle('selected', c === card));
       document.getElementById('referralRow').classList.toggle('hidden', state.selectedTier !== 'full');
       document.getElementById('partnerRow').classList.toggle('hidden', state.selectedTier !== 'roadmap');
-      document.getElementById('unlock').textContent = `Continue — $${TIER_PRICE[state.selectedTier]}`;
+      document.getElementById('unlock').textContent = `${TIER_CTA[state.selectedTier]} — $${TIER_PRICE[state.selectedTier]}`;
     };
   });
   document.getElementById('disc-check').onchange = (e) => {
@@ -1098,15 +1035,17 @@ function openCheckout(){
   modal.setAttribute('aria-labelledby', 'modalTitle');
   modal.innerHTML = `
     <div class="modal fadein" id="modalBox" tabindex="-1" style="outline:none;">
-      <h3 id="modalTitle">Unlock your ${tier === 'full' ? 'workspace' : 'roadmap'}</h3>
-      <p style="color:var(--ink-soft);font-size:13px;margin:0 0 16px;">Setback — ${esc(TIER_LABEL[tier])} ($${TIER_PRICE[tier]}${tier === 'full' ? ', or $49 with a valid referral code or active subscription' : ', or $19.99 with a valid promo code'})</p>
-      <div style="display:flex;gap:8px;">
-        <input id="accessCodeInput" placeholder="Access code" aria-label="Access code" style="flex:1;margin-bottom:0;">
-        <button class="btn" id="redeemCode" style="width:auto;">Unlock</button>
-      </div>
-      <div id="redeemErr"></div>
-      <div class="divider">or pay by card</div>
+      <h3 id="modalTitle">Unlock your ${tier === 'full' ? 'bid packet' : 'roadmap'}</h3>
+      <p style="color:var(--ink-soft);font-size:13px;margin:0 0 16px;">Setback — ${esc(TIER_LABEL[tier])} ($${TIER_PRICE[tier]}${tier === 'full' ? ', or $49 if eligible for the discounted rate' : ', or $19.99 with a valid promo code'})</p>
       <button class="btn secondary" id="paynow" style="margin-top:0;">Pay with card — redirects to Stripe</button>
+      <details class="codeToggle" style="margin-top:10px;">
+        <summary>Have a code?</summary>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <input id="accessCodeInput" placeholder="Access code" aria-label="Access code" style="flex:1;margin-bottom:0;">
+          <button class="btn" id="redeemCode" style="width:auto;">Unlock</button>
+        </div>
+        <div id="redeemErr"></div>
+      </details>
       <button class="btn secondary" id="cancelpay" style="margin-top:8px;">Cancel</button>
       <div id="payErr"></div>
     </div>
@@ -1279,6 +1218,18 @@ function renderFull(opts){
   // access-code/dev-stub unlocks stay inside the same modal and don't have
   // this problem. Offer the same save-by-email step inline instead, once,
   // right after a fresh Stripe return.
+  // Shown once, right after a fresh Stripe return on a full-tier ($97)
+  // project — contextual only, never on the homeowner-facing teaser (that
+  // never reaches renderFull at all; it stops at the paywall).
+  const bidPackUpsell = opts.offerBidPackUpsell ? `
+    <div class="card">
+      <h3>You'll bid again. Be ready when you do.</h3>
+      <p style="color:var(--ink-soft);font-size:13.5px;">The Bid Pack: 5 full bid packets for $299. That's $60 a packet instead of $97 — prepaid, no expiry games, drawn down one job at a time. The contractor who shows the packet wins the bid. Now do it five times.</p>
+      <a class="btn secondary" href="expediters.html#bidpack" style="display:block;text-align:center;text-decoration:none;">Get the Bid Pack — $299</a>
+      <p style="text-align:center;font-size:12px;color:var(--ink-soft);margin:8px 0 0;">Credits appear in your account instantly.</p>
+    </div>
+  ` : '';
+
   const saveInlineCard = opts.offerSaveInline ? `
     <div class="card" id="saveInlineCard">
       <h3>${ICON.check} Payment complete</h3>
@@ -1325,6 +1276,7 @@ function renderFull(opts){
       <div id="thanks" aria-live="polite"></div>
     </div>
     ${workspaceLink}
+    ${bidPackUpsell}
     <p class="disc">This is an informational roadmap, not a permit guarantee or legal determination — confirm current requirements with the issuing agencies before submitting.</p>
   `);
 
@@ -1504,27 +1456,17 @@ async function handleVerifyReturn(token){
   }
 }
 
-// Subscription and expediter-pack checkout both return to "/" with just
-// ?checkout_session_id — no project to key off, unlike the per-project
-// checkout flow below. sessionStorage (set right before the Stripe redirect)
-// is what tells the two apart on return.
+// Expediter-pack checkout returns to "/" with just ?checkout_session_id —
+// no project to key off, unlike the per-project checkout flow below.
+// sessionStorage (set right before the Stripe redirect) confirms this is
+// actually a pending pack purchase and not an unrelated stray query param.
+// (The $79/mo subscription used to share this same return path — withdrawn
+// from sale, so no new subscription checkout can start one anymore.)
 async function handleAccountCheckoutReturn(checkoutSessionId){
   const pending = sessionStorage.getItem('pendingCheckout');
   sessionStorage.removeItem('pendingCheckout');
   window.history.replaceState(null, '', location.pathname);
 
-  if (pending === 'subscription'){
-    try {
-      const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/subscription/confirm-checkout?session_id=${encodeURIComponent(checkoutSessionId)}`, {}, 15000);
-      if (!res.ok) throw new Error(`Backend returned ${res.status}`);
-      render();
-      document.getElementById('errbox').innerHTML = `<div class="guarantee">You're on Setback Pro — every full workspace is now $49. <a href="projects.html">Manage your subscription</a></div>`;
-    } catch (err){
-      render();
-      document.getElementById('errbox').innerHTML = `<div class="err">Payment went through, but we couldn't confirm it here — check <a href="projects.html">My Projects</a> in a moment.</div>`;
-    }
-    return true;
-  }
   if (pending === 'pack'){
     try {
       const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/expediter-pack/confirm-checkout?session_id=${encodeURIComponent(checkoutSessionId)}`, {}, 15000);
@@ -1586,8 +1528,11 @@ async function init(){
           // A real Stripe payment involves a full page redirect away and
           // back — unlike the access-code/dev-stub paths, there's no modal
           // still open to offer "save via email" from. Offer it inline
-          // instead, once, right after a fresh Stripe return.
-          renderFull({ offerSaveInline: !!checkoutSessionId });
+          // instead, once, right after a fresh Stripe return. The Bid Pack
+          // upsell is gated the same way (fresh return) and additionally to
+          // full-tier only — a $49 roadmap buyer hasn't bought a bid packet
+          // yet, so "you'll bid again" doesn't apply.
+          renderFull({ offerSaveInline: !!checkoutSessionId, offerBidPackUpsell: !!checkoutSessionId && project.tier === 'full' });
         } else {
           // Not paid yet — a visitor returning to a saved-but-unpurchased link
           // gets the same teaser everyone else gets, not the full content.

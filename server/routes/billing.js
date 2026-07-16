@@ -22,6 +22,14 @@ export async function handleBillingRoutes(req, res, ip) {
     if (checkRateLimit(res, ip)) return true;
     const user = getSessionUser(req);
     if (!user) { sendJson(res, 401, { error: 'sign in to subscribe' }); return true; }
+    // The $79/mo plan is withdrawn from sale (sold zero units) — existing
+    // subscriptions keep working (cancel, retention offer, webhook-driven
+    // status updates below are untouched), but no new one can be started.
+    // Default false so this stays off unless explicitly re-enabled.
+    if (process.env.SUBSCRIPTIONS_ENABLED !== 'true') {
+      sendJson(res, 403, { error: 'Setback Pro is not available for new subscriptions — see the one-time pricing ladder instead.' });
+      return true;
+    }
     try {
       const origin = originFromRequest(req);
       const session = await createSubscriptionCheckoutSession({
@@ -119,7 +127,7 @@ export async function handleBillingRoutes(req, res, ip) {
     try {
       const body = JSON.parse((await readBody(req)) || '{}');
       if (body.size !== undefined) {
-        if (!(body.size in PACK_SIZES)) { sendJson(res, 400, { error: 'size must be "starter" or "bulk"' }); return true; }
+        if (!(body.size in PACK_SIZES)) { sendJson(res, 400, { error: 'size must be "starter", "bulk", or "bid5"' }); return true; }
         size = body.size;
       }
     } catch (err) {

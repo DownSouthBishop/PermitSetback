@@ -6,10 +6,13 @@ import { sendJson, requirePaid, checkRateLimit } from '../http-utils.js';
 import { callAnthropicJSON } from '../ai.js';
 import { getProjectStmt, insertDocumentStmt, getDocumentsByProjectStmt } from '../db.js';
 
+// Display labels only — doc_type values themselves (the DB column and the
+// LLM response shape below) are unchanged, so existing rows and the JSON
+// contract stay stable across this rename.
 const DOC_LABELS = {
-  permit_checklist: 'Permit Checklist',
-  owner_summary: 'Owner Summary',
-  contractor_summary: 'Contractor Summary',
+  permit_checklist: 'Gather-This Checklist',
+  owner_summary: 'Client Proposal Summary',
+  contractor_summary: 'Your Internal Scope Sheet',
   hoa_questions: 'HOA Questions',
   inspection_checklist: 'Inspection Checklist',
   building_dept_questions: 'Building Department Questions'
@@ -18,12 +21,12 @@ const DOC_TYPES = Object.keys(DOC_LABELS);
 
 const SYSTEM_PROMPT = `You are Setback's document generator for U.S. construction/improvement permitting. Given a project's location, description, trade, the agencies involved, the jurisdiction flags, and the rejection risks already identified for it, generate six supporting documents. Plain text only — no markdown formatting (no #, *, or **) since this is exported as-is for the user to copy, print, or hand to someone.
 
-1. permit_checklist — everything needed to submit, specific to the agencies and flags already identified for this project (not a generic checklist).
-2. owner_summary — a short plain-English summary a homeowner with no construction background could read to understand what's being built and what to expect. No jargon.
-3. contractor_summary — a technical summary for the contractor: scope, the specific code requirements and risks already identified, what to have ready.
+1. permit_checklist — the gather-this checklist: everything needed to submit, specific to the agencies and flags already identified for this project (not a generic checklist).
+2. owner_summary — a Client Proposal Summary: what the contractor hands the homeowner to win the job. Plain English, no jargon, framed as "what I handle so you don't have to" — the permits and risks are the contractor's problem to manage, not the homeowner's to worry about.
+3. contractor_summary — the contractor's own Internal Scope Sheet: scope, the specific code requirements and risks already identified, what to have ready. Technical, for the contractor's own use, not for the client.
 4. hoa_questions — specific questions to ask an HOA before submitting, grounded in this project's actual flags/risks. If nothing suggests an HOA is likely involved, say so briefly instead of inventing questions.
 5. inspection_checklist — the inspections this project will likely require, in the order they'd typically happen.
-6. building_dept_questions — specific questions to ask the building department, grounded in the actual flags/risks already identified — not generic questions.
+6. building_dept_questions — specific questions to ask the building department, grounded in the actual flags/risks already identified — not generic questions. These are things to confirm before submitting; the building department has the final word.
 
 Keep each document tight — 100-200 words, not an essay. A checklist or question list should be short lines, not paragraphs.
 

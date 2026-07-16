@@ -55,12 +55,25 @@ test('subscription create-checkout-session requires auth', async () => {
   assert.equal(res.status, 401);
 });
 
-test('subscription create-checkout-session fails gracefully with no Stripe key configured', async () => {
+test('subscription create-checkout-session refuses new subscriptions by default (withdrawn from sale)', async () => {
   const { sessionToken } = await makeUser('subscriber1@example.com');
   const res = await fetch(`${BASE}/api/subscription/create-checkout-session`, {
     method: 'POST', headers: { authorization: `Bearer ${sessionToken}` }
   });
-  assert.equal(res.status, 502);
+  assert.equal(res.status, 403);
+});
+
+test('subscription create-checkout-session fails gracefully with no Stripe key configured, when re-enabled', async () => {
+  process.env.SUBSCRIPTIONS_ENABLED = 'true';
+  try {
+    const { sessionToken } = await makeUser('subscriber2@example.com');
+    const res = await fetch(`${BASE}/api/subscription/create-checkout-session`, {
+      method: 'POST', headers: { authorization: `Bearer ${sessionToken}` }
+    });
+    assert.equal(res.status, 502);
+  } finally {
+    delete process.env.SUBSCRIPTIONS_ENABLED;
+  }
 });
 
 test('expediter-pack create-checkout-session requires auth', async () => {
@@ -212,4 +225,30 @@ test('checkout.session.completed webhook credits a Starter pack at 15 credits, n
 
   const pack = getAvailablePackForUserStmt.get(userId);
   assert.equal(pack.credits_total, 15);
+});
+
+test('checkout.session.completed webhook credits a Bid Pack at 5 credits', async () => {
+  const { userId } = await makeUser('webhook-pack-bid5@example.com');
+  const stripeSessionId = `cs_${crypto.randomUUID()}`;
+  const { body, headers } = signedWebhookHeaders({
+    type: 'checkout.session.completed',
+    data: { object: { id: stripeSessionId, payment_status: 'paid', metadata: { type: 'expediter_pack', userId: String(userId), size: 'bid5' } } }
+  });
+  const res = await fetch(`${BASE}/api/stripe/webhook`, { method: 'POST', headers, body });
+  assert.equal(res.status, 200);
+
+  const pack = getAvailablePackForUserStmt.get(userId);
+  assert.equal(pack.credits_total, 5);
+});
+
+test('expediter-pack create-checkout-session accepts "bid5" as a valid size', async () => {
+  const { sessionToken } = await makeUser('expediter-bid5@example.com');
+  const res = await fetch(`${BASE}/api/expediter-pack/create-checkout-session`, {
+    method: 'POST', headers: { authorization: `Bearer ${sessionToken}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ size: 'bid5' })
+  });
+  // No STRIPE_SECRET_KEY in this test env — 502 (Stripe call attempted and
+  // failed) proves validation passed, as opposed to the 400 a rejected size
+  // would produce.
+  assert.equal(res.status, 502);
 });

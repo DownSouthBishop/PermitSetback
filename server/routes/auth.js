@@ -8,6 +8,7 @@ import {
 } from '../db.js';
 import { computeAttentionItems } from '../attention.js';
 import { sendEmail } from '../email.js';
+import { packLabelForCredits } from '../stripe.js';
 
 // True once a real sender is configured, or once this is genuinely a
 // production deploy — either way, the sign-in link must never be handed
@@ -134,7 +135,8 @@ export async function handleAuthRoutes(req, res, ip) {
     const user = getSessionUser(req);
     if (!user) { sendJson(res, 401, { error: 'not authenticated' }); return true; }
     const packs = getPackCreditsByUserStmt.all(user.id).map(p => ({
-      creditsTotal: p.credits_total, creditsUsed: p.credits_used, createdAt: p.created_at
+      creditsTotal: p.credits_total, creditsUsed: p.credits_used, createdAt: p.created_at,
+      label: packLabelForCredits(p.credits_total)
     }));
     sendJson(res, 200, { packs });
     return true;

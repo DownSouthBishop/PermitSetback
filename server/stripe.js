@@ -115,8 +115,31 @@ export async function createSubscriptionCheckoutSession({ userId, successUrl, ca
 // buy the bigger pack instead of two Starters, not just "more credits."
 export const PACK_SIZES = {
   starter: { credits: 15, amountCents: 54900, label: 'Setback — Expediter Starter Pack (15 roadmap credits)' },
-  bulk: { credits: 50, amountCents: 149900, label: 'Setback — Expediter Pack (50 roadmap credits)' }
+  bulk: { credits: 50, amountCents: 149900, label: 'Setback — Expediter Pack (50 roadmap credits)' },
+  // Contractor-tier pack (5 bid packets, $299) — same one-time-payment,
+  // same pack_credits/redeem-pack-credit flow as the expediter sizes above,
+  // just not white-label: see isWhiteLabelPack below. Priced against the
+  // $97 single-packet rate (~$60/packet here), not against expediter volume.
+  bid5: { credits: 5, amountCents: 29900, label: 'Setback — Bid Pack (5 bid packets)' }
 };
+
+// pack_credits has no "kind"/size column — unnecessary, since the three
+// pack sizes (5/15/50 credits) are already numerically distinct. Used to
+// tell a contractor's Bid Pack apart from an expediter pack wherever that
+// matters: display labels here, and white-label eligibility in the print
+// views (server/routes/documents.js) — a project unlocked from a
+// starter/bulk credit is white-label, one unlocked from a bid5 credit
+// always carries the Setback footer, same as a $97 single purchase.
+export function packKindForCredits(creditsTotal) {
+  const entry = Object.entries(PACK_SIZES).find(([, v]) => v.credits === creditsTotal);
+  return entry ? entry[0] : 'bulk';
+}
+export function packLabelForCredits(creditsTotal) {
+  return { starter: 'Expediter Starter', bulk: 'Expediter Bulk', bid5: 'Bid Pack' }[packKindForCredits(creditsTotal)];
+}
+export function isWhiteLabelPack(creditsTotal) {
+  return packKindForCredits(creditsTotal) !== 'bid5';
+}
 
 // metadata.type is how the webhook tells this apart from a regular project
 // payment (which keys off metadata.projectId instead); metadata.size is how

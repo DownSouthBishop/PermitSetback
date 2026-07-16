@@ -21,7 +21,7 @@ delete process.env.GOOGLE_API_KEY;
 delete process.env.STRIPE_SECRET_KEY;
 delete process.env.STRIPE_WEBHOOK_SECRET;
 
-const { verifyWebhookSignature } = await import('../stripe.js');
+const { verifyWebhookSignature, packKindForCredits, packLabelForCredits, isWhiteLabelPack } = await import('../stripe.js');
 const { server } = await import('../index.js');
 const { insertProject, markProjectPaidStmt } = await import('../db.js');
 
@@ -57,6 +57,18 @@ test('a signature with the wrong secret fails verification', () => {
   const sig = crypto.createHmac('sha256', 'whsec_correct').update(`${timestamp}.body`).digest('hex');
   const header = `t=${timestamp},v1=${sig}`;
   assert.equal(verifyWebhookSignature('body', header, 'whsec_wrong'), false);
+});
+
+test('pack kind/label/white-label derive correctly from credit count', () => {
+  assert.equal(packKindForCredits(5), 'bid5');
+  assert.equal(packKindForCredits(15), 'starter');
+  assert.equal(packKindForCredits(50), 'bulk');
+  assert.equal(packLabelForCredits(5), 'Bid Pack');
+  assert.equal(packLabelForCredits(15), 'Expediter Starter');
+  assert.equal(packLabelForCredits(50), 'Expediter Bulk');
+  assert.equal(isWhiteLabelPack(5), false, 'the contractor Bid Pack must never be white-label');
+  assert.equal(isWhiteLabelPack(15), true);
+  assert.equal(isWhiteLabelPack(50), true);
 });
 
 test('a missing signature header fails verification without throwing', () => {
