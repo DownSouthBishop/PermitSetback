@@ -1,7 +1,8 @@
-// AI provider layer — Anthropic (Claude) is primary; Google Gemini Flash is
-// an optional fallback used only when the Anthropic call actually fails
-// (timeout, 5xx, or a 429 rate limit) — not raced in parallel, to avoid
-// paying for two calls on every request when one almost always succeeds.
+// AI provider layer — Google Gemini Flash is primary (free tier); Anthropic
+// (Claude) is the fallback used only when the Gemini call actually fails
+// (timeout, 5xx, a 429 rate limit, or no GOOGLE_API_KEY configured) — not
+// raced in parallel, to avoid paying for two calls on every request when
+// one almost always succeeds.
 import { getInsightStmt } from './db.js';
 import { logUsage } from './ai.js';
 
@@ -76,7 +77,7 @@ async function callAnthropic(userText) {
   // No project row exists yet at this point in the flow (this call is what
   // produces the content that becomes the project) — logged project-less;
   // still counted in the by-call-type cost totals.
-  logUsage({ callType: 'roadmap', usage: data.usage });
+  logUsage({ callType: 'roadmap', provider: 'anthropic-fallback', model: 'claude-sonnet-4-6', usage: data.usage });
   const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
   return extractJson(text);
 }
@@ -114,7 +115,7 @@ async function callAnthropicTimeline(userText, projectId) {
   }, 150_000);
   if (!res.ok) throw new Error(`Anthropic returned ${res.status}`);
   const data = await res.json();
-  logUsage({ callType: 'timeline', projectId, usage: data.usage });
+  logUsage({ callType: 'timeline', projectId, provider: 'anthropic-fallback', model: 'claude-sonnet-4-6', usage: data.usage });
   const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
   return extractJson(text);
 }
@@ -131,27 +132,28 @@ async function callGeminiTimeline(userText, projectId) {
   }, 150_000);
   if (!res.ok) throw new Error(`Gemini returned ${res.status}`);
   const data = await res.json();
-  logUsage({ callType: 'timeline', projectId, provider: 'gemini-fallback', model: 'gemini-2.5-flash', usage: data.usageMetadata && { input_tokens: data.usageMetadata.promptTokenCount, output_tokens: data.usageMetadata.candidatesTokenCount } });
+  logUsage({ callType: 'timeline', projectId, provider: 'gemini', model: 'gemini-2.5-flash', usage: data.usageMetadata && { input_tokens: data.usageMetadata.promptTokenCount, output_tokens: data.usageMetadata.candidatesTokenCount } });
   const text = data.candidates?.[0]?.content?.parts?.map(p => p.text).join('\n') || '';
   return extractJson(text);
 }
 
 // Generates the ordered phase breakdown for the Timeline module. Mirrors
-// generateRoadmap's Anthropic-primary, Gemini-fallback shape.
+// generateRoadmap's Gemini-primary, Anthropic-fallback shape.
 export async function generateTimelinePhases(location, description, trade, projectId) {
   const userText = `Project location: ${location}\nProject description: ${description}\nTrade: ${trade}`;
 
   try {
-    const result = await callAnthropicTimeline(userText, projectId);
-    if (isValidTimelinePhases(result)) return { ok: true, provider: 'anthropic', phases: result.phases };
-    throw new Error('Anthropic response failed schema validation');
-  } catch (err) {
-    console.error('Anthropic timeline call failed:', err.message);
-    if (!GOOGLE_KEY) throw err;
-
+    if (!GOOGLE_KEY) throw new Error('GOOGLE_API_KEY is not set');
     const result = await callGeminiTimeline(userText, projectId);
-    if (isValidTimelinePhases(result)) return { ok: true, provider: 'gemini-fallback', phases: result.phases };
-    throw new Error('Gemini fallback response also failed schema validation');
+    if (isValidTimelinePhases(result)) return { ok: true, provider: 'gemini', phases: result.phases };
+    throw new Error('Gemini response failed schema validation');
+  } catch (err) {
+    console.error('Gemini timeline call failed:', err.message);
+    if (!ANTHROPIC_KEY) throw err;
+
+    const result = await callAnthropicTimeline(userText, projectId);
+    if (isValidTimelinePhases(result)) return { ok: true, provider: 'anthropic-fallback', phases: result.phases };
+    throw new Error('Anthropic fallback response also failed schema validation');
   }
 }
 
@@ -168,7 +170,7 @@ async function callGemini(userText) {
   }, 150_000);
   if (!res.ok) throw new Error(`Gemini returned ${res.status}`);
   const data = await res.json();
-  logUsage({ callType: 'roadmap', provider: 'gemini-fallback', model: 'gemini-2.5-flash', usage: data.usageMetadata && { input_tokens: data.usageMetadata.promptTokenCount, output_tokens: data.usageMetadata.candidatesTokenCount } });
+  logUsage({ callType: 'roadmap', provider: 'gemini', model: 'gemini-2.5-flash', usage: data.usageMetadata && { input_tokens: data.usageMetadata.promptTokenCount, output_tokens: data.usageMetadata.candidatesTokenCount } });
   const text = data.candidates?.[0]?.content?.parts?.map(p => p.text).join('\n') || '';
   return extractJson(text);
 }
@@ -212,7 +214,7 @@ async function callAnthropicChat(systemPrompt, messages, projectId) {
   }, 150_000);
   if (!res.ok) throw new Error(`Anthropic returned ${res.status}`);
   const data = await res.json();
-  logUsage({ callType: 'advisor', projectId, usage: data.usage });
+  logUsage({ callType: 'advisor', projectId, provider: 'anthropic-fallback', model: 'claude-sonnet-4-6', usage: data.usage });
   return (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
 }
 
@@ -226,7 +228,7 @@ async function callGeminiChat(systemPrompt, messages, projectId) {
   }, 150_000);
   if (!res.ok) throw new Error(`Gemini returned ${res.status}`);
   const data = await res.json();
-  logUsage({ callType: 'advisor', projectId, provider: 'gemini-fallback', model: 'gemini-2.5-flash', usage: data.usageMetadata && { input_tokens: data.usageMetadata.promptTokenCount, output_tokens: data.usageMetadata.candidatesTokenCount } });
+  logUsage({ callType: 'advisor', projectId, provider: 'gemini', model: 'gemini-2.5-flash', usage: data.usageMetadata && { input_tokens: data.usageMetadata.promptTokenCount, output_tokens: data.usageMetadata.candidatesTokenCount } });
   return (data.candidates?.[0]?.content?.parts?.map(p => p.text).join('\n') || '').trim();
 }
 
@@ -237,15 +239,16 @@ export async function askAdvisor(project, history, userMessage) {
   const messages = [...history, { role: 'user', content: userMessage }];
   const systemPrompt = advisorSystemPrompt(project);
   try {
-    const reply = await callAnthropicChat(systemPrompt, messages, project.id);
-    if (!reply) throw new Error('Anthropic returned an empty reply');
-    return { ok: true, provider: 'anthropic', reply };
-  } catch (err) {
-    console.error('Anthropic advisor call failed:', err.message);
-    if (!GOOGLE_KEY) throw err;
+    if (!GOOGLE_KEY) throw new Error('GOOGLE_API_KEY is not set');
     const reply = await callGeminiChat(systemPrompt, messages, project.id);
-    if (!reply) throw new Error('Gemini fallback returned an empty reply');
-    return { ok: true, provider: 'gemini-fallback', reply };
+    if (!reply) throw new Error('Gemini returned an empty reply');
+    return { ok: true, provider: 'gemini', reply };
+  } catch (err) {
+    console.error('Gemini advisor call failed:', err.message);
+    if (!ANTHROPIC_KEY) throw err;
+    const reply = await callAnthropicChat(systemPrompt, messages, project.id);
+    if (!reply) throw new Error('Anthropic fallback returned an empty reply');
+    return { ok: true, provider: 'anthropic-fallback', reply };
   }
 }
 
@@ -261,15 +264,16 @@ export async function generateRoadmap(location, description, trade) {
   const userText = `Project location: ${location}\nProject description: ${description}${learnedContext}`;
 
   try {
-    const result = await callAnthropic(userText);
-    if (isValidRoadmap(result) || result.unrecognized) return { ok: true, provider: 'anthropic', result };
-    throw new Error('Anthropic response failed schema validation');
-  } catch (err) {
-    console.error('Anthropic call failed:', err.message);
-    if (!GOOGLE_KEY) throw err; // no fallback configured — let it fail through to the caller
-
+    if (!GOOGLE_KEY) throw new Error('GOOGLE_API_KEY is not set');
     const result = await callGemini(userText);
-    if (isValidRoadmap(result) || result.unrecognized) return { ok: true, provider: 'gemini-fallback', result };
-    throw new Error('Gemini fallback response also failed schema validation');
+    if (isValidRoadmap(result) || result.unrecognized) return { ok: true, provider: 'gemini', result };
+    throw new Error('Gemini response failed schema validation');
+  } catch (err) {
+    console.error('Gemini call failed:', err.message);
+    if (!ANTHROPIC_KEY) throw err; // no fallback configured — let it fail through to the caller
+
+    const result = await callAnthropic(userText);
+    if (isValidRoadmap(result) || result.unrecognized) return { ok: true, provider: 'anthropic-fallback', result };
+    throw new Error('Anthropic fallback response also failed schema validation');
   }
 }

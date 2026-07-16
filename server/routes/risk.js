@@ -8,7 +8,7 @@
 // shares the table via category = 'feasibility', so this file never touches
 // those rows).
 import { readBody, sendJson, requirePaid, checkRateLimit } from '../http-utils.js';
-import { callAnthropicJSON } from '../ai.js';
+import { callLLMJSON } from '../ai.js';
 import { getProjectStmt, insertFindingStmt, getFindingsByProjectStmt } from '../db.js';
 
 const SYSTEM_PROMPT = `You are Setback's risk analyst. Given a US construction/improvement project's location, description, and trade, identify risks that could delay the project, blow the budget, or block approval — beyond a basic feasibility screen: permitting delays, inspection failures, cost overrun risk, contractor/scheduling risk, weather/seasonal risk, code-compliance risk, and neighbor/dispute risk.
@@ -27,7 +27,7 @@ function isValidRisks(obj) {
 
 async function generateRiskFindings(project) {
   const userText = `Project location: ${project.location}\nProject description: ${project.description}\nTrade: ${project.trade}`;
-  const result = await callAnthropicJSON({
+  const result = await callLLMJSON({
     systemPrompt: SYSTEM_PROMPT, userText, maxTokens: 1500, isValid: isValidRisks,
     projectId: project.id, callType: 'risk'
   });

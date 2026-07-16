@@ -6,7 +6,7 @@
 // project_findings with category = 'feasibility' (Risk Intelligence shares
 // the table via category = 'risk', so this file never touches those rows).
 import { readBody, sendJson, requirePaid, checkRateLimit } from '../http-utils.js';
-import { callAnthropicJSON } from '../ai.js';
+import { callLLMJSON } from '../ai.js';
 import { getProjectStmt, insertFindingStmt, getFindingsByProjectStmt } from '../db.js';
 
 const SYSTEM_PROMPT = `You are Setback's feasibility analyst. Given a US construction/improvement project's location, description, and trade, identify concerns that could affect feasibility BEFORE the applicant gets to permits: flood zones, wetlands, HOA restrictions, historic district designation, lot/setback restrictions, utility conflicts, environmental concerns, and zoning concerns.
@@ -25,7 +25,7 @@ function isValidFindings(obj) {
 
 async function generateFeasibilityFindings(project) {
   const userText = `Project location: ${project.location}\nProject description: ${project.description}\nTrade: ${project.trade}`;
-  const result = await callAnthropicJSON({
+  const result = await callLLMJSON({
     systemPrompt: SYSTEM_PROMPT, userText, maxTokens: 1500, isValid: isValidFindings,
     projectId: project.id, callType: 'feasibility'
   });

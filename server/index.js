@@ -42,7 +42,7 @@ if (!process.env.ANTHROPIC_API_KEY) {
   process.exit(1);
 }
 if (!process.env.GOOGLE_API_KEY) {
-  console.log('GOOGLE_API_KEY not set — running on Anthropic only, no fallback. That is fine for now.');
+  console.log('GOOGLE_API_KEY not set — Gemini (the free-tier primary) is unavailable; running on the Anthropic fallback only.');
 }
 
 export const server = createServer(async (req, res) => {

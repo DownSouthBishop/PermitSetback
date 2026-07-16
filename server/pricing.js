@@ -5,7 +5,7 @@
 // rough internal estimate — Anthropic can and does change these rates.
 const PRICING_PER_MTOK = {
   'claude-sonnet-4-6': { input: 3, output: 15 },
-  'gemini-2.5-flash': { input: null, output: null } // fallback provider; not costed here (rarely used — Anthropic-primary)
+  'gemini-2.5-flash': { input: null, output: null } // primary provider (free tier) — no per-token dollar cost to estimate
 };
 
 export function estimateCostUsd(model, inputTokens, outputTokens) {

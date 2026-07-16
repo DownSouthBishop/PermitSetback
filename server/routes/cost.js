@@ -4,7 +4,7 @@
 // not importing from llm.js since its callAnthropic/callGemini are wired to
 // the permit-roadmap SYSTEM_PROMPT specifically.
 import { readBody, sendJson, requirePaid, checkRateLimit } from '../http-utils.js';
-import { callAnthropicJSON } from '../ai.js';
+import { callLLMJSON } from '../ai.js';
 import { getProjectStmt, insertCostStmt, getCostsByProjectStmt } from '../db.js';
 
 const SYSTEM_PROMPT = `You are Setback's cost estimator for U.S. construction and improvement projects. Given a project's location, description, and trade, break down the likely costs into line items.
@@ -27,7 +27,7 @@ function isValidCostEstimate(obj) {
 
 async function generateCostEstimate(project) {
   const userText = `Project location: ${project.location}\nProject description: ${project.description}\nTrade: ${project.trade}`;
-  return callAnthropicJSON({
+  return callLLMJSON({
     systemPrompt: SYSTEM_PROMPT, userText, maxTokens: 1200, isValid: isValidCostEstimate,
     projectId: project.id, callType: 'cost'
   });

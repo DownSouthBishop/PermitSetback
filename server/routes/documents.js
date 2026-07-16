@@ -3,7 +3,7 @@
 // generation time). GET /api/projects/:id/documents lists saved documents;
 // POST generates the remaining set in one LLM call and persists them.
 import { sendJson, requirePaid, checkRateLimit } from '../http-utils.js';
-import { callAnthropicJSON } from '../ai.js';
+import { callLLMJSON } from '../ai.js';
 import { getProjectStmt, insertDocumentStmt, getDocumentsByProjectStmt } from '../db.js';
 
 // Display labels only — doc_type values themselves (the DB column and the
@@ -46,7 +46,7 @@ async function generateDocuments(project) {
   // both truncated mid-generation and broke the JSON. Tightened the prompt
   // to ask for shorter documents AND raised the ceiling, rather than either
   // alone.
-  const result = await callAnthropicJSON({
+  const result = await callLLMJSON({
     systemPrompt: SYSTEM_PROMPT, userText, maxTokens: 6000, isValid: isValidDocuments, timeoutMs: 150_000,
     projectId: project.id, callType: 'documents'
   });
