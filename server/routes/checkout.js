@@ -9,7 +9,8 @@ import {
   getAccessCodeStmt, incrementAccessCodeUsesStmt, insertAccessCodeRedemptionStmt,
   getActiveSubscriptionByUserStmt, getReferralCodeStmt, redeemReferralCodeStmt,
   getAvailablePackForUserStmt, incrementPackCreditsUsedStmt,
-  linkProjectToUserStmt, getPartnerCodeStmt, insertPartnerRedemptionStmt, setProjectPackSourceStmt
+  linkProjectToUserStmt, getPartnerCodeStmt, insertPartnerRedemptionStmt, setProjectPackSourceStmt,
+  getProjectsByUserStmt, insertEvent
 } from '../db.js';
 import { createCheckoutSession, retrieveCheckoutSession } from '../stripe.js';
 import { getSessionUser } from './auth.js';
@@ -18,6 +19,20 @@ import { pregenerateFullWorkspace } from '../pregenerate.js';
 import { mintReferralCodeForProject } from '../referrals.js';
 
 const VALID_TIERS = ['roadmap', 'full'];
+
+// KPI events fired at the one moment every unlock path funnels through:
+// a project just became paid. project here is the row fetched BEFORE
+// marking it paid (so .user_id/.drip_*_sent_at reflect state going into
+// this purchase, not state this purchase itself just wrote).
+function logPurchaseKpiEvents(project, now) {
+  if (project.drip_day2_sent_at || project.drip_day6_sent_at) {
+    insertEvent.run(now, 'drip_converted', JSON.stringify({ projectId: project.id }));
+  }
+  if (project.user_id) {
+    const alreadyPaid = getProjectsByUserStmt.all(project.user_id).some(p => p.paid && p.id !== project.id);
+    if (alreadyPaid) insertEvent.run(now, 'second_purchase', JSON.stringify({ projectId: project.id, userId: project.user_id }));
+  }
+}
 
 // The pricing ladder (see server/db.js's pricing-overhaul comment for the
 // tables this reads): $49 roadmap-only, $97 full workspace one-off, $49
@@ -258,6 +273,7 @@ export async function handleCheckoutRoutes(req, res, ip) {
       }
       const now = new Date().toISOString();
       const tier = VALID_TIERS.includes(session.metadata?.tier) ? session.metadata.tier : 'full';
+      logPurchaseKpiEvents(project, now);
       markProjectPaidStmt.run(tier, now, now, id);
       // Fire every module's generator now instead of making the buyer wait
       // per-tab after they've already paid — fire-and-forget, never awaited

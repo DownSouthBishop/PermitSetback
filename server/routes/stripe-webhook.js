@@ -13,9 +13,23 @@ import { readBody, sendJson } from '../http-utils.js';
 import { verifyWebhookSignature, PACK_SIZES } from '../stripe.js';
 import {
   getProjectStmt, markProjectPaidStmt, db, getSubscriptionByStripeIdStmt,
-  insertSubscriptionStmt, updateSubscriptionStatusStmt, insertPackCreditsStmt
+  insertSubscriptionStmt, updateSubscriptionStatusStmt, insertPackCreditsStmt,
+  getProjectsByUserStmt, insertEvent
 } from '../db.js';
 import { pregenerateFullWorkspace } from '../pregenerate.js';
+
+// Same KPI events routes/checkout.js's confirm-checkout logs — this is the
+// webhook's defense-in-depth twin of that path, for whichever gets to a
+// given purchase first.
+function logPurchaseKpiEvents(project, now) {
+  if (project.drip_day2_sent_at || project.drip_day6_sent_at) {
+    insertEvent.run(now, 'drip_converted', JSON.stringify({ projectId: project.id }));
+  }
+  if (project.user_id) {
+    const alreadyPaid = getProjectsByUserStmt.all(project.user_id).some(p => p.paid && p.id !== project.id);
+    if (alreadyPaid) insertEvent.run(now, 'second_purchase', JSON.stringify({ projectId: project.id, userId: project.user_id }));
+  }
+}
 
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 const getPackByStripeSessionStmt = db.prepare('SELECT id FROM pack_credits WHERE stripe_session_id = ?');
@@ -53,6 +67,7 @@ export async function handleStripeWebhookRoutes(req, res) {
       if (project && !project.paid && sub.payment_status === 'paid') {
         const now = new Date().toISOString();
         const tier = sub.metadata?.tier || 'full';
+        logPurchaseKpiEvents(project, now);
         markProjectPaidStmt.run(tier, now, now, projectId);
         // Defense-in-depth twin of routes/checkout.js's confirm-checkout —
         // generateAndSaveX's own "already exists" guards make this a no-op
@@ -70,6 +85,7 @@ export async function handleStripeWebhookRoutes(req, res) {
         const credits = (PACK_SIZES[sub.metadata?.size] || PACK_SIZES.bulk).credits;
         try {
           insertPackCreditsStmt.run(crypto.randomUUID(), sub.metadata.userId, sub.id, credits, new Date().toISOString());
+          if (sub.metadata?.size === 'bid5') insertEvent.run(new Date().toISOString(), 'bid_pack_purchased', JSON.stringify({ userId: sub.metadata.userId }));
         } catch (err) {
           if (!err.message.includes('UNIQUE')) throw err;
         }

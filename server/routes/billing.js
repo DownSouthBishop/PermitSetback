@@ -5,7 +5,7 @@
 import { readBody, sendJson, checkRateLimit, originFromRequest } from '../http-utils.js';
 import {
   db, insertSubscriptionStmt, getActiveSubscriptionByUserStmt, getSubscriptionByStripeIdStmt,
-  updateSubscriptionStatusStmt, insertPackCreditsStmt, markRetentionOfferUsedStmt
+  updateSubscriptionStatusStmt, insertPackCreditsStmt, markRetentionOfferUsedStmt, insertEvent
 } from '../db.js';
 import { createSubscriptionCheckoutSession, createPackCheckoutSession, retrieveCheckoutSession, cancelSubscription, applyRetentionDiscount, PACK_SIZES } from '../stripe.js';
 import { getSessionUser } from './auth.js';
@@ -169,6 +169,7 @@ export async function handleBillingRoutes(req, res, ip) {
         const credits = (PACK_SIZES[session.metadata?.size] || PACK_SIZES.bulk).credits;
         try {
           insertPackCreditsStmt.run(crypto.randomUUID(), session.metadata.userId, sessionId, credits, new Date().toISOString());
+          if (session.metadata?.size === 'bid5') insertEvent.run(new Date().toISOString(), 'bid_pack_purchased', JSON.stringify({ userId: session.metadata.userId }));
         } catch (err) {
           if (!err.message.includes('UNIQUE')) throw err;
         }

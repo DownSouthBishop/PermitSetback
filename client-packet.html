@@ -33,7 +33,7 @@
 <button class="btn printbtn screenOnly" id="printBtn" style="width:auto;padding:10px 18px;">Print / Save as PDF</button>
 
 <script type="module">
-import { esc, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf } from './modules/shared.js';
+import { esc, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf, logEvent } from './modules/shared.js';
 
 const params = new URLSearchParams(location.search);
 const projectId = params.get('id');
@@ -121,7 +121,10 @@ async function load() {
   `;
 }
 
-document.getElementById('printBtn').onclick = () => window.print();
+document.getElementById('printBtn').onclick = () => {
+  logEvent('bid_packet_downloaded', { projectId });
+  window.print();
+};
 load();
 </script>
 </body>

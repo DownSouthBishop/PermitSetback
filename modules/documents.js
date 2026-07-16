@@ -2,7 +2,7 @@
 // checklist/summary/questions set this module generates on demand. Each is
 // copyable on its own, same interaction as the Permits module's narrative.
 
-import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf, renderUpgradeCard } from './shared.js';
+import { esc, ICON, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf, renderUpgradeCard, logEvent } from './shared.js';
 
 // Confirm-before-filing hedge for the two document types that ask the
 // county/HOA a direct question rather than just organizing what's already
@@ -97,6 +97,7 @@ function wireBrandingForm(container, project) {
       const body = await res.json();
       if (!res.ok) throw new Error(body.error || `Backend returned ${res.status}`);
       Object.assign(project, { companyName: body.companyName, companyContact: body.companyContact, companyLogoUrl: body.companyLogoUrl });
+      logEvent('branding_saved', { projectId: project.id });
       btn.textContent = 'Saved';
       setTimeout(() => { btn.textContent = 'Save branding'; btn.disabled = false; }, 1500);
     } catch (err) {

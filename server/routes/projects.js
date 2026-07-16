@@ -13,7 +13,7 @@
 // all of it plus the ADMIN_SECRET-gated admin routes (now routes/admin.js)
 // for unrelated reasons.
 import { readBody, sendJson, checkGenerousRateLimit, requirePaid } from '../http-utils.js';
-import { getProjectStmt, updateProjectOutcomeStmt, insertOutcome, insertRefundClaimStmt, getReferralCodeByReferrerStmt, updateProjectBrandingStmt, getPackCreditsByIdStmt, unsubscribeProjectStmt } from '../db.js';
+import { getProjectStmt, updateProjectOutcomeStmt, insertOutcome, insertRefundClaimStmt, getReferralCodeByReferrerStmt, updateProjectBrandingStmt, getPackCreditsByIdStmt, unsubscribeProjectStmt, insertEvent } from '../db.js';
 import { isWhiteLabelPack } from '../stripe.js';
 import { verifyOutcomeSignature } from '../outcome-signing.js';
 import { mintReferralCodeForProject } from '../referrals.js';
@@ -160,6 +160,7 @@ export async function handleProjectsRoutes(req, res, ip) {
       return true;
     }
     if (outcome !== 'not_yet_filed') recordProjectOutcome(project, outcome);
+    insertEvent.run(new Date().toISOString(), 'outcome_reported', JSON.stringify({ projectId: id, outcome }));
     await mintReferralCodeForProject(id);
     confirm('Thanks — recorded. Check your project page for your referral code.');
     return true;
