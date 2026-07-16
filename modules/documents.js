@@ -40,6 +40,73 @@ function groupHeadingHtml(heading) {
   return `<h4 style="font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin:20px 0 8px;">${esc(heading)}</h4>`;
 }
 
+// What goes on the cover of the Client Packet PDF (Phase 2.2's print view) —
+// lives here rather than its own tab since it's meaningless without the
+// packet it brands. Revisable anytime; POST /api/projects/:id/branding is a
+// plain update, not a one-shot grant.
+function brandingFormHtml(project) {
+  return `
+    <div class="card" id="brandingCard">
+      <h3>${ICON.doc} Put your company on the cover</h3>
+      <p style="color:var(--ink-soft);font-size:13px;margin:0 0 14px;">This appears on every page of your Client Packet PDF. It should — you're the one winning the job.</p>
+      <label for="brandCompanyName" style="display:block;font-size:13px;font-weight:600;margin:0 0 4px;">Company name</label>
+      <input id="brandCompanyName" placeholder="e.g. Acme Contracting" value="${esc(project.companyName || '')}">
+      <label for="brandCompanyContact" style="display:block;font-size:13px;font-weight:600;margin:0 0 4px;">Contact line</label>
+      <input id="brandCompanyContact" placeholder="e.g. (555) 010-0100 &middot; info@acme.com" value="${esc(project.companyContact || '')}">
+      <label for="brandLogoUrl" style="display:block;font-size:13px;font-weight:600;margin:0 0 4px;">Logo URL (optional)</label>
+      <input id="brandLogoUrl" placeholder="https://..." value="${esc(project.companyLogoUrl || '')}">
+      <div id="brandErr"></div>
+      <button class="btn secondary" id="brandSave">Save branding</button>
+    </div>
+  `;
+}
+
+// The two zero-dependency PDFs (print-styled pages + window.print(), no PDF
+// library) — see client-packet.html and submission-pack.html. Both pages
+// determine white-label branding server-side from project.whiteLabel; they
+// never take it as a query param or anything else client-supplied.
+function printLinksHtml(project) {
+  return `
+    <div class="card">
+      <h3>${ICON.doc} Print your packet</h3>
+      <a class="btn" href="client-packet.html?id=${encodeURIComponent(project.id)}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin-bottom:8px;">Download Client Packet (PDF)</a>
+      <p style="font-size:12px;color:var(--ink-soft);margin:0 0 12px;">Branded, client-facing pages only.</p>
+      <a class="btn secondary" href="submission-pack.html?id=${encodeURIComponent(project.id)}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;">Download City Submission Pack (PDF)</a>
+      <p style="font-size:12px;color:var(--ink-soft);margin:8px 0 0;">Your working file for the county.</p>
+    </div>
+  `;
+}
+
+function wireBrandingForm(container, project) {
+  const btn = container.querySelector('#brandSave');
+  if (!btn) return;
+  btn.onclick = async () => {
+    const companyName = container.querySelector('#brandCompanyName').value.trim();
+    const companyContact = container.querySelector('#brandCompanyContact').value.trim();
+    const companyLogoUrl = container.querySelector('#brandLogoUrl').value.trim();
+    const errBox = container.querySelector('#brandErr');
+    errBox.innerHTML = '';
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span>Saving...`;
+    try {
+      const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/branding`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyName, companyContact, companyLogoUrl })
+      }, 8000);
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || `Backend returned ${res.status}`);
+      Object.assign(project, { companyName: body.companyName, companyContact: body.companyContact, companyLogoUrl: body.companyLogoUrl });
+      btn.textContent = 'Saved';
+      setTimeout(() => { btn.textContent = 'Save branding'; btn.disabled = false; }, 1500);
+    } catch (err) {
+      errBox.innerHTML = `<div class="err">${esc(err.message || "Couldn't save — try again.")}</div>`;
+      btn.disabled = false;
+      btn.textContent = 'Save branding';
+    }
+  };
+}
+
 function wireCopyButtons(container) {
   container.querySelectorAll('button[data-idx]').forEach(btn => {
     btn.onclick = async () => {
@@ -57,7 +124,7 @@ function wireCopyButtons(container) {
   });
 }
 
-function renderDocs(container, documents) {
+function renderDocs(container, documents, project) {
   const byType = new Map();
   documents.forEach((doc, index) => {
     if (!byType.has(doc.docType)) byType.set(doc.docType, []);
@@ -68,8 +135,9 @@ function renderDocs(container, documents) {
     if (!entries.length) return '';
     return groupHeadingHtml(group.heading) + entries.map(({ doc, index }) => docCard(doc, index)).join('');
   }).join('');
-  container.innerHTML = grouped +
+  container.innerHTML = brandingFormHtml(project) + printLinksHtml(project) + grouped +
     `<p class="disc">These are drafts to review and adapt, not final submissions — confirm specifics with the relevant party before sending.</p>`;
+  wireBrandingForm(container, project);
   wireCopyButtons(container);
 }
 
@@ -81,7 +149,7 @@ async function generate(container, project) {
     const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(project.id)}/documents`, { method: 'POST' }, 160000);
     if (!res.ok) throw new Error(`Backend returned ${res.status}`);
     const { documents } = await res.json();
-    renderDocs(container, documents);
+    renderDocs(container, documents, project);
   } catch (err) {
     container.innerHTML = `<div class="card"><h3>${ICON.doc} Documents</h3><div class="err">Couldn't generate documents — is the backend running? Try again in a moment.</div></div>`;
   }
@@ -103,7 +171,7 @@ export async function render(container, project) {
 
   // Only the narrative (always present) means the rest hasn't been generated yet.
   if (documents.length <= 1) {
-    container.innerHTML = `
+    container.innerHTML = brandingFormHtml(project) + printLinksHtml(project) + `
       <div class="card">
         <h3>${ICON.doc} Ready-to-hand-off paperwork</h3>
         <p style="color:var(--ink-soft);font-size:13.5px;margin:0 0 14px;">A permit checklist, owner and contractor summaries, HOA and building department questions, and the likely inspection order — all specific to this ${esc(tradeLabel(project.trade).toLowerCase())} project in ${esc(cityOf(project.location)) || 'your area'}.</p>
@@ -111,10 +179,11 @@ export async function render(container, project) {
       </div>
       ${docCard(documents[0], 0)}
     `;
+    wireBrandingForm(container, project);
     container.querySelector('#generate').onclick = () => generate(container, project);
     wireCopyButtons(container);
     return;
   }
 
-  renderDocs(container, documents);
+  renderDocs(container, documents, project);
 }

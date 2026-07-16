@@ -59,7 +59,8 @@ const endpoints = [
   ['POST', '/documents'],
   ['GET', '/conversation'],
   ['GET', '/tasks'],
-  ['GET', '/overview']
+  ['GET', '/overview'],
+  ['POST', '/branding']
 ];
 
 for (const [method, path] of endpoints) {

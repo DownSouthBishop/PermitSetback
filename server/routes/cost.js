@@ -44,6 +44,21 @@ function costRowToJson(row) {
   };
 }
 
+// Generates and persists a cost estimate if none exists yet, or returns the
+// existing one — shared by the POST route below and the post-payment
+// pre-generation pass in server/pregenerate.js.
+export async function generateAndSaveCost(project) {
+  const existing = getCostsByProjectStmt.all(project.id);
+  if (existing.length > 0) return existing.map(costRowToJson);
+
+  const { costs } = await generateCostEstimate(project);
+  const now = new Date().toISOString();
+  for (const c of costs) {
+    insertCostStmt.run(crypto.randomUUID(), project.id, c.category, c.lowEstimate ?? null, c.highEstimate ?? null, c.note ?? null, now);
+  }
+  return getCostsByProjectStmt.all(project.id).map(costRowToJson);
+}
+
 // Returns true if this module handled the request (response already sent),
 // false if the caller should try the next route module.
 export async function handleCostRoutes(req, res, ip) {
@@ -71,12 +86,8 @@ export async function handleCostRoutes(req, res, ip) {
     if (checkRateLimit(res, ip)) return true;
 
     try {
-      const { costs } = await generateCostEstimate(project);
-      const now = new Date().toISOString();
-      for (const c of costs) {
-        insertCostStmt.run(crypto.randomUUID(), id, c.category, c.lowEstimate ?? null, c.highEstimate ?? null, c.note ?? null, now);
-      }
-      sendJson(res, 200, { costs: getCostsByProjectStmt.all(id).map(costRowToJson) });
+      const costs = await generateAndSaveCost(project);
+      sendJson(res, 200, { costs });
     } catch (err) {
       console.error('Cost estimate generation failed:', err.message);
       sendJson(res, 502, { error: 'Could not generate a cost estimate right now — try again in a moment.' });

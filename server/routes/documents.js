@@ -67,6 +67,24 @@ function withNarrative(project, docs) {
   ];
 }
 
+// Generates and persists the document set if none exists yet, or returns
+// the existing set (without the synthetic narrative — callers that want it
+// prepended use withNarrative separately, same as the routes below).
+// Shared by the POST route and the post-payment pre-generation pass in
+// server/pregenerate.js.
+export async function generateAndSaveDocuments(project) {
+  const existing = getDocumentsByProjectStmt.all(project.id);
+  if (existing.length > 0) return existing.map(documentRowToJson);
+
+  const docs = await generateDocuments(project);
+  const now = new Date().toISOString();
+  return docs.map(d => {
+    const docId = crypto.randomUUID();
+    insertDocumentStmt.run(docId, project.id, d.docType, d.content, now, now);
+    return { id: docId, docType: d.docType, title: DOC_LABELS[d.docType] || d.docType, content: d.content, createdAt: now, updatedAt: now };
+  });
+}
+
 // Returns true if this module handled the request (response already sent),
 // false if the caller should try the next route module.
 export async function handleDocumentsRoutes(req, res, ip) {
@@ -93,13 +111,7 @@ export async function handleDocumentsRoutes(req, res, ip) {
 
     if (checkRateLimit(res, ip)) return true;
     try {
-      const docs = await generateDocuments(project);
-      const now = new Date().toISOString();
-      const saved = docs.map(d => {
-        const docId = crypto.randomUUID();
-        insertDocumentStmt.run(docId, id, d.docType, d.content, now, now);
-        return { id: docId, docType: d.docType, title: DOC_LABELS[d.docType] || d.docType, content: d.content, createdAt: now, updatedAt: now };
-      });
+      const saved = await generateAndSaveDocuments(project);
       sendJson(res, 200, { documents: withNarrative(project, saved) });
     } catch (err) {
       console.error('Document generation failed:', err.message);

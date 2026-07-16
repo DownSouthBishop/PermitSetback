@@ -44,6 +44,23 @@ function findingRowToJson(row) {
   };
 }
 
+// Generates and persists feasibility findings if none exist yet, or returns
+// the existing set — the "generate if empty" logic every caller needs
+// (the POST route below, and the post-payment pre-generation pass in
+// server/pregenerate.js) instead of each duplicating it.
+export async function generateAndSaveFeasibility(project) {
+  const existing = getFindingsByProjectStmt.all(project.id, 'feasibility');
+  if (existing.length > 0) return existing.map(findingRowToJson);
+
+  const findings = await generateFeasibilityFindings(project);
+  const now = new Date().toISOString();
+  return findings.map(f => {
+    const findingId = crypto.randomUUID();
+    insertFindingStmt.run(findingId, project.id, 'feasibility', f.label, f.detail, null, f.impact || null, null, null, f.confidence || null, now, now);
+    return { id: findingId, label: f.label, detail: f.detail, impact: f.impact || null, confidence: f.confidence || null, createdAt: now, updatedAt: now };
+  });
+}
+
 // Returns true if this module handled the request (response already sent),
 // false if the caller should try the next route module.
 export async function handleFeasibilityRoutes(req, res, ip) {
@@ -71,13 +88,7 @@ export async function handleFeasibilityRoutes(req, res, ip) {
 
     if (checkRateLimit(res, ip)) return true;
     try {
-      const findings = await generateFeasibilityFindings(project);
-      const now = new Date().toISOString();
-      const saved = findings.map(f => {
-        const findingId = crypto.randomUUID();
-        insertFindingStmt.run(findingId, id, 'feasibility', f.label, f.detail, null, f.impact || null, null, null, f.confidence || null, now, now);
-        return { id: findingId, label: f.label, detail: f.detail, impact: f.impact || null, confidence: f.confidence || null, createdAt: now, updatedAt: now };
-      });
+      const saved = await generateAndSaveFeasibility(project);
       sendJson(res, 200, { findings: saved });
     } catch (err) {
       console.error('Feasibility generation failed:', err.message);

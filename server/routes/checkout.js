@@ -10,11 +10,12 @@ import {
   getAccessCodeStmt, incrementAccessCodeUsesStmt, insertAccessCodeRedemptionStmt,
   getActiveSubscriptionByUserStmt, getReferralCodeStmt, redeemReferralCodeStmt,
   insertReferralCodeStmt, getAvailablePackForUserStmt, incrementPackCreditsUsedStmt,
-  linkProjectToUserStmt, getPartnerCodeStmt, insertPartnerRedemptionStmt
+  linkProjectToUserStmt, getPartnerCodeStmt, insertPartnerRedemptionStmt, setProjectPackSourceStmt
 } from '../db.js';
 import { createCheckoutSession, retrieveCheckoutSession, createReferralPromotionCode } from '../stripe.js';
 import { getSessionUser } from './auth.js';
 import { projectRowToJson } from './projects.js';
+import { pregenerateFullWorkspace } from '../pregenerate.js';
 
 const VALID_TIERS = ['roadmap', 'full'];
 
@@ -236,6 +237,7 @@ export async function handleCheckoutRoutes(req, res, ip) {
 
     const now = new Date().toISOString();
     markProjectPaidStmt.run('full', now, now, id);
+    setProjectPackSourceStmt.run(pack.id, id);
     if (project.user_id === null) linkProjectToUserStmt.run(sessionUser.id, now, id);
     sendJson(res, 200, projectRowToJson(getProjectStmt.get(id)));
     return true;
@@ -268,6 +270,10 @@ export async function handleCheckoutRoutes(req, res, ip) {
       const now = new Date().toISOString();
       const tier = VALID_TIERS.includes(session.metadata?.tier) ? session.metadata.tier : 'full';
       markProjectPaidStmt.run(tier, now, now, id);
+      // Fire every module's generator now instead of making the buyer wait
+      // per-tab after they've already paid — fire-and-forget, never awaited
+      // here (see server/pregenerate.js).
+      if (tier === 'full') pregenerateFullWorkspace(project);
 
       // A referral code used at checkout gets consumed here, not at session
       // creation — someone abandoning checkout shouldn't burn a friend's

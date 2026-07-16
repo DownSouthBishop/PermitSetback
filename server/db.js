@@ -352,7 +352,23 @@ for (const stmt of [
   // granted more than once per subscription — without this, repeatedly
   // opening the cancel flow and accepting the offer each time would stack
   // discounted months indefinitely.
-  "ALTER TABLE subscriptions ADD COLUMN retention_offer_used_at TEXT"
+  "ALTER TABLE subscriptions ADD COLUMN retention_offer_used_at TEXT",
+  // Client Packet branding (SETBACK VISION 1.0 repositioning) — nullable
+  // until a full-tier buyer sets them via POST /api/projects/:id/branding.
+  // Dedicated columns rather than folding into the existing `extra` JSON
+  // bucket: extra has no established write path anywhere in this codebase
+  // (read-only today), while this is exactly the additive-column pattern
+  // every other post-launch project field above already uses.
+  "ALTER TABLE projects ADD COLUMN company_name TEXT",
+  "ALTER TABLE projects ADD COLUMN company_contact TEXT",
+  "ALTER TABLE projects ADD COLUMN company_logo_url TEXT",
+  // Which pack_credits row (if any) unlocked this project — the only
+  // server-side way to know whether a project is white-label-eligible
+  // (Phase 2.2's print views): white-label is an expediter Starter/Bulk
+  // pack entitlement, never a client-supplied flag. NULL for every
+  // non-pack unlock path (direct purchase, access code, referral code) —
+  // those are never white-label, full stop.
+  "ALTER TABLE projects ADD COLUMN unlocked_via_pack_id TEXT"
 ]) {
   try { db.exec(stmt); } catch (err) { /* column already exists — fine */ }
 }
@@ -411,6 +427,17 @@ export const linkProjectToUserStmt = db.prepare('UPDATE projects SET user_id = ?
 // block for the tables this interacts with (subscriptions, pack_credits,
 // referral_codes).
 export const markProjectPaidStmt = db.prepare(`UPDATE projects SET paid = 1, tier = ?, paid_at = ?, updated_at = ? WHERE id = ?`);
+// Branding a buyer puts on their Client Packet PDF's cover — see routes/projects.js's
+// branding endpoint. Plain WHERE id = ? (not a double-checked-locking guard
+// like the payment/entitlement statements above): this is free-form display
+// data a buyer can revise anytime, not something that grants value once.
+export const updateProjectBrandingStmt = db.prepare(
+  'UPDATE projects SET company_name = ?, company_contact = ?, company_logo_url = ?, updated_at = ? WHERE id = ?'
+);
+// Set once, at pack-credit redemption time (routes/checkout.js) — records
+// which pack unlocked this project, for the white-label determination above.
+export const setProjectPackSourceStmt = db.prepare('UPDATE projects SET unlocked_via_pack_id = ? WHERE id = ?');
+export const getPackCreditsByIdStmt = db.prepare('SELECT * FROM pack_credits WHERE id = ?');
 
 // --- access codes ---------------------------------------------------------
 export const getAccessCodeStmt = db.prepare('SELECT * FROM access_codes WHERE code = ?');

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>City Submission Pack — Setback</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="shared.css">
+<style>
+  body{ background:#fff; }
+  .wrap{ max-width:720px; }
+  @media print{
+    .screenOnly{ display:none !important; }
+    body{ font-size:12pt; }
+    .card{ box-shadow:none; border:1px solid #ccc; break-inside:avoid; }
+  }
+  .cover{ display:flex; align-items:center; gap:16px; border-bottom:2px solid var(--ink); padding-bottom:18px; margin-bottom:22px; }
+  .cover .brandname{ font-size:20px; font-weight:800; }
+  .cover .projline{ margin-left:auto; text-align:right; font-size:13px; color:var(--ink-soft); }
+  h2.sect{ font-size:15px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin:28px 0 10px; }
+  .footerline{ text-align:center; font-size:11px; color:var(--ink-soft); margin-top:36px; padding-top:12px; border-top:1px solid var(--line); }
+  .honesty{ font-size:12px; color:var(--ink-soft); border-top:1px solid var(--line); margin-top:28px; padding-top:12px; }
+  .printbtn{ position:fixed; top:16px; right:16px; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <p style="padding-top:16px;">Loading your City Submission Pack&hellip;</p>
+</div>
+<button class="btn printbtn screenOnly" id="printBtn" style="width:auto;padding:10px 18px;">Print / Save as PDF</button>
+
+<script type="module">
+import { esc, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf } from './modules/shared.js';
+
+const params = new URLSearchParams(location.search);
+const projectId = params.get('id');
+const app = document.getElementById('app');
+
+function errorState(message) {
+  app.innerHTML = `<p style="padding-top:40px;">${esc(message)}</p>`;
+  document.getElementById('printBtn').style.display = 'none';
+}
+
+function docSection(title, doc) {
+  if (!doc) return '';
+  return `<h2 class="sect">${esc(title)}</h2><p style="white-space:pre-wrap;">${esc(doc.content)}</p>`;
+}
+
+async function load() {
+  if (!projectId) { errorState('No project specified.'); return; }
+
+  let project;
+  try {
+    const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(projectId)}`, {}, 10000);
+    if (!res.ok) throw new Error();
+    project = await res.json();
+  } catch {
+    errorState("Couldn't load this project — is the backend running?");
+    return;
+  }
+  if (!project.paid) { errorState('This project has not been unlocked yet.'); return; }
+  if (project.tier !== 'full') { errorState('The City Submission Pack is part of the Full Workspace — this project was unlocked at the Roadmap tier.'); return; }
+
+  const docsRes = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(projectId)}/documents`, {}, 10000);
+  const { documents } = docsRes.ok ? await docsRes.json() : { documents: [] };
+  const byType = t => documents.find(d => d.docType === t);
+
+  document.title = `City Submission Pack — ${project.location}`;
+
+  app.innerHTML = `
+    <div class="cover">
+      <div>
+        <div class="brandname">${esc(project.companyName || 'Your Company')}</div>
+      </div>
+      <div class="projline">
+        <div>${esc(cityOf(project.location))}</div>
+        <div>${esc(tradeLabel(project.trade))}</div>
+      </div>
+    </div>
+
+    <h2 class="sect">Permit narrative — submission draft</h2>
+    <p style="white-space:pre-wrap;">${esc(project.narrative)}</p>
+
+    ${docSection('Gather-this checklist', byType('permit_checklist'))}
+    ${docSection('Building department questions', byType('building_dept_questions'))}
+    ${docSection('HOA questions', byType('hoa_questions'))}
+    ${docSection('Inspection checklist', byType('inspection_checklist'))}
+
+    <p class="honesty">This pack organizes your submission — it doesn't replace county confirmation. Requirements marked "commonly required" should be verified with the building department before filing. Portal links and phone numbers change; always use the county's official site.</p>
+
+    ${project.whiteLabel ? '' : `<div class="footerline">Permit roadmap prepared with Setback &middot; ${esc(location.hostname)} &middot; Every permit, decoded in 60 seconds</div>`}
+  `;
+}
+
+document.getElementById('printBtn').onclick = () => window.print();
+load();
+</script>
+</body>
+</html>

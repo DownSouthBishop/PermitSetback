@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Client Packet — Setback</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="shared.css">
+<style>
+  body{ background:#fff; }
+  .wrap{ max-width:720px; }
+  .screenOnly{ }
+  @media print{
+    .screenOnly{ display:none !important; }
+    body{ font-size:12pt; }
+    .card{ box-shadow:none; border:1px solid #ccc; break-inside:avoid; }
+    a[href]:after{ content:none !important; }
+  }
+  .cover{ display:flex; align-items:center; gap:16px; border-bottom:2px solid var(--ink); padding-bottom:18px; margin-bottom:22px; }
+  .cover img{ max-height:56px; max-width:180px; object-fit:contain; }
+  .cover .brandname{ font-size:20px; font-weight:800; }
+  .cover .brandcontact{ color:var(--ink-soft); font-size:13px; }
+  .cover .projline{ margin-left:auto; text-align:right; font-size:13px; color:var(--ink-soft); }
+  h2.sect{ font-size:15px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin:28px 0 10px; }
+  .footerline{ text-align:center; font-size:11px; color:var(--ink-soft); margin-top:36px; padding-top:12px; border-top:1px solid var(--line); }
+  .printbtn{ position:fixed; top:16px; right:16px; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <p style="padding-top:16px;">Loading your Client Packet&hellip;</p>
+</div>
+<button class="btn printbtn screenOnly" id="printBtn" style="width:auto;padding:10px 18px;">Print / Save as PDF</button>
+
+<script type="module">
+import { esc, fetchWithTimeout, BACKEND_ORIGIN, tradeLabel, cityOf } from './modules/shared.js';
+
+const params = new URLSearchParams(location.search);
+const projectId = params.get('id');
+const app = document.getElementById('app');
+
+function errorState(message) {
+  app.innerHTML = `<p style="padding-top:40px;">${esc(message)}</p>`;
+  document.getElementById('printBtn').style.display = 'none';
+}
+
+async function load() {
+  if (!projectId) { errorState('No project specified.'); return; }
+
+  let project;
+  try {
+    const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(projectId)}`, {}, 10000);
+    if (!res.ok) throw new Error();
+    project = await res.json();
+  } catch {
+    errorState("Couldn't load this project — is the backend running?");
+    return;
+  }
+  if (!project.paid) { errorState('This project has not been unlocked yet.'); return; }
+  if (project.tier !== 'full') { errorState('The Client Packet is part of the Full Workspace — this project was unlocked at the Roadmap tier.'); return; }
+
+  const [docsRes, timelineRes, costRes] = await Promise.all([
+    fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(projectId)}/documents`, {}, 10000),
+    fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(projectId)}/timeline`, {}, 10000),
+    fetchWithTimeout(`${BACKEND_ORIGIN}/api/projects/${encodeURIComponent(projectId)}/cost`, {}, 10000)
+  ]);
+  const { documents } = docsRes.ok ? await docsRes.json() : { documents: [] };
+  const { phases } = timelineRes.ok ? await timelineRes.json() : { phases: [] };
+  const { costs } = costRes.ok ? await costRes.json() : { costs: [] };
+
+  const clientSummary = documents.find(d => d.docType === 'owner_summary');
+
+  const timelineHtml = phases.length ? `
+    <ul style="padding-left:20px;">
+      ${phases.map(p => `<li style="margin-bottom:6px;"><b>${esc(p.name)}</b>${p.estimatedDuration ? ` — ${esc(p.estimatedDuration)}` : ''}</li>`).join('')}
+    </ul>
+  ` : `<p>${esc(project.timeline || 'Timeline not yet generated.')}</p><p style="color:var(--ink-soft);font-size:13px;">${esc(project.timelineNote || '')}</p>`;
+
+  const costHtml = costs.length ? `
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      ${costs.map(c => `
+        <tr style="border-bottom:1px solid var(--line);">
+          <td style="padding:6px 0;">${esc(c.category)}</td>
+          <td style="padding:6px 0;text-align:right;white-space:nowrap;">${c.lowEstimate != null ? `$${c.lowEstimate.toLocaleString()} &ndash; $${c.highEstimate.toLocaleString()}` : ''}</td>
+        </tr>
+      `).join('')}
+    </table>
+  ` : `<p style="color:var(--ink-soft);font-size:13px;">Cost estimate not yet generated.</p>`;
+
+  const logo = project.companyLogoUrl ? `<img src="${esc(project.companyLogoUrl)}" alt="">` : '';
+
+  document.title = `Client Packet — ${project.location}`;
+
+  app.innerHTML = `
+    <div class="cover">
+      ${logo}
+      <div>
+        <div class="brandname">${esc(project.companyName || 'Your Company')}</div>
+        <div class="brandcontact">${esc(project.companyContact || '')}</div>
+      </div>
+      <div class="projline">
+        <div>${esc(cityOf(project.location))}</div>
+        <div>${esc(tradeLabel(project.trade))}</div>
+      </div>
+    </div>
+
+    <h2 class="sect">What I handle so you don't have to</h2>
+    <p>${clientSummary ? esc(clientSummary.content) : "Every permit this project needs, every agency involved, and the risks specific to your address — organized so nothing catches you by surprise partway through."}</p>
+
+    <h2 class="sect">Your permit application</h2>
+    <p style="white-space:pre-wrap;">${esc(project.narrative)}</p>
+
+    <h2 class="sect">Timeline</h2>
+    ${timelineHtml}
+
+    <h2 class="sect">Cost</h2>
+    ${costHtml}
+    <p class="disc" style="font-size:11px;color:var(--ink-soft);margin-top:6px;">These are planning-stage ranges, not a quote — confirmed pricing comes from your contractor.</p>
+
+    ${project.whiteLabel ? '' : `<div class="footerline">Permit roadmap prepared with Setback &middot; ${esc(location.hostname)} &middot; Every permit, decoded in 60 seconds</div>`}
+  `;
+}
+
+document.getElementById('printBtn').onclick = () => window.print();
+load();
+</script>
+</body>
+</html>

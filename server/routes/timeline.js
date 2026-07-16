@@ -18,6 +18,25 @@ function phaseRowToJson(row) {
   };
 }
 
+// Generates and persists timeline phases if none exist yet, or returns the
+// existing set — shared by the POST route below and the post-payment
+// pre-generation pass in server/pregenerate.js.
+export async function generateAndSaveTimeline(project) {
+  const existing = getTimelinePhasesByProjectStmt.all(project.id);
+  if (existing.length > 0) return existing.map(phaseRowToJson);
+
+  const { phases } = await generateTimelinePhases(project.location, project.description, project.trade, project.id);
+  const now = new Date().toISOString();
+  phases.forEach((phase, i) => {
+    insertTimelinePhaseStmt.run(
+      crypto.randomUUID(), project.id, phase.name, i,
+      phase.estimatedDuration || null, 'pending',
+      phase.isBottleneck ? 1 : 0, phase.note || null, now
+    );
+  });
+  return getTimelinePhasesByProjectStmt.all(project.id).map(phaseRowToJson);
+}
+
 // Returns true if this module handled the request (response already sent),
 // false if the caller should try the next route module.
 export async function handleTimelineRoutes(req, res, ip) {
@@ -36,16 +55,8 @@ export async function handleTimelineRoutes(req, res, ip) {
     if (checkRateLimit(res, ip)) return true;
 
     try {
-      const { phases } = await generateTimelinePhases(project.location, project.description, project.trade, project.id);
-      const now = new Date().toISOString();
-      phases.forEach((phase, i) => {
-        insertTimelinePhaseStmt.run(
-          crypto.randomUUID(), id, phase.name, i,
-          phase.estimatedDuration || null, 'pending',
-          phase.isBottleneck ? 1 : 0, phase.note || null, now
-        );
-      });
-      sendJson(res, 200, { phases: getTimelinePhasesByProjectStmt.all(id).map(phaseRowToJson) });
+      const phases = await generateAndSaveTimeline(project);
+      sendJson(res, 200, { phases });
     } catch (err) {
       console.error('Timeline generation failed:', err.message);
       sendJson(res, 502, { error: 'Timeline generation failed — try again in a moment.' });

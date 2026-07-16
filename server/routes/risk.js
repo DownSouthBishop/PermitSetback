@@ -49,6 +49,22 @@ function findingRowToJson(row) {
   };
 }
 
+// Generates and persists risk findings if none exist yet, or returns the
+// existing set — shared by the POST route below and the post-payment
+// pre-generation pass in server/pregenerate.js.
+export async function generateAndSaveRisk(project) {
+  const existing = getFindingsByProjectStmt.all(project.id, 'risk');
+  if (existing.length > 0) return existing.map(findingRowToJson);
+
+  const risks = await generateRiskFindings(project);
+  const now = new Date().toISOString();
+  return risks.map(r => {
+    const findingId = crypto.randomUUID();
+    insertFindingStmt.run(findingId, project.id, 'risk', r.label, r.detail, r.likelihood || null, r.impact || null, r.priority || null, r.mitigation || null, r.confidence || null, now, now);
+    return { id: findingId, label: r.label, detail: r.detail, likelihood: r.likelihood || null, impact: r.impact || null, priority: r.priority || null, mitigation: r.mitigation || null, confidence: r.confidence || null, createdAt: now, updatedAt: now };
+  });
+}
+
 // Returns true if this module handled the request (response already sent),
 // false if the caller should try the next route module.
 export async function handleRiskRoutes(req, res, ip) {
@@ -76,13 +92,7 @@ export async function handleRiskRoutes(req, res, ip) {
 
     if (checkRateLimit(res, ip)) return true;
     try {
-      const risks = await generateRiskFindings(project);
-      const now = new Date().toISOString();
-      const saved = risks.map(r => {
-        const findingId = crypto.randomUUID();
-        insertFindingStmt.run(findingId, id, 'risk', r.label, r.detail, r.likelihood || null, r.impact || null, r.priority || null, r.mitigation || null, r.confidence || null, now, now);
-        return { id: findingId, label: r.label, detail: r.detail, likelihood: r.likelihood || null, impact: r.impact || null, priority: r.priority || null, mitigation: r.mitigation || null, confidence: r.confidence || null, createdAt: now, updatedAt: now };
-      });
+      const saved = await generateAndSaveRisk(project);
       sendJson(res, 200, { findings: saved });
     } catch (err) {
       console.error('Risk generation failed:', err.message);

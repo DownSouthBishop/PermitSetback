@@ -15,6 +15,7 @@ import {
   getProjectStmt, markProjectPaidStmt, db, getSubscriptionByStripeIdStmt,
   insertSubscriptionStmt, updateSubscriptionStatusStmt, insertPackCreditsStmt
 } from '../db.js';
+import { pregenerateFullWorkspace } from '../pregenerate.js';
 
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 const getPackByStripeSessionStmt = db.prepare('SELECT id FROM pack_credits WHERE stripe_session_id = ?');
@@ -51,7 +52,12 @@ export async function handleStripeWebhookRoutes(req, res) {
       const project = projectId && getProjectStmt.get(projectId);
       if (project && !project.paid && sub.payment_status === 'paid') {
         const now = new Date().toISOString();
-        markProjectPaidStmt.run(sub.metadata?.tier || 'full', now, now, projectId);
+        const tier = sub.metadata?.tier || 'full';
+        markProjectPaidStmt.run(tier, now, now, projectId);
+        // Defense-in-depth twin of routes/checkout.js's confirm-checkout —
+        // generateAndSaveX's own "already exists" guards make this a no-op
+        // if the redirect path already fired it.
+        if (tier === 'full') pregenerateFullWorkspace(project);
       }
       // Expediter pack — the same one-time-payment confirmation as a
       // project, just keyed by session id instead of a project id since a

@@ -12,8 +12,20 @@
 // redemption) lives in routes/checkout.js instead — this file used to carry
 // all of it plus the ADMIN_SECRET-gated admin routes (now routes/admin.js)
 // for unrelated reasons.
-import { readBody, sendJson, checkGenerousRateLimit } from '../http-utils.js';
-import { getProjectStmt, updateProjectOutcomeStmt, insertOutcome, insertRefundClaimStmt, getReferralCodeByReferrerStmt } from '../db.js';
+import { readBody, sendJson, checkGenerousRateLimit, requirePaid } from '../http-utils.js';
+import { getProjectStmt, updateProjectOutcomeStmt, insertOutcome, insertRefundClaimStmt, getReferralCodeByReferrerStmt, updateProjectBrandingStmt, getPackCreditsByIdStmt } from '../db.js';
+import { isWhiteLabelPack } from '../stripe.js';
+
+// White-label is an expediter Starter/Bulk pack entitlement, determined
+// here from unlocked_via_pack_id (set once, at redemption time — see
+// routes/checkout.js) — never from anything the client sends. Every
+// non-pack unlock (direct $49/$97/$299 purchase, access code, referral
+// code) is null here and therefore never white-label.
+function isProjectWhiteLabel(row) {
+  if (!row.unlocked_via_pack_id) return false;
+  const pack = getPackCreditsByIdStmt.get(row.unlocked_via_pack_id);
+  return !!pack && isWhiteLabelPack(pack.credits_total);
+}
 
 export function projectRowToJson(row) {
   // Only ever surface a code this project actually minted, and only while
@@ -45,9 +57,24 @@ export function projectRowToJson(row) {
     // something actually writes to it.
     extra: row.extra ? JSON.parse(row.extra) : null,
     outcomeStatus: row.outcome_status,
+    companyName: row.company_name,
+    companyContact: row.company_contact,
+    companyLogoUrl: row.company_logo_url,
+    whiteLabel: isProjectWhiteLabel(row),
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
+}
+
+// http/https only — this gets rendered as an <img src> on the Client Packet
+// print view (Phase 2.2), so anything else (javascript:, data:, etc.) is
+// rejected outright rather than merely escaped.
+function isValidLogoUrl(url) {
+  try {
+    return ['http:', 'https:'].includes(new URL(url).protocol);
+  } catch {
+    return false;
+  }
 }
 
 // Teaser shape for a project that hasn't been paid for yet — counts only,
@@ -113,6 +140,37 @@ export async function handleProjectsRoutes(req, res, ip) {
 
       insertRefundClaimStmt.run(crypto.randomUUID(), id, project.outcome_status || 'rejected', details.trim().slice(0, 4000), (contactEmail || '').trim().slice(0, 200) || null, new Date().toISOString());
       sendJson(res, 200, { ok: true });
+    } catch (err) {
+      sendJson(res, 400, { error: 'invalid request body' });
+    }
+    return true;
+  }
+
+  // Client Packet branding — full-tier only, same as the print views it
+  // feeds (Phase 2.2). Revisable anytime, not a one-shot grant, so this is
+  // a plain update rather than the atomic-guard pattern payment/entitlement
+  // writes elsewhere in this file use.
+  if (req.method === 'POST' && /^\/api\/projects\/[^/]+\/branding$/.test(req.url)) {
+    if (checkGenerousRateLimit(res, ip)) return true;
+    const id = req.url.split('/')[3];
+    const project = getProjectStmt.get(id);
+    if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }
+    if (requirePaid(res, project)) return true;
+    try {
+      const { companyName, companyContact, companyLogoUrl } = JSON.parse((await readBody(req)) || '{}');
+      const logoUrl = (companyLogoUrl || '').trim();
+      if (logoUrl && !isValidLogoUrl(logoUrl)) {
+        sendJson(res, 400, { error: 'logo URL must be a valid http:// or https:// link' });
+        return true;
+      }
+      const now = new Date().toISOString();
+      updateProjectBrandingStmt.run(
+        (companyName || '').trim().slice(0, 200) || null,
+        (companyContact || '').trim().slice(0, 200) || null,
+        logoUrl || null,
+        now, id
+      );
+      sendJson(res, 200, projectRowToJson(getProjectStmt.get(id)));
     } catch (err) {
       sendJson(res, 400, { error: 'invalid request body' });
     }

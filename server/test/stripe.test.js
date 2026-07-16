@@ -203,6 +203,37 @@ test('redeem-pack-credit consumes a credit and unlocks the project at full tier'
   // Still the same pack (49 of 50 credits left), not exhausted — proves the
   // credit was actually decremented rather than the pack being consumed whole.
   assert.equal(pack.stripe_session_id, 'cs_test_pack');
+
+  // A 50-credit (Bulk) pack is white-label — see server/stripe.js's
+  // isWhiteLabelPack and routes/projects.js's isProjectWhiteLabel.
+  assert.equal(body.whiteLabel, true);
+});
+
+test('redeem-pack-credit against a Bid Pack (5 credits) does not grant white-label', async () => {
+  const { getOrCreateUser, insertSessionStmt, insertPackCreditsStmt } = await import('../db.js');
+  const user = getOrCreateUser('pack-test-bid5@example.com');
+  const token = crypto.randomUUID();
+  const now = new Date();
+  insertSessionStmt.run(token, user.id, now.toISOString(), new Date(now.getTime() + 60_000).toISOString());
+  insertPackCreditsStmt.run(crypto.randomUUID(), user.id, 'cs_test_bid5_pack', 5, now.toISOString());
+  const projectId = makeProject({ paid: 0 });
+
+  const res = await fetch(`${BASE}/api/projects/${projectId}/redeem-pack-credit`, {
+    // Unique IP: keeps this off the shared tight rate-limit budget the
+    // concurrent-redemption test below (same file) depends on staying intact.
+    method: 'POST', headers: { Authorization: `Bearer ${token}`, 'x-forwarded-for': '203.0.113.201' }
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.whiteLabel, false, 'the contractor Bid Pack must never unlock white-label');
+});
+
+test('a directly-purchased project (no pack involved) is never white-label', () => {
+  const projectId = makeProject({ paid: true, tier: 'full' });
+  return fetch(`${BASE}/api/projects/${projectId}`).then(async res => {
+    const body = await res.json();
+    assert.equal(body.whiteLabel, false);
+  });
 });
 
 test('two concurrent redeem-pack-credit calls on the last credit cannot both succeed', async () => {
