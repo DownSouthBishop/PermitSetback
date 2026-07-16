@@ -1,14 +1,13 @@
 # Setback
 
-> Setback tells a contractor or homeowner every permit their construction project needs, in under 60 seconds — agencies, jurisdiction-specific rejection risks, a realistic timeline, and a draft permit narrative. Any trade, any US location, no account required.
+> Setback generates a US construction-permit roadmap from an address and job description in about 60 seconds — every permit, every agency, jurisdiction-specific rejection risks, a realistic timeline, and a submission-ready permit narrative. The $97 tier adds a branded Client Packet a contractor hands the homeowner and a City Submission Pack for filing. Any trade, any US location, no account required.
 
 Setback is not legal advice and does not replace an official agency determination. See /disclaimer.html.
 
 ## Product
 - [Get a roadmap](index.html): the main tool — describe a project and location, get a permit roadmap
-- Pricing: $49 for the roadmap, $97 for the full workspace, one time — shown in full on [Get a roadmap](index.html)
-- [Setback Pro](index.html): $79/mo membership, drops every full workspace to $49
-- [For permit expediters](expediters.html): prepaid packs for expediting firms, $549/15 roadmaps or $1,499/50 roadmaps
+- Pricing, one time, no subscription: $49 Quote-Ready Roadmap, $97 The Bid Packet (adds the Client Packet + City Submission Pack + feasibility/cost/risk/AI advisor), $299 Bid Pack (5 bid packets), shown in full on [Get a roadmap](index.html)
+- [For permit expediters](expediters.html): prepaid packs for expediting firms, $549/15 roadmaps or $1,499/50 roadmaps, white-label
 - [How it works](how-it-works.html): what the roadmap is based on, and what to independently confirm
 
 ## Policies

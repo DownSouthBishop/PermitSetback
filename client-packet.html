@@ -8,27 +8,40 @@
 <link rel="stylesheet" href="shared.css">
 <style>
   body{ background:#fff; }
-  .wrap{ max-width:720px; }
+  .wrap{ max-width:760px; padding:0; }
   .screenOnly{ }
   @media print{
     .screenOnly{ display:none !important; }
     body{ font-size:12pt; }
-    .card{ box-shadow:none; border:1px solid #ccc; break-inside:avoid; }
+    .section{ break-inside:avoid; }
+    .cover{ break-after:page; }
     a[href]:after{ content:none !important; }
   }
-  .cover{ display:flex; align-items:center; gap:16px; border-bottom:2px solid var(--ink); padding-bottom:18px; margin-bottom:22px; }
-  .cover img{ max-height:56px; max-width:180px; object-fit:contain; }
-  .cover .brandname{ font-size:20px; font-weight:800; }
-  .cover .brandcontact{ color:var(--ink-soft); font-size:13px; }
-  .cover .projline{ margin-left:auto; text-align:right; font-size:13px; color:var(--ink-soft); }
-  h2.sect{ font-size:15px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin:28px 0 10px; }
-  .footerline{ text-align:center; font-size:11px; color:var(--ink-soft); margin-top:36px; padding-top:12px; border-top:1px solid var(--line); }
+  .cover{
+    background:linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
+    color:#fff; padding:56px 48px; display:flex; flex-direction:column; gap:28px;
+  }
+  .cover .brandrow{ display:flex; align-items:center; gap:16px; }
+  .cover img{ max-height:52px; max-width:170px; object-fit:contain; background:#fff; padding:6px; border-radius:6px; }
+  .cover .brandname{ font-size:19px; font-weight:800; }
+  .cover .brandcontact{ opacity:.85; font-size:13px; }
+  .cover .title{ font-size:34px; font-weight:800; letter-spacing:-0.02em; line-height:1.15; margin-top:10px; }
+  .cover .projline{ font-size:15px; opacity:.9; }
+  .body-pad{ padding:0 48px 48px; }
+  .section{ margin-top:32px; }
+  .section h2{ font-size:14px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin:0 0 12px; padding-bottom:8px; border-bottom:2px solid var(--line); }
+  .section p{ font-size:14.5px; line-height:1.6; }
+  table.costtable{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  table.costtable th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); padding:6px 0; border-bottom:2px solid var(--line); }
+  table.costtable td{ padding:9px 0; border-bottom:1px solid var(--line); }
+  table.costtable td:last-child{ text-align:right; white-space:nowrap; font-family:var(--font-mono); }
+  .footerline{ text-align:center; font-size:11px; color:var(--ink-soft); margin-top:40px; padding-top:14px; border-top:1px solid var(--line); }
   .printbtn{ position:fixed; top:16px; right:16px; }
 </style>
 </head>
 <body>
 <div class="wrap" id="app">
-  <p style="padding-top:16px;">Loading your Client Packet&hellip;</p>
+  <p style="padding:40px 48px;">Loading your Client Packet&hellip;</p>
 </div>
 <button class="btn printbtn screenOnly" id="printBtn" style="width:auto;padding:10px 18px;">Print / Save as PDF</button>
 
@@ -40,7 +53,7 @@ const projectId = params.get('id');
 const app = document.getElementById('app');
 
 function errorState(message) {
-  app.innerHTML = `<p style="padding-top:40px;">${esc(message)}</p>`;
+  app.innerHTML = `<p style="padding:40px 48px;">${esc(message)}</p>`;
   document.getElementById('printBtn').style.display = 'none';
 }
 
@@ -71,53 +84,68 @@ async function load() {
   const clientSummary = documents.find(d => d.docType === 'owner_summary');
 
   const timelineHtml = phases.length ? `
-    <ul style="padding-left:20px;">
+    <ul style="padding-left:20px;margin:0;">
       ${phases.map(p => `<li style="margin-bottom:6px;"><b>${esc(p.name)}</b>${p.estimatedDuration ? ` — ${esc(p.estimatedDuration)}` : ''}</li>`).join('')}
     </ul>
   ` : `<p>${esc(project.timeline || 'Timeline not yet generated.')}</p><p style="color:var(--ink-soft);font-size:13px;">${esc(project.timelineNote || '')}</p>`;
 
   const costHtml = costs.length ? `
-    <table style="width:100%;border-collapse:collapse;font-size:13px;">
-      ${costs.map(c => `
-        <tr style="border-bottom:1px solid var(--line);">
-          <td style="padding:6px 0;">${esc(c.category)}</td>
-          <td style="padding:6px 0;text-align:right;white-space:nowrap;">${c.lowEstimate != null ? `$${c.lowEstimate.toLocaleString()} &ndash; $${c.highEstimate.toLocaleString()}` : ''}</td>
-        </tr>
-      `).join('')}
+    <table class="costtable">
+      <thead><tr><th>Category</th><th>Estimate</th></tr></thead>
+      <tbody>
+        ${costs.map(c => `
+          <tr>
+            <td>${esc(c.category)}</td>
+            <td>${c.lowEstimate != null ? `$${c.lowEstimate.toLocaleString()} &ndash; $${c.highEstimate.toLocaleString()}` : ''}</td>
+          </tr>
+        `).join('')}
+      </tbody>
     </table>
   ` : `<p style="color:var(--ink-soft);font-size:13px;">Cost estimate not yet generated.</p>`;
 
-  const logo = project.companyLogoUrl ? `<img src="${esc(project.companyLogoUrl)}" alt="">` : '';
+  const logoAlt = `${project.companyName || 'Company'} logo`;
+  const logo = project.companyLogoUrl ? `<img src="${esc(project.companyLogoUrl)}" alt="${esc(logoAlt)}">` : '';
 
   document.title = `Client Packet — ${project.location}`;
 
   app.innerHTML = `
     <div class="cover">
-      ${logo}
-      <div>
-        <div class="brandname">${esc(project.companyName || 'Your Company')}</div>
-        <div class="brandcontact">${esc(project.companyContact || '')}</div>
+      <div class="brandrow">
+        ${logo}
+        <div>
+          <div class="brandname">${esc(project.companyName || 'Your Company')}</div>
+          <div class="brandcontact">${esc(project.companyContact || '')}</div>
+        </div>
       </div>
-      <div class="projline">
-        <div>${esc(cityOf(project.location))}</div>
-        <div>${esc(tradeLabel(project.trade))}</div>
+      <div>
+        <div class="title">Permit &amp; Bid Packet</div>
+        <div class="projline">${esc(project.location)} &middot; ${esc(tradeLabel(project.trade))}</div>
       </div>
     </div>
+    <div class="body-pad">
+      <div class="section">
+        <h2>What I handle so you don't have to</h2>
+        <p>${clientSummary ? esc(clientSummary.content) : "Every permit this project needs, every agency involved, and the risks specific to your address — organized so nothing catches you by surprise partway through."}</p>
+      </div>
 
-    <h2 class="sect">What I handle so you don't have to</h2>
-    <p>${clientSummary ? esc(clientSummary.content) : "Every permit this project needs, every agency involved, and the risks specific to your address — organized so nothing catches you by surprise partway through."}</p>
+      <div class="section">
+        <h2>Your permit application</h2>
+        <p style="white-space:pre-wrap;">${esc(project.narrative)}</p>
+      </div>
 
-    <h2 class="sect">Your permit application</h2>
-    <p style="white-space:pre-wrap;">${esc(project.narrative)}</p>
+      <div class="section">
+        <h2>Timeline</h2>
+        ${timelineHtml}
+      </div>
 
-    <h2 class="sect">Timeline</h2>
-    ${timelineHtml}
+      <div class="section">
+        <h2>Cost</h2>
+        ${costHtml}
+        <p class="disc" style="font-size:11px;color:var(--ink-soft);margin-top:8px;">These are planning-stage ranges, not a quote — confirmed pricing comes from your contractor.</p>
+      </div>
 
-    <h2 class="sect">Cost</h2>
-    ${costHtml}
-    <p class="disc" style="font-size:11px;color:var(--ink-soft);margin-top:6px;">These are planning-stage ranges, not a quote — confirmed pricing comes from your contractor.</p>
-
-    ${project.whiteLabel ? '' : `<div class="footerline">Permit roadmap prepared with Setback &middot; ${esc(location.hostname)} &middot; Every permit, decoded in 60 seconds</div>`}
+      ${project.whiteLabel ? '' : `<div class="footerline">Permit roadmap prepared with Setback &middot; ${esc(location.hostname)} &middot; Every permit, decoded in 60 seconds</div>`}
+    </div>
   `;
 }
 

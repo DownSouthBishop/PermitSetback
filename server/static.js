@@ -19,7 +19,9 @@ const MIME = {
   '.xml': 'application/xml; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
-  '.png': 'image/png'
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg'
 };
 
 // Baseline hardening headers — applied to EVERY response (see index.js's
