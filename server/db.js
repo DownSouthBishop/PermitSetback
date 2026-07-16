@@ -368,7 +368,16 @@ for (const stmt of [
   // pack entitlement, never a client-supplied flag. NULL for every
   // non-pack unlock path (direct purchase, access code, referral code) —
   // those are never white-label, full stop.
-  "ALTER TABLE projects ADD COLUMN unlocked_via_pack_id TEXT"
+  "ALTER TABLE projects ADD COLUMN unlocked_via_pack_id TEXT",
+  // The 7-day unpaid-results window (server/expiry.js) and the day-2/day-6
+  // drip (server/drip.js) — all nullable, all set at most once per project.
+  "ALTER TABLE projects ADD COLUMN expired_at TEXT",
+  "ALTER TABLE projects ADD COLUMN drip_day2_sent_at TEXT",
+  "ALTER TABLE projects ADD COLUMN drip_day6_sent_at TEXT",
+  "ALTER TABLE projects ADD COLUMN unsubscribed_at TEXT",
+  // The post-timeline outcome email (server/outcome-email.js) — set once,
+  // the first (and only) time it sends for a given project.
+  "ALTER TABLE projects ADD COLUMN outcome_email_sent_at TEXT"
 ]) {
   try { db.exec(stmt); } catch (err) { /* column already exists — fine */ }
 }
@@ -648,3 +657,43 @@ export const upsertAttentionDigestStmt = db.prepare(`
 export const redeemReferralCodeStmt = db.prepare(
   'UPDATE referral_codes SET redeemed_project_id = ?, redeemed_at = ? WHERE code = ? AND redeemed_project_id IS NULL'
 );
+
+// --- 7-day unpaid-results expiry (server/expiry.js) ---------------------
+// Clears the teaser-visible content on unpaid projects past the 7-day
+// window while keeping the row (location/trade/created_at survive for
+// analytics) — the row is never deleted, only the content a visitor could
+// still be shown. WHERE expired_at IS NULL makes a repeat run of the sweep
+// a no-op for rows it already cleared.
+export const expireUnpaidProjectsStmt = db.prepare(`
+  UPDATE projects SET agencies = '[]', flags = '[]', risks = '[]', narrative = '', extra = NULL, expired_at = ?
+  WHERE paid = 0 AND expired_at IS NULL AND created_at <= ?
+`);
+
+// --- Drip emails (server/drip.js) ---------------------------------------
+// One row per unpaid project that has a captured email on file (someone
+// requested a magic link for it, whether or not they ever clicked it) —
+// the subquery picks that project's most recently requested email.
+// Excludes anything already paid, expired, or unsubscribed.
+export const getDripCandidatesStmt = db.prepare(`
+  SELECT p.*, (
+    SELECT email FROM magic_links WHERE project_id = p.id ORDER BY created_at DESC LIMIT 1
+  ) AS lead_email
+  FROM projects p
+  WHERE p.paid = 0 AND p.expired_at IS NULL AND p.unsubscribed_at IS NULL
+    AND EXISTS (SELECT 1 FROM magic_links WHERE project_id = p.id)
+`);
+export const markDrip2SentStmt = db.prepare('UPDATE projects SET drip_day2_sent_at = ? WHERE id = ? AND drip_day2_sent_at IS NULL');
+export const markDrip6SentStmt = db.prepare('UPDATE projects SET drip_day6_sent_at = ? WHERE id = ? AND drip_day6_sent_at IS NULL');
+export const unsubscribeProjectStmt = db.prepare('UPDATE projects SET unsubscribed_at = ? WHERE id = ? AND unsubscribed_at IS NULL');
+
+// --- Post-timeline outcome email (server/outcome-email.js) ----------------
+export const getOutcomeEmailCandidatesStmt = db.prepare(`
+  SELECT p.*, (
+    SELECT email FROM magic_links WHERE project_id = p.id ORDER BY created_at DESC LIMIT 1
+  ) AS lead_email
+  FROM projects p
+  WHERE p.paid = 1 AND p.outcome_email_sent_at IS NULL AND p.unsubscribed_at IS NULL
+    AND p.paid_at IS NOT NULL AND p.paid_at <= ?
+    AND EXISTS (SELECT 1 FROM magic_links WHERE project_id = p.id)
+`);
+export const markOutcomeEmailSentStmt = db.prepare('UPDATE projects SET outcome_email_sent_at = ? WHERE id = ? AND outcome_email_sent_at IS NULL');

@@ -40,13 +40,28 @@ function makeFullyPopulatedProject() {
   return { id, location: 'Denver, Colorado', description: 'Test project', trade: 'fence' };
 }
 
-test('pregenerateFullWorkspace returns immediately without waiting on the generators', () => {
-  const project = { id: crypto.randomUUID(), location: 'Denver, Colorado', description: 'Test project', trade: 'fence' };
-  const start = Date.now();
-  pregenerateFullWorkspace(project);
-  // Generous threshold — the point isn't a strict timing budget, it's proving
-  // this returns long before a real LLM round-trip (seconds) could complete.
-  assert.ok(Date.now() - start < 500, 'must not block the caller — the whole point is not delaying the HTTP response');
+test('pregenerateFullWorkspace returns immediately without waiting on the generators', async () => {
+  // Stub the network entirely — an unpopulated project means every
+  // generateAndSaveX would otherwise fire a real, slow (and here,
+  // guaranteed-to-fail) call to api.anthropic.com in the background. The
+  // point of this test is the synchronous return below, not the network
+  // round-trip, so there's nothing to gain from letting it happen for real.
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, opts) => {
+    if (typeof url === 'string' && url.includes('api.anthropic.com')) return new Response('{}', { status: 401 });
+    return originalFetch(url, opts);
+  };
+  try {
+    const project = { id: crypto.randomUUID(), location: 'Denver, Colorado', description: 'Test project', trade: 'fence' };
+    const start = Date.now();
+    pregenerateFullWorkspace(project);
+    // Generous threshold — the point isn't a strict timing budget, it's proving
+    // this returns long before a real LLM round-trip could complete.
+    assert.ok(Date.now() - start < 500, 'must not block the caller — the whole point is not delaying the HTTP response');
+    await new Promise(r => setTimeout(r, 50));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test('pregenerateFullWorkspace is a no-op when every module already has content (double-fire safety)', async () => {

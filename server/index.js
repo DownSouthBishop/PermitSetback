@@ -30,6 +30,9 @@ import { handleStaticRoutes, SECURITY_HEADERS, isHttpsRequest } from './static.j
 import { runLearningPass } from './learn.js';
 import { runAttentionDigestPass } from './attention-digest.js';
 import { sweepRateLimitMaps } from './rate-limit.js';
+import { runExpiryPass } from './expiry.js';
+import { runDripPass } from './drip.js';
+import { runOutcomeEmailPass } from './outcome-email.js';
 import { db } from './db.js';
 
 const PORT = process.env.PORT || 8787;
@@ -131,5 +134,11 @@ setTimeout(() => {
   runLearningPass();
   runAttentionDigestPass();
   sweepRateLimitMaps();
-  setInterval(() => { runLearningPass(); runAttentionDigestPass(); sweepRateLimitMaps(); }, 6 * 60 * 60 * 1000).unref();
+  runExpiryPass();
+  runDripPass();
+  runOutcomeEmailPass();
+  setInterval(() => {
+    runLearningPass(); runAttentionDigestPass(); sweepRateLimitMaps();
+    runExpiryPass(); runDripPass(); runOutcomeEmailPass();
+  }, 6 * 60 * 60 * 1000).unref();
 }, 30_000).unref();

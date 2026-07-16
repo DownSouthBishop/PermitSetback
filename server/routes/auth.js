@@ -4,7 +4,7 @@ import { readBody, sendJson, checkRateLimit } from '../http-utils.js';
 import {
   getOrCreateUser, insertMagicLinkStmt, getMagicLinkStmt, markMagicLinkUsedStmt,
   insertSessionStmt, linkProjectToUserStmt, getProjectsByUserStmt, getSessionUserStmt,
-  getActiveSubscriptionByUserStmt, getPackCreditsByUserStmt
+  getActiveSubscriptionByUserStmt, getPackCreditsByUserStmt, getProjectStmt
 } from '../db.js';
 import { computeAttentionItems } from '../attention.js';
 import { sendEmail } from '../email.js';
@@ -34,6 +34,35 @@ export function getSessionUser(req) {
   if (!row) return null;
   if (new Date(row.expires_at).getTime() < Date.now()) return null;
   return row;
+}
+
+// The teaser's "email me my results link" capture (an unpaid project) wants
+// the richer results-recap email (Appendix A §6.1) — location, counts, the
+// guarantee line — not the bare "here's your sign-in link" utility copy
+// every other request-link call site (subscribe, save-after-payment,
+// projects.html sign-in) wants instead. Same endpoint, same magic-link
+// mechanism; only the email content branches on whether there's an unpaid
+// project attached. "Permits" in the approved copy becomes "agencies" here
+// — this app has no separate permit count, only agencies/flags/risks.
+function buildRequestLinkEmail(project, link) {
+  if (!project || project.paid) {
+    return {
+      subject: 'Your Setback sign-in link',
+      html: `<p>Here's your sign-in link — it expires in 15 minutes:</p><p><a href="${link}">${link}</a></p>`,
+      text: `Here's your sign-in link — it expires in 15 minutes: ${link}`
+    };
+  }
+  const agencyCount = JSON.parse(project.agencies).length;
+  const riskCount = JSON.parse(project.risks).length;
+  return {
+    subject: `Your permit results for ${project.location} — ${agencyCount} agencies, ${riskCount} risks found`,
+    html: `
+      <p>Here's your link — it's saved for 7 days: <a href="${link}">Open my results</a></p>
+      <p>The short version: this project touches ${agencyCount} agencies and we flagged ${riskCount} rejection risk${riskCount === 1 ? '' : 's'} worth knowing before anyone quotes it. The full packet — names, narratives, checklists, and the client-ready PDF — is behind the link.</p>
+      <p>&mdash; Setback<br>Rejected as drafted? Refunded in full.</p>
+    `,
+    text: `Here's your link — it's saved for 7 days: ${link}\n\nThe short version: this project touches ${agencyCount} agencies and we flagged ${riskCount} rejection risk${riskCount === 1 ? '' : 's'} worth knowing before anyone quotes it. The full packet — names, narratives, checklists, and the client-ready PDF — is behind the link.\n\n— Setback. Rejected as drafted? Refunded in full.`
+  };
 }
 
 function projectSummary(p) {
@@ -68,12 +97,9 @@ export async function handleAuthRoutes(req, res, ip) {
         // would let someone distinguish "email sent" from "email failed"
         // per address, which is its own small oracle. Log and move on.
         try {
-          await sendEmail({
-            to: email,
-            subject: 'Your Setback sign-in link',
-            html: `<p>Here's your sign-in link — it expires in 15 minutes:</p><p><a href="${link}">${link}</a></p>`,
-            text: `Here's your sign-in link — it expires in 15 minutes: ${link}`
-          });
+          const project = projectId ? getProjectStmt.get(projectId) : null;
+          const { subject, html, text } = buildRequestLinkEmail(project, link);
+          await sendEmail({ to: email, subject, html, text });
         } catch (err) {
           console.error('[auth] sendEmail failed:', err.message);
         }

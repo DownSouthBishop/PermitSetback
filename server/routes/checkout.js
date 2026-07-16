@@ -3,19 +3,19 @@
 // Split out of projects.js, which had accumulated project CRUD and every
 // unlock mechanism together for unrelated reasons. Account-scoped billing
 // (subscriptions, the expediter pack purchase itself) stays in billing.js.
-import { randomInt } from 'node:crypto';
 import { readBody, sendJson, checkRateLimit, originFromRequest } from '../http-utils.js';
 import {
   getProjectStmt, markProjectPaidStmt,
   getAccessCodeStmt, incrementAccessCodeUsesStmt, insertAccessCodeRedemptionStmt,
   getActiveSubscriptionByUserStmt, getReferralCodeStmt, redeemReferralCodeStmt,
-  insertReferralCodeStmt, getAvailablePackForUserStmt, incrementPackCreditsUsedStmt,
+  getAvailablePackForUserStmt, incrementPackCreditsUsedStmt,
   linkProjectToUserStmt, getPartnerCodeStmt, insertPartnerRedemptionStmt, setProjectPackSourceStmt
 } from '../db.js';
-import { createCheckoutSession, retrieveCheckoutSession, createReferralPromotionCode } from '../stripe.js';
+import { createCheckoutSession, retrieveCheckoutSession } from '../stripe.js';
 import { getSessionUser } from './auth.js';
 import { projectRowToJson } from './projects.js';
 import { pregenerateFullWorkspace } from '../pregenerate.js';
+import { mintReferralCodeForProject } from '../referrals.js';
 
 const VALID_TIERS = ['roadmap', 'full'];
 
@@ -43,17 +43,6 @@ function upgradePriceCentsFor({ sessionUser, referralCodeRow }) {
   const alreadyAtFullRate = (sessionUser && getActiveSubscriptionByUserStmt.get(sessionUser.id))
     || (referralCodeRow && !referralCodeRow.redeemed_project_id);
   return alreadyAtFullRate ? 0 : 4800;
-}
-
-// Referral codes are shared out loud (emailed, texted to another
-// contractor), so they use a short human-typeable alphabet rather than a
-// UUID — no ambiguous characters (0/O, 1/I) since someone will be reading
-// this off a screen to type it in.
-const REFERRAL_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-function generateReferralCode() {
-  let code = '';
-  for (let i = 0; i < 8; i++) code += REFERRAL_ALPHABET[randomInt(REFERRAL_ALPHABET.length)];
-  return code;
 }
 
 // Returns true if this module handled the request (response already sent),
@@ -300,15 +289,7 @@ export async function handleCheckoutRoutes(req, res, ip) {
       // still works (the local code is what's actually checked at
       // redemption), just without a Stripe-side record.
       if (tier === 'full' && session.amount_total === 9700) {
-        const code = generateReferralCode();
-        let promotionCodeId = null;
-        try {
-          const promotionCode = await createReferralPromotionCode({ referrerProjectId: id });
-          promotionCodeId = promotionCode.id;
-        } catch (err) {
-          console.error('Stripe referral promotion code creation failed:', err.message);
-        }
-        insertReferralCodeStmt.run(code, id, promotionCodeId, now);
+        await mintReferralCodeForProject(id);
       }
 
       sendJson(res, 200, projectRowToJson(getProjectStmt.get(id)));

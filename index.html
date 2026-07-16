@@ -950,6 +950,15 @@ function renderTeaser(){
       </div>
       <p style="font-size:13.5px;color:var(--ink-soft);">Here's the shape of it — the full packet is one step away.</p>
 
+      <div id="teaserEmailCapture">
+        <label for="teaserEmail" style="display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;">Email me my results link — so this doesn't disappear when the tab does.</label>
+        <div style="display:flex;gap:8px;">
+          <input id="teaserEmail" type="email" placeholder="you@email.com" aria-label="Email" style="flex:1;margin-bottom:0;">
+          <button class="btn secondary" id="teaserEmailSend" style="width:auto;">Send my link</button>
+        </div>
+        <div id="teaserEmailErr"></div>
+      </div>
+
       <div class="anchor"><span>The names, the narratives, the checklists, and the client-ready PDF are in the full packet. A permit expediter would charge <b>$500&ndash;$3,000</b> to assemble what's behind this screen. You've already done the hard part — you told us the job.</span></div>
 
       <p style="font-size:14px;font-weight:700;text-align:center;margin:14px 0;">Rejected as drafted? Refunded in full. That's the deal.</p>
@@ -1021,6 +1030,31 @@ function renderTeaser(){
     state.referralCode = document.getElementById('referralInput').value.trim();
     state.partnerCode = document.getElementById('partnerInput').value.trim();
     openCheckout();
+  };
+  document.getElementById('teaserEmailSend').onclick = async () => {
+    const email = document.getElementById('teaserEmail').value.trim();
+    const errBox = document.getElementById('teaserEmailErr');
+    errBox.innerHTML = '';
+    if (!email || !email.includes('@')){ errBox.innerHTML = `<div class="err">Enter a valid email address.</div>`; return; }
+    if (state.isMock){ errBox.innerHTML = `<div class="err">This needs the backend running — this is demo data.</div>`; return; }
+    const btn = document.getElementById('teaserEmailSend');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span>Sending...`;
+    try {
+      const res = await fetchWithTimeout(`${BACKEND_ORIGIN}/api/auth/request-link`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, projectId: state.project.id })
+      }, 8000);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Backend returned ${res.status}`);
+      document.getElementById('teaserEmailCapture').innerHTML = data.devLink
+        ? `<div style="font-size:12.5px;color:var(--ink-soft);">Saved — here's your link directly (no email delivery in dev): <a href="${esc(data.devLink)}">Open my results</a></div>`
+        : `<div style="font-size:12.5px;color:var(--ink-soft);">Check your email for your results link.</div>`;
+    } catch (err){
+      errBox.innerHTML = `<div class="err">Couldn't send that — is the backend running?</div>`;
+      btn.disabled = false;
+      btn.textContent = 'Send my link';
+    }
   };
 }
 
@@ -1516,7 +1550,10 @@ async function init(){
         const project = await res.json();
         state.project = { id: project.id, location: project.location, description: project.description };
         state.isMock = false;
-        if (project.paid){
+        if (project.expired){
+          render({ hideIntake: true });
+          document.getElementById('errbox').innerHTML = `<div class="err">This link has expired — results are saved for 7 days. Generate a new roadmap below.</div>`;
+        } else if (project.paid){
           state.result = {
             agencies: project.agencies, flags: project.flags, risks: project.risks,
             timeline: project.timeline, timelineNote: project.timelineNote, narrative: project.narrative,

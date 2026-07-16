@@ -13,8 +13,20 @@
 // all of it plus the ADMIN_SECRET-gated admin routes (now routes/admin.js)
 // for unrelated reasons.
 import { readBody, sendJson, checkGenerousRateLimit, requirePaid } from '../http-utils.js';
-import { getProjectStmt, updateProjectOutcomeStmt, insertOutcome, insertRefundClaimStmt, getReferralCodeByReferrerStmt, updateProjectBrandingStmt, getPackCreditsByIdStmt } from '../db.js';
+import { getProjectStmt, updateProjectOutcomeStmt, insertOutcome, insertRefundClaimStmt, getReferralCodeByReferrerStmt, updateProjectBrandingStmt, getPackCreditsByIdStmt, unsubscribeProjectStmt } from '../db.js';
 import { isWhiteLabelPack } from '../stripe.js';
+import { verifyOutcomeSignature } from '../outcome-signing.js';
+import { mintReferralCodeForProject } from '../referrals.js';
+
+// Shared by the in-app "tell us what happened" POST below and the
+// post-timeline email's signed GET outcome-report links — same two writes
+// (project.outcome_status + the standalone outcomes table learn.js reads
+// for jurisdiction-level insights) regardless of which path recorded it.
+function recordProjectOutcome(project, outcome) {
+  const now = new Date().toISOString();
+  updateProjectOutcomeStmt.run(outcome, now, now, project.id);
+  insertOutcome.run(now, project.location, project.description, project.trade, outcome);
+}
 
 // White-label is an expediter Starter/Bulk pack entitlement, determined
 // here from unlocked_via_pack_id (set once, at redemption time — see
@@ -77,6 +89,13 @@ function isValidLogoUrl(url) {
   }
 }
 
+// The 7-day window (server/expiry.js) has already cleared this row's
+// content by the time expired_at is set — this is just the honest shape to
+// show for it, distinct from the normal unpaid teaser.
+function projectExpiredJson(row) {
+  return { id: row.id, expired: true, location: row.location, trade: row.trade };
+}
+
 // Teaser shape for a project that hasn't been paid for yet — counts only,
 // no agencies/flags/risks/narrative content.
 function projectTeaserJson(row) {
@@ -110,13 +129,39 @@ export async function handleProjectsRoutes(req, res, ip) {
       const project = getProjectStmt.get(id);
       if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }
 
-      const now = new Date().toISOString();
-      updateProjectOutcomeStmt.run(outcome, now, now, id);
-      insertOutcome.run(now, project.location, project.description, project.trade, outcome);
+      recordProjectOutcome(project, outcome);
       sendJson(res, 200, { ok: true });
     } catch (err) {
       sendJson(res, 400, { error: 'invalid request body' });
     }
+    return true;
+  }
+
+  // The post-timeline outcome email's four buttons (server/outcome-email.js,
+  // Appendix A §6.4) — a signed GET link, not a POST, since it's clicked
+  // straight out of an email client. "not_yet_filed" isn't a real outcome
+  // (nothing to record), but still says thanks with a referral code, same
+  // as the other three.
+  if (req.method === 'GET' && /^\/api\/projects\/[^/]+\/outcome-report$/.test(req.url.split('?')[0])) {
+    const id = req.url.split('/')[3];
+    const { searchParams } = new URL(req.url, 'http://localhost');
+    const outcome = searchParams.get('outcome');
+    const sig = searchParams.get('sig');
+    const validOutcomes = ['approved', 'comments', 'rejected', 'not_yet_filed'];
+
+    const project = getProjectStmt.get(id);
+    const confirm = (message) => {
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      res.end(`<!doctype html><html><body style="font-family:sans-serif;padding:40px;text-align:center;max-width:480px;margin:0 auto;"><p>${message}</p></body></html>`);
+    };
+
+    if (!project || !validOutcomes.includes(outcome) || !verifyOutcomeSignature(id, outcome, sig)) {
+      confirm("That link isn't valid — it may be old or mistyped.");
+      return true;
+    }
+    if (outcome !== 'not_yet_filed') recordProjectOutcome(project, outcome);
+    await mintReferralCodeForProject(id);
+    confirm('Thanks — recorded. Check your project page for your referral code.');
     return true;
   }
 
@@ -177,10 +222,24 @@ export async function handleProjectsRoutes(req, res, ip) {
     return true;
   }
 
+  // One-click unsubscribe from the drip sequence (server/drip.js) — the
+  // project's own id is the capability token here, same trust boundary the
+  // rest of this file already uses for an unpaid project's teaser/outcome/
+  // refund-claim routes (know the id, act on it — no separate signed token).
+  if (req.method === 'GET' && /^\/api\/projects\/[^/]+\/unsubscribe$/.test(req.url)) {
+    const id = req.url.split('/')[3];
+    const project = getProjectStmt.get(id);
+    if (project) unsubscribeProjectStmt.run(new Date().toISOString(), id);
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    res.end('<!doctype html><html><body style="font-family:sans-serif;padding:40px;text-align:center;"><p>You’ve been unsubscribed from emails about this project.</p></body></html>');
+    return true;
+  }
+
   if (req.method === 'GET' && /^\/api\/projects\/[^/]+$/.test(req.url)) {
     const id = req.url.split('/')[3];
     const project = getProjectStmt.get(id);
     if (!project) { sendJson(res, 404, { error: 'not found' }); return true; }
+    if (!project.paid && project.expired_at) { sendJson(res, 200, projectExpiredJson(project)); return true; }
     sendJson(res, 200, project.paid ? projectRowToJson(project) : projectTeaserJson(project));
     return true;
   }

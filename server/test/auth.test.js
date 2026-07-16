@@ -19,8 +19,21 @@ delete process.env.RESEND_API_KEY;
 process.env.NODE_ENV = 'test';
 
 const { server } = await import('../index.js');
+const { insertProject, markProjectPaidStmt } = await import('../db.js');
 
 after(() => server.close());
+
+function makeProject({ paid = false } = {}) {
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+  insertProject.run(
+    id, 'Broward County, Florida', 'Test project', 'pool', 'anthropic',
+    JSON.stringify([{ name: 'a' }, { name: 'b' }]), '[]', JSON.stringify(['risk1']),
+    '4-8 weeks', 'test', 'narrative text', null, now, now
+  );
+  if (paid) markProjectPaidStmt.run('full', now, now, id);
+  return id;
+}
 
 test('with no email sender configured, the dev link is returned directly (local dev keeps working)', async () => {
   const res = await fetch(`${BASE}/api/auth/request-link`, {
@@ -50,6 +63,59 @@ test('once RESEND_API_KEY is set, the response never contains a link or token â€
     assert.equal(res.status, 200);
     assert.deepEqual(body, { ok: true }, 'response must carry no token/link, even though the send failed');
     assert.ok(calledResendWith, 'expected the route to attempt a Resend send');
+  } finally {
+    globalThis.fetch = originalFetch;
+    delete process.env.RESEND_API_KEY;
+  }
+});
+
+test('an unpaid project attached to the request gets the results-recap email, not the generic sign-in copy', async () => {
+  process.env.RESEND_API_KEY = 'test-resend-key';
+  const originalFetch = globalThis.fetch;
+  let sentBody = null;
+  globalThis.fetch = async (url, opts) => {
+    if (typeof url === 'string' && url.startsWith('https://api.resend.com/')) {
+      sentBody = JSON.parse(opts.body);
+      return new Response('{}', { status: 200 });
+    }
+    return originalFetch(url, opts);
+  };
+  try {
+    const projectId = makeProject({ paid: false });
+    const res = await fetch(`${BASE}/api/auth/request-link`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'lead@example.com', projectId })
+    });
+    assert.equal(res.status, 200);
+    assert.match(sentBody.subject, /Broward County, Florida/);
+    assert.match(sentBody.subject, /2 agencies/);
+    assert.match(sentBody.subject, /1 risks/);
+    assert.match(sentBody.text, /Rejected as drafted\? Refunded in full/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    delete process.env.RESEND_API_KEY;
+  }
+});
+
+test('a paid project attached to the request still gets the generic sign-in email', async () => {
+  process.env.RESEND_API_KEY = 'test-resend-key';
+  const originalFetch = globalThis.fetch;
+  let sentBody = null;
+  globalThis.fetch = async (url, opts) => {
+    if (typeof url === 'string' && url.startsWith('https://api.resend.com/')) {
+      sentBody = JSON.parse(opts.body);
+      return new Response('{}', { status: 200 });
+    }
+    return originalFetch(url, opts);
+  };
+  try {
+    const projectId = makeProject({ paid: true });
+    const res = await fetch(`${BASE}/api/auth/request-link`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'buyer@example.com', projectId })
+    });
+    assert.equal(res.status, 200);
+    assert.equal(sentBody.subject, 'Your Setback sign-in link');
   } finally {
     globalThis.fetch = originalFetch;
     delete process.env.RESEND_API_KEY;
